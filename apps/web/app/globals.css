@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@import "@repo/tailwind-config";
+
+:root {
+  color-scheme: light;
+  --background: #f6f3eb;
+  --foreground: #1e2a24;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
+}
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+}
+::selection {
+  background: #f4b860;
+  color: #1e2a24;
+}
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}

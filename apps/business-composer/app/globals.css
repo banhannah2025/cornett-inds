@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "@repo/tailwind-config";
+
+:root {
+  color-scheme: light;
+  --ink: #18201b;
+  --muted: #69726c;
+  --canvas: #f4f5f0;
+  --surface: #ffffff;
+  --line: #dfe3dc;
+  --brand: #224c3a;
+  --brand-soft: #e4efe8;
+  --accent: #d69a55;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 85% 0%, rgb(214 154 85 / 10%), transparent 24rem),
+    var(--canvas);
+  color: var(--ink);
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@repo/platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./access": "./src/access.ts",
+    "./integrations": "./src/integrations.ts",
+    "./products": "./src/products.ts",
+    "./templates": "./src/templates.ts",
+    "./tenancy": "./src/tenancy.ts",
+    "./workspaces": "./src/workspaces.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "typescript": "5.9.2"
+  }
+}

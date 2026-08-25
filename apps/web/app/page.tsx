@@ -1,0 +1,472 @@
+import {
+  ArrowRight,
+  Compass,
+  MapPin,
+  Radio,
+  Satellite,
+  Signal,
+  Sparkles,
+  Truck,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { NewsMenu } from "@/components/news-menu";
+import { AdminSiteEditor } from "@/components/admin-site-editor";
+import { AdminSessionControls } from "@/components/admin-session-controls";
+import { getAdminContext } from "@/lib/admin";
+import { getSiteSettings } from "@/sanity/lib/data";
+import { FieldNotesMenu } from "@/components/field-notes-menu";
+import { NavbarAuth } from "@/components/navbar-auth";
+
+const fieldNotes = [
+  {
+    eyebrow: "The setup",
+    title: "How we take reliable work with us",
+    description:
+      "The connectivity, power, and small routines that turn a faraway campsite into a dependable office.",
+    icon: Satellite,
+  },
+  {
+    eyebrow: "Location notes",
+    title: "Can you actually work from here?",
+    description:
+      "Honest notes on signal, quiet, access, weather, and everything we wish we knew before arriving.",
+    icon: MapPin,
+  },
+  {
+    eyebrow: "Life outside work",
+    title: "What makes a place worth staying",
+    description:
+      "The trails, towns, meals, views, and unplanned moments that make the journey more than a desk with scenery.",
+    icon: Compass,
+  },
+];
+
+export default async function Page() {
+  const [settings, admin] = await Promise.all([
+    getSiteSettings(),
+    getAdminContext(),
+  ]);
+  return (
+    <main className="overflow-hidden bg-[#f6f3eb] text-[#1e2a24]">
+      <header className="absolute inset-x-0 top-0 z-50">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-6 sm:px-8 lg:px-10">
+          <a className="text-white" href="#top" aria-label="Blended Works home">
+            <span className="block font-serif text-2xl font-semibold tracking-tight">
+              Blended Works
+            </span>
+            <span className="block text-[10px] font-bold uppercase tracking-[0.24em] text-white/70">
+              Field notes from anywhere
+            </span>
+          </a>
+          <nav
+            aria-label="Primary navigation"
+            className="flex items-center gap-8 text-sm font-semibold text-white/80"
+          >
+            <FieldNotesMenu />
+            <a
+              className="hidden transition hover:text-white md:block"
+              href="#connection"
+            >
+              The setup
+            </a>
+            <a
+              className="hidden transition hover:text-white md:block"
+              href="#rig"
+            >
+              Dream rig
+            </a>
+            <a
+              className="hidden transition hover:text-white md:block"
+              href="#about"
+            >
+              Our story
+            </a>
+            <NewsMenu />
+          </nav>
+          {admin.isAdmin ? (
+            <AdminSessionControls name={admin.displayName ?? "Administrator"} />
+          ) : (
+            <NavbarAuth
+              enabled={Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)}
+              onHero
+            />
+          )}
+        </div>
+      </header>
+
+      <section
+        className="relative flex min-h-[760px] items-end sm:min-h-[820px] lg:min-h-screen"
+        id="top"
+      >
+        <Image
+          alt="A remote campsite overlooking forested mountains with a laptop and satellite connection ready for work"
+          className="object-cover object-[66%_center]"
+          fill
+          priority
+          sizes="100vw"
+          src="/images/remote-camp-hero.png"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,25,21,0.86)_0%,rgba(15,25,21,0.52)_46%,rgba(15,25,21,0.08)_78%),linear-gradient(0deg,rgba(15,25,21,0.66)_0%,transparent_48%)]" />
+        <div className="relative mx-auto w-full max-w-7xl px-5 pb-16 sm:px-8 sm:pb-20 lg:px-10 lg:pb-24">
+          <div className="max-w-3xl">
+            <p className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.26em] text-[#f1be72]">
+              <span className="h-px w-10 bg-[#f1be72]" />
+              {settings.heroEyebrow}
+            </p>
+            <h1 className="font-serif text-5xl font-semibold leading-[0.98] tracking-[-0.035em] text-white sm:text-7xl lg:text-[6.4rem]">
+              {settings.heroHeadline}
+              <br />
+              <span className="italic text-[#f5d5a4]">
+                {settings.heroAccent}
+              </span>
+            </h1>
+            <p className="mt-7 max-w-xl text-lg leading-8 text-white/80 sm:text-xl">
+              {settings.heroIntroduction}
+            </p>
+            <div className="mt-9 flex flex-wrap gap-4">
+              <Link
+                className="inline-flex items-center gap-2 rounded-full bg-[#f4b860] px-6 py-3.5 text-sm font-bold text-[#1e2a24] transition hover:bg-[#ffd08a]"
+                href="/field-notes"
+              >
+                Read our field notes <ArrowRight className="size-4" />
+              </Link>
+              <a
+                className="inline-flex items-center gap-2 rounded-full border border-white/35 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
+                href="#about"
+              >
+                Meet Robin &amp; Laura
+              </a>
+              {admin.isAdmin && <AdminSiteEditor settings={settings} />}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[#1e2a24]/10 bg-[#1e2a24] text-white">
+        <div className="mx-auto grid max-w-7xl divide-y divide-white/10 px-5 sm:px-8 md:grid-cols-3 md:divide-x md:divide-y-0 lg:px-10">
+          <InfoItem
+            icon={Signal}
+            title="Connected"
+            detail="Starlink-powered workdays"
+          />
+          <InfoItem
+            icon={MapPin}
+            title="On the move"
+            detail="New places, real reviews"
+          />
+          <InfoItem
+            icon={Radio}
+            title="From the field"
+            detail="What works—and what doesn't"
+          />
+        </div>
+      </section>
+
+      <section className="px-5 py-24 sm:px-8 lg:px-10 lg:py-32" id="stories">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 border-b border-[#1e2a24]/15 pb-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-end">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#a45d2d]">
+              Notes from the road
+            </p>
+            <div>
+              <h2 className="max-w-3xl font-serif text-4xl leading-tight tracking-tight sm:text-6xl">
+                More than pretty places.{" "}
+                <span className="italic text-[#6b786e]">Useful details.</span>
+              </h2>
+              <p className="mt-5 max-w-2xl leading-7 text-[#59665f]">
+                We&rsquo;re documenting the full picture: whether we could get
+                there, get online, get our work done, and still remember why we
+                came.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-5 pt-10 lg:grid-cols-3">
+            {fieldNotes.map(
+              ({ eyebrow, title, description, icon: Icon }, index) => (
+                <article
+                  className="group flex min-h-[390px] flex-col justify-between rounded-[2rem] border border-[#1e2a24]/10 bg-[#ebe7dc] p-8 transition hover:-translate-y-1 hover:bg-[#e4dfd2]"
+                  key={title}
+                >
+                  <div className="flex items-start justify-between">
+                    <span className="rounded-full bg-[#1e2a24] p-3 text-[#f4b860]">
+                      <Icon className="size-5" />
+                    </span>
+                    <span className="font-serif text-sm text-[#7b857e]">
+                      0{index + 1}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#a45d2d]">
+                      {eyebrow}
+                    </p>
+                    <h3 className="font-serif text-3xl leading-tight">
+                      {title}
+                    </h3>
+                    <p className="mt-4 leading-7 text-[#59665f]">
+                      {description}
+                    </p>
+                    <p className="mt-6 inline-flex items-center gap-2 text-sm font-bold">
+                      First field note coming soon{" "}
+                      <ArrowRight className="size-4 transition group-hover:translate-x-1" />
+                    </p>
+                  </div>
+                </article>
+              ),
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="bg-[#dfe5dc] px-5 py-24 sm:px-8 lg:px-10 lg:py-32"
+        id="connection"
+      >
+        <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-2 lg:items-center">
+          <div className="relative overflow-hidden rounded-[2.5rem] bg-[#23372e] p-8 text-white sm:p-12">
+            <div className="absolute -right-20 -top-20 size-72 rounded-full border border-white/10" />
+            <div className="absolute -right-8 -top-8 size-44 rounded-full border border-white/10" />
+            <Satellite className="size-14 text-[#f4b860]" strokeWidth={1.4} />
+            <p className="mt-24 text-xs font-bold uppercase tracking-[0.22em] text-[#f4b860]">
+              Our working connection
+            </p>
+            <p className="mt-4 max-w-md font-serif text-4xl leading-tight sm:text-5xl">
+              A clear sky can be an office address.
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#a45d2d]">
+              Work from almost anywhere
+            </p>
+            <h2 className="mt-5 font-serif text-4xl leading-tight tracking-tight sm:text-6xl">
+              Remote work is only freeing when the connection works.
+            </h2>
+            <p className="mt-7 max-w-xl text-lg leading-8 text-[#526158]">
+              Starlink gives us dependable satellite internet far beyond the
+              usual office. We&rsquo;ll share what the setup actually
+              takes—clear views, power, weather, speeds, interruptions, and the
+              small adjustments that keep a workday moving.
+            </p>
+            <div className="mt-9 grid gap-4 sm:grid-cols-2">
+              {[
+                "Real-world connection notes",
+                "Power and equipment details",
+                "Location-by-location lessons",
+                "No perfect-road mythology",
+              ].map((item) => (
+                <p
+                  className="flex items-center gap-3 text-sm font-bold"
+                  key={item}
+                >
+                  <span className="flex size-6 items-center justify-center rounded-full bg-[#1e2a24] text-[#f4b860]">
+                    <Sparkles className="size-3" />
+                  </span>
+                  {item}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="bg-[#1e2a24] px-5 py-24 text-white sm:px-8 lg:px-10 lg:py-32"
+        id="rig"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 border-b border-white/15 pb-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-end">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#f4b860]">
+              The ideal vehicle package
+            </p>
+            <div>
+              <h2 className="max-w-4xl font-serif text-4xl leading-tight tracking-tight sm:text-6xl">
+                One built to roam.{" "}
+                <span className="italic text-[#b9c6bd]">
+                  One built to haul.
+                </span>
+              </h2>
+              <p className="mt-5 max-w-2xl leading-7 text-white/60">
+                Our dream setup combines a capable exploration vehicle, a
+                dependable diesel workhorse—giving us the flexibility to reach
+                farther without asking one vehicle to do everything. A fully
+                equipped fifth wheel completes the package as our comfortable
+                work-from-anywhere home base.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10 grid gap-5 xl:grid-cols-3">
+            <article className="rounded-[2rem] border border-white/10 bg-white/5 p-8 sm:p-10">
+              <div className="flex items-center justify-between">
+                <span className="rounded-full bg-[#f4b860] p-3 text-[#1e2a24]">
+                  <Compass className="size-5" />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">
+                  Explore
+                </span>
+              </div>
+              <div className="relative mt-8 aspect-[3/2] overflow-hidden rounded-2xl bg-black/20">
+                <Image
+                  alt="Original editorial illustration of an expedition-ready off-road SUV on a mountain trail"
+                  className="object-cover transition duration-500 hover:scale-[1.02]"
+                  fill
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  src="/images/land-cruiser-editorial.png"
+                />
+              </div>
+              <p className="mt-8 text-sm font-bold text-[#f4b860]">
+                Toyota Land Cruiser
+              </p>
+              <h3 className="mt-3 font-serif text-4xl">The trail vehicle.</h3>
+              <p className="mt-4 max-w-lg leading-7 text-white/60">
+                The vehicle for day trips, rough roads, trailheads, and
+                discovering the places where a larger tow rig is better left at
+                camp.
+              </p>
+            </article>
+
+            <article className="rounded-[2rem] border border-white/10 bg-white/5 p-8 sm:p-10">
+              <div className="flex items-center justify-between">
+                <span className="rounded-full bg-[#f4b860] p-3 text-[#1e2a24]">
+                  <Truck className="size-5" />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">
+                  Tow
+                </span>
+              </div>
+              <div className="relative mt-8 aspect-[3/2] overflow-hidden rounded-2xl bg-black/20">
+                <Image
+                  alt="Original editorial illustration of a heavy-duty diesel tow rig and travel trailer in the mountains"
+                  className="object-cover transition duration-500 hover:scale-[1.02]"
+                  fill
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  src="/images/duramax-tow-rig-editorial.png"
+                />
+              </div>
+              <p className="mt-8 text-sm font-bold text-[#f4b860]">
+                Chevrolet Silverado 3500HD Duramax
+              </p>
+              <h3 className="mt-3 font-serif text-4xl">
+                The diesel workhorse.
+              </h3>
+              <p className="mt-4 max-w-lg leading-7 text-white/60">
+                The heavy-duty foundation for towing, carrying gear, and moving
+                the complete remote-work camp confidently between destinations.
+              </p>
+            </article>
+
+            <article className="rounded-[2rem] border border-white/10 bg-white/5 p-8 sm:p-10">
+              <div className="flex items-center justify-between">
+                <span className="rounded-full bg-[#f4b860] p-3 text-[#1e2a24]">
+                  <Sparkles className="size-5" />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">
+                  Live + work
+                </span>
+              </div>
+              <div className="relative mt-8 aspect-[3/2] overflow-hidden rounded-2xl bg-black/20">
+                <Image
+                  alt="Original editorial illustration of a fully equipped premium fifth-wheel trailer at a mountain campsite"
+                  className="object-cover transition duration-500 hover:scale-[1.02]"
+                  fill
+                  sizes="(min-width: 1280px) 33vw, 100vw"
+                  src="/images/premium-fifth-wheel-editorial.png"
+                />
+              </div>
+              <p className="mt-8 text-sm font-bold text-[#f4b860]">
+                Brinkley Model Z&ndash;inspired fifth wheel
+              </p>
+              <h3 className="mt-3 font-serif text-4xl">The home base.</h3>
+              <p className="mt-4 max-w-lg leading-7 text-white/60">
+                A premium, all-season trailer with all the bells and whistles:
+                residential comfort, dedicated work space, abundant storage,
+                solar power, and connectivity built for longer stays.
+              </p>
+            </article>
+          </div>
+
+          <p className="mt-8 text-sm italic text-white/45">
+            This is the setup we&rsquo;re working toward—not a claim about what
+            is already in the driveway. Vehicle artwork is an original,
+            unofficial editorial representation; Blended Works is not affiliated
+            with or endorsed by Toyota, Chevrolet, or Brinkley RV.
+          </p>
+        </div>
+      </section>
+
+      <section className="px-5 py-24 sm:px-8 lg:px-10 lg:py-32" id="about">
+        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.75fr_1.25fr]">
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#a45d2d]">
+            Robin + Laura
+          </p>
+          <div>
+            <p className="font-serif text-4xl leading-tight tracking-tight sm:text-6xl">
+              {settings.aboutHeadline}
+            </p>
+            <div className="mt-10 grid gap-8 border-t border-[#1e2a24]/15 pt-8 md:grid-cols-2">
+              <p className="leading-7 text-[#59665f]">
+                {settings.aboutRobinAndLaura}
+              </p>
+              <p className="leading-7 text-[#59665f]">
+                {settings.aboutJournal}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 pb-5 sm:px-8 sm:pb-8" id="follow">
+        <div className="mx-auto max-w-7xl overflow-hidden rounded-[2.5rem] bg-[#c8703d] px-6 py-16 text-center text-white sm:px-12 sm:py-20">
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/70">
+            The next view is still ahead
+          </p>
+          <h2 className="mx-auto mt-5 max-w-3xl font-serif text-4xl leading-tight sm:text-6xl">
+            Come along as we figure it out.
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl leading-7 text-white/80">
+            New locations, honest workday reports, and the practical details
+            that make remote travel possible.
+          </p>
+          <a
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#873f21] transition hover:bg-[#fff1df]"
+            href="mailto:hello@blendedworks.com?subject=Follow%20Blended%20Works"
+          >
+            Say hello <ArrowRight className="size-4" />
+          </a>
+        </div>
+      </section>
+
+      <footer className="px-5 py-10 sm:px-8 lg:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-[#657169] sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-serif text-lg font-semibold text-[#1e2a24]">
+            Blended Works
+          </p>
+          <p>Built on the road by Robin &amp; Laura.</p>
+          <a className="font-bold text-[#1e2a24]" href="#top">
+            Back to the top ↑
+          </a>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+function InfoItem({
+  icon: Icon,
+  title,
+  detail,
+}: {
+  icon: typeof Signal;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <div className="flex items-center gap-4 py-6 md:px-7 first:md:pl-0">
+      <Icon className="size-5 text-[#f4b860]" />
+      <div>
+        <p className="text-sm font-bold">{title}</p>
+        <p className="text-xs text-white/55">{detail}</p>
+      </div>
+    </div>
+  );
+}
