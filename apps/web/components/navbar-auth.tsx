@@ -1,6 +1,6 @@
 "use client";
 
-import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import { LogIn } from "lucide-react";
 
 export function NavbarAuth({
@@ -10,11 +10,17 @@ export function NavbarAuth({
   enabled: boolean;
   onHero?: boolean;
 }) {
+  const { isLoaded, isSignedIn } = useAuth();
+
   if (!enabled) return null;
+
+  if (!isLoaded) {
+    return <div aria-hidden="true" className="h-10 w-24 shrink-0" />;
+  }
 
   return (
     <div className="flex shrink-0 items-center">
-      <Show when="signed-out">
+      {!isSignedIn ? (
         <SignInButton mode="modal">
           <button
             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
@@ -28,8 +34,7 @@ export function NavbarAuth({
             <span className="hidden sm:inline">Sign in</span>
           </button>
         </SignInButton>
-      </Show>
-      <Show when="signed-in">
+      ) : (
         <div
           className={`rounded-full border p-1 ${
             onHero
@@ -39,7 +44,7 @@ export function NavbarAuth({
         >
           <UserButton />
         </div>
-      </Show>
+      )}
     </div>
   );
 }

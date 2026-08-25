@@ -16,8 +16,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const dashboardUrl =
-    process.env.NEXT_PUBLIC_BUSINESS_COMPOSER_URL ?? "http://localhost:3002";
+  const dashboardUrl = process.env.NEXT_PUBLIC_BUSINESS_COMPOSER_URL;
   const document = (
     <html lang="en">
       <body className={GeistSans.className}>
@@ -29,9 +28,13 @@ export default function RootLayout({
 
   return process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
     <ClerkProvider
-      allowedRedirectOrigins={[dashboardUrl]}
-      signInForceRedirectUrl={dashboardUrl}
-      signUpForceRedirectUrl={dashboardUrl}
+      {...(dashboardUrl
+        ? {
+            allowedRedirectOrigins: [dashboardUrl],
+            signInForceRedirectUrl: dashboardUrl,
+            signUpForceRedirectUrl: dashboardUrl,
+          }
+        : {})}
     >
       {document}
     </ClerkProvider>
