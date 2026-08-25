@@ -10,6 +10,7 @@ export default clerkMiddleware(
     if (isInternalRoute(request)) await auth.protect();
   },
   {
+    isSatellite: false,
     signInUrl: "/sign-in",
     signUpUrl: "/sign-up",
   },
