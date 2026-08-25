@@ -33,6 +33,7 @@ import type { CSSProperties } from "react";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { WebsiteContentManager } from "@/components/website-content-manager";
 import { getSiteContent } from "@/lib/site-content";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 const navigation = [
@@ -156,7 +157,14 @@ export default async function Page({
 
   if (!guestMode) {
     const session = await auth();
-    if (!session.isAuthenticated) redirect(siteUrl);
+    if (!session.isAuthenticated) {
+      const requestHeaders = await headers();
+      const currentHost =
+        requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+      const publicSiteHost = new URL(siteUrl).host;
+
+      redirect(currentHost === publicSiteHost ? "/sign-in" : siteUrl);
+    }
 
     const user = await currentUser();
     displayName = user?.firstName ?? user?.username ?? "Blended Works User";
