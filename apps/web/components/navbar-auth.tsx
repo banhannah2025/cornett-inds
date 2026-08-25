@@ -31,7 +31,7 @@ export function NavbarAuth({
             type="button"
           >
             <LogIn aria-hidden="true" className="size-4" />
-            <span className="hidden sm:inline">Sign in</span>
+            <span>Sign in</span>
           </button>
         </SignInButton>
       ) : (
