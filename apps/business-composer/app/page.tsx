@@ -33,6 +33,7 @@ import type { CSSProperties } from "react";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { WebsiteContentManager } from "@/components/website-content-manager";
 import { getSiteContent } from "@/lib/site-content";
+import { redirect } from "next/navigation";
 
 const navigation = [
   { label: "Overview", icon: Grid2X2, active: true },
@@ -141,6 +142,8 @@ export default async function Page({
   searchParams: Promise<{ workspace?: string; guest?: string }>;
 }) {
   const query = await searchParams;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_BLENDED_WORKS_URL ?? "http://localhost:3000";
   const clerkConfigured = Boolean(
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
     process.env.CLERK_SECRET_KEY,
@@ -153,7 +156,7 @@ export default async function Page({
 
   if (!guestMode) {
     const session = await auth();
-    if (!session.isAuthenticated) return session.redirectToSignIn();
+    if (!session.isAuthenticated) redirect(siteUrl);
 
     const user = await currentUser();
     displayName = user?.firstName ?? user?.username ?? "Blended Works User";
@@ -201,9 +204,6 @@ export default async function Page({
     .slice(0, 2)
     .toUpperCase();
   const siteContent = canManageWebsite ? await getSiteContent() : null;
-  const siteUrl =
-    process.env.NEXT_PUBLIC_BLENDED_WORKS_URL ?? "http://localhost:3000";
-
   return (
     <main
       className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]"
