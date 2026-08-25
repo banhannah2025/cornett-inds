@@ -29,7 +29,7 @@ export default function RootLayout({
 
   return process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
     <ClerkProvider
-      allowedRedirectOrigins={["http://localhost:3002"]}
+      allowedRedirectOrigins={[dashboardUrl]}
       signInForceRedirectUrl={dashboardUrl}
       signUpForceRedirectUrl={dashboardUrl}
     >

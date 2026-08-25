@@ -201,7 +201,8 @@ export default async function Page({
     .slice(0, 2)
     .toUpperCase();
   const siteContent = canManageWebsite ? await getSiteContent() : null;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl =
+    process.env.NEXT_PUBLIC_BLENDED_WORKS_URL ?? "http://localhost:3000";
 
   return (
     <main
