@@ -14,13 +14,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const domain = process.env.NEXT_PUBLIC_CLERK_DOMAIN ?? "localhost:3002";
-  const signInUrl =
-    process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ??
-    "http://localhost:3000/sign-in";
-  const signUpUrl =
-    process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL ??
-    "http://localhost:3000/sign-up";
   const document = (
     <html lang="en">
       <body className={GeistSans.className}>{children}</body>
@@ -28,13 +21,7 @@ export default function RootLayout({
   );
 
   return process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
-    <ClerkProvider
-      domain={domain}
-      isSatellite={process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE !== "false"}
-      satelliteAutoSync
-      signInUrl={signInUrl}
-      signUpUrl={signUpUrl}
-    >
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
       {document}
     </ClerkProvider>
   ) : (

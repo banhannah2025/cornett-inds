@@ -10,15 +10,8 @@ export default clerkMiddleware(
     if (isInternalRoute(request)) await auth.protect();
   },
   {
-    domain: process.env.NEXT_PUBLIC_CLERK_DOMAIN ?? "localhost:3002",
-    isSatellite: process.env.NEXT_PUBLIC_CLERK_IS_SATELLITE !== "false",
-    satelliteAutoSync: true,
-    signInUrl:
-      process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ??
-      "http://localhost:3000/sign-in",
-    signUpUrl:
-      process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL ??
-      "http://localhost:3000/sign-up",
+    signInUrl: "/sign-in",
+    signUpUrl: "/sign-up",
   },
 );
 
