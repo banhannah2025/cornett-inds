@@ -28,12 +28,24 @@ export function ExpandableImage({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const label = alt ? `View ${alt} full screen` : "View image full screen";
 
-  function open() {
-    dialogRef.current?.showModal();
+  async function open() {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    dialog.showModal();
+    try {
+      await dialog.requestFullscreen({ navigationUI: "hide" });
+    } catch {
+      // The dialog already fills the viewport when native fullscreen is unavailable.
+    }
   }
 
-  function close() {
-    dialogRef.current?.close();
+  async function close() {
+    const dialog = dialogRef.current;
+    if (document.fullscreenElement === dialog) {
+      await document.exitFullscreen();
+    }
+    dialog?.close();
   }
 
   return (
@@ -85,7 +97,7 @@ export function ExpandableImage({
           />
           <Image
             alt={alt}
-            className="pointer-events-none object-contain p-3 sm:p-8"
+            className="pointer-events-none object-contain"
             fill
             sizes="100vw"
             src={src}
