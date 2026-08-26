@@ -13,8 +13,17 @@ import {
   fieldNotesQuery,
   devotionalsQuery,
   devotionalBySlugQuery,
+  currentLocationQuery,
 } from "./queries";
-import type { Devotional, FieldNote, FieldNoteCategory, NewsCategory, NewsPost, SiteSettings } from "./types";
+import type {
+  CurrentLocation,
+  Devotional,
+  FieldNote,
+  FieldNoteCategory,
+  NewsCategory,
+  NewsPost,
+  SiteSettings,
+} from "./types";
 
 const options = { cache: "no-store" } as const;
 
@@ -70,9 +79,30 @@ export const newsCategories: NewsCategory[] = [
 ];
 
 export const fieldNoteCategories: FieldNoteCategory[] = [
-  { _id: "field-note-category-about-us", title: "About Us", slug: "about-us", description: "The people, values, decisions, and everyday moments behind Blended Works.", order: 1 },
-  { _id: "field-note-category-our-journey", title: "Our Journey", slug: "our-journey", description: "The unfolding story of building a remote-working life together and what we learn along the way.", order: 2 },
-  { _id: "field-note-category-locations", title: "Locations", slug: "locations", description: "Firsthand stories from the places we stay, explore, work, and remember.", order: 3 },
+  {
+    _id: "field-note-category-about-us",
+    title: "About Us",
+    slug: "about-us",
+    description:
+      "The people, values, decisions, and everyday moments behind Blended Works.",
+    order: 1,
+  },
+  {
+    _id: "field-note-category-our-journey",
+    title: "Our Journey",
+    slug: "our-journey",
+    description:
+      "The unfolding story of building a remote-working life together and what we learn along the way.",
+    order: 2,
+  },
+  {
+    _id: "field-note-category-locations",
+    title: "Locations",
+    slug: "locations",
+    description:
+      "Firsthand stories from the places we stay, explore, work, and remember.",
+    order: 3,
+  },
 ];
 
 export const defaultSiteSettings: SiteSettings = {
@@ -164,37 +194,99 @@ export async function getSiteSettings() {
   }
 }
 
+export async function getCurrentLocation() {
+  try {
+    return await sanityClient.fetch<CurrentLocation | null>(
+      currentLocationQuery,
+      {},
+      options,
+    );
+  } catch {
+    return null;
+  }
+}
+
 export async function getFieldNoteCategories() {
-  try { const categories = await sanityClient.fetch<FieldNoteCategory[]>(fieldNoteCategoriesQuery, {}, options); return categories.length ? categories : fieldNoteCategories; }
-  catch { return fieldNoteCategories; }
+  try {
+    const categories = await sanityClient.fetch<FieldNoteCategory[]>(
+      fieldNoteCategoriesQuery,
+      {},
+      options,
+    );
+    return categories.length ? categories : fieldNoteCategories;
+  } catch {
+    return fieldNoteCategories;
+  }
 }
 
 export async function getAllFieldNotes() {
-  try { return await sanityClient.fetch<FieldNote[]>(fieldNotesQuery, {}, options); }
-  catch { return []; }
+  try {
+    return await sanityClient.fetch<FieldNote[]>(fieldNotesQuery, {}, options);
+  } catch {
+    return [];
+  }
 }
 
 export async function getFieldNoteCategory(slug: string) {
-  try { return (await sanityClient.fetch<FieldNoteCategory | null>(fieldNoteCategoryBySlugQuery, { category: slug }, options)) ?? fieldNoteCategories.find((item) => item.slug === slug) ?? null; }
-  catch { return fieldNoteCategories.find((item) => item.slug === slug) ?? null; }
+  try {
+    return (
+      (await sanityClient.fetch<FieldNoteCategory | null>(
+        fieldNoteCategoryBySlugQuery,
+        { category: slug },
+        options,
+      )) ??
+      fieldNoteCategories.find((item) => item.slug === slug) ??
+      null
+    );
+  } catch {
+    return fieldNoteCategories.find((item) => item.slug === slug) ?? null;
+  }
 }
 
 export async function getFieldNotesByCategory(category: string) {
-  try { return await sanityClient.fetch<FieldNote[]>(fieldNotesByCategoryQuery, { category }, options); }
-  catch { return []; }
+  try {
+    return await sanityClient.fetch<FieldNote[]>(
+      fieldNotesByCategoryQuery,
+      { category },
+      options,
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function getFieldNote(category: string, slug: string) {
-  try { return await sanityClient.fetch<FieldNote | null>(fieldNoteBySlugQuery, { category, slug }, options); }
-  catch { return null; }
+  try {
+    return await sanityClient.fetch<FieldNote | null>(
+      fieldNoteBySlugQuery,
+      { category, slug },
+      options,
+    );
+  } catch {
+    return null;
+  }
 }
 
 export async function getDevotionals() {
-  try { return await sanityClient.fetch<Devotional[]>(devotionalsQuery, {}, options); }
-  catch { return []; }
+  try {
+    return await sanityClient.fetch<Devotional[]>(
+      devotionalsQuery,
+      {},
+      options,
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function getDevotional(slug: string) {
-  try { return await sanityClient.fetch<Devotional | null>(devotionalBySlugQuery, { slug }, options); }
-  catch { return null; }
+  try {
+    return await sanityClient.fetch<Devotional | null>(
+      devotionalBySlugQuery,
+      { slug },
+      options,
+    );
+  } catch {
+    return null;
+  }
 }
