@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { ExpandableImage } from "@/components/expandable-image";
 import { NewsMenu } from "@/components/news-menu";
 import { AdminSiteEditor } from "@/components/admin-site-editor";
 import { AdminSessionControls } from "@/components/admin-session-controls";
@@ -108,6 +109,12 @@ export default async function Page() {
           src="/images/remote-camp-hero.png"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,25,21,0.86)_0%,rgba(15,25,21,0.52)_46%,rgba(15,25,21,0.08)_78%),linear-gradient(0deg,rgba(15,25,21,0.66)_0%,transparent_48%)]" />
+        <ExpandableImage
+          alt="A remote campsite overlooking forested mountains with a laptop and satellite connection ready for work"
+          className="absolute right-6 top-28 z-20 grid size-11 place-items-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur transition hover:bg-black/75 sm:right-8 sm:top-24 lg:right-10"
+          iconOnly
+          src="/images/remote-camp-hero.png"
+        />
         <div className="relative mx-auto w-full max-w-7xl px-6 pb-16 sm:px-8 sm:pb-20 lg:px-10 lg:pb-24">
           <div className="max-w-3xl">
             <p className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.26em] text-[#f1be72]">
@@ -305,15 +312,13 @@ export default async function Page() {
                   Explore
                 </span>
               </div>
-              <div className="relative mt-8 aspect-[3/2] overflow-hidden rounded-2xl bg-black/20">
-                <Image
-                  alt="Original editorial illustration of an expedition-ready off-road SUV on a mountain trail"
-                  className="object-cover transition duration-500 hover:scale-[1.02]"
-                  fill
-                  sizes="(min-width: 1024px) 50vw, 100vw"
-                  src="/images/land-cruiser-editorial.png"
-                />
-              </div>
+              <ExpandableImage
+                className="mt-8 aspect-[3/2] rounded-2xl bg-black/20"
+                alt="Original editorial illustration of an expedition-ready off-road SUV on a mountain trail"
+                imageClassName="object-cover transition duration-500 group-hover/media:scale-[1.02]"
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                src="/images/land-cruiser-editorial.png"
+              />
               <p className="mt-8 text-sm font-bold text-[#f4b860]">
                 Toyota Land Cruiser
               </p>
@@ -334,15 +339,13 @@ export default async function Page() {
                   Tow
                 </span>
               </div>
-              <div className="relative mt-8 aspect-[3/2] overflow-hidden rounded-2xl bg-black/20">
-                <Image
-                  alt="Original editorial illustration of a heavy-duty diesel tow rig and travel trailer in the mountains"
-                  className="object-cover transition duration-500 hover:scale-[1.02]"
-                  fill
-                  sizes="(min-width: 1024px) 50vw, 100vw"
-                  src="/images/duramax-tow-rig-editorial.png"
-                />
-              </div>
+              <ExpandableImage
+                className="mt-8 aspect-[3/2] rounded-2xl bg-black/20"
+                alt="Original editorial illustration of a heavy-duty diesel tow rig and travel trailer in the mountains"
+                imageClassName="object-cover transition duration-500 group-hover/media:scale-[1.02]"
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                src="/images/duramax-tow-rig-editorial.png"
+              />
               <p className="mt-8 text-sm font-bold text-[#f4b860]">
                 Chevrolet Silverado 3500HD Duramax
               </p>
@@ -364,15 +367,13 @@ export default async function Page() {
                   Live + work
                 </span>
               </div>
-              <div className="relative mt-8 aspect-[3/2] overflow-hidden rounded-2xl bg-black/20">
-                <Image
-                  alt="Original editorial illustration of a fully equipped premium fifth-wheel trailer at a mountain campsite"
-                  className="object-cover transition duration-500 hover:scale-[1.02]"
-                  fill
-                  sizes="(min-width: 1280px) 33vw, 100vw"
-                  src="/images/premium-fifth-wheel-editorial.png"
-                />
-              </div>
+              <ExpandableImage
+                className="mt-8 aspect-[3/2] rounded-2xl bg-black/20"
+                alt="Original editorial illustration of a fully equipped premium fifth-wheel trailer at a mountain campsite"
+                imageClassName="object-cover transition duration-500 group-hover/media:scale-[1.02]"
+                sizes="(min-width: 1280px) 33vw, 100vw"
+                src="/images/premium-fifth-wheel-editorial.png"
+              />
               <p className="mt-8 text-sm font-bold text-[#f4b860]">
                 Brinkley Model Z&ndash;inspired fifth wheel
               </p>

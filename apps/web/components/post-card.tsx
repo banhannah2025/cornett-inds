@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { ExpandableImage } from "@/components/expandable-image";
 import { urlForImage } from "@/sanity/lib/image";
 import type { NewsPost } from "@/sanity/lib/types";
 
@@ -24,15 +24,14 @@ export function PostCard({
     <article
       className={`group overflow-hidden rounded-[2rem] border border-[#1e2a24]/10 bg-white ${featured ? "lg:grid lg:grid-cols-[1.15fr_0.85fr]" : ""}`}
     >
-      <Link
-        className={`relative block overflow-hidden bg-[#dfe5dc] ${featured ? "min-h-72 lg:min-h-[30rem]" : "aspect-[4/3]"}`}
-        href={href}
+      <div
+        className={`relative overflow-hidden bg-[#dfe5dc] ${featured ? "min-h-72 lg:min-h-[30rem]" : "aspect-[4/3]"}`}
       >
         {post.mainImage?.asset?._ref ? (
-          <Image
+          <ExpandableImage
             alt={post.mainImage.alt ?? ""}
-            className="object-cover transition duration-700 group-hover:scale-[1.025]"
-            fill
+            className="absolute inset-0 size-full"
+            imageClassName="object-cover transition duration-700 group-hover:scale-[1.025]"
             sizes={
               featured
                 ? "(min-width: 1024px) 60vw, 100vw"
@@ -46,7 +45,7 @@ export function PostCard({
         ) : (
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_25%,#f4b860_0,transparent_28%),linear-gradient(135deg,#263b31,#52695b)]" />
         )}
-      </Link>
+      </div>
       <div
         className={`flex flex-col justify-center ${featured ? "p-8 sm:p-12" : "p-7"}`}
       >
