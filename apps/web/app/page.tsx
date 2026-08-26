@@ -50,7 +50,7 @@ export default async function Page() {
   ]);
   return (
     <main className="overflow-hidden bg-[#f6f3eb] text-[#1e2a24]">
-      <header className="absolute inset-x-0 top-0 z-50">
+      <header className="absolute inset-x-0 top-0 z-50 bg-gradient-to-b from-[#0f1915]/85 via-[#0f1915]/45 to-transparent pb-8">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-5 gap-y-4 px-6 py-5 sm:flex-nowrap sm:px-8 sm:py-6 lg:px-10">
           <a className="text-white" href="#top" aria-label="Blended Works home">
             <span className="block font-serif text-2xl font-semibold tracking-tight">
@@ -97,7 +97,7 @@ export default async function Page() {
       </header>
 
       <section
-        className="relative flex min-h-[820px] items-end sm:min-h-[820px] lg:min-h-screen"
+        className="relative flex min-h-[820px] items-end pt-48 sm:pt-36 lg:min-h-[max(100vh,900px)] lg:pt-28"
         id="top"
       >
         <Image
@@ -121,7 +121,7 @@ export default async function Page() {
               <span className="h-px w-10 bg-[#f1be72]" />
               {settings.heroEyebrow}
             </p>
-            <h1 className="font-serif text-5xl font-semibold leading-[0.98] tracking-[-0.035em] text-white sm:text-7xl lg:text-[6.4rem]">
+            <h1 className="break-words font-serif text-[clamp(2.75rem,11vw,6.4rem)] font-semibold leading-[0.98] tracking-[-0.035em] text-white">
               {settings.heroHeadline}
               <br />
               <span className="italic text-[#f5d5a4]">
