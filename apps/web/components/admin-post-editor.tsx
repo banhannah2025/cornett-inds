@@ -15,6 +15,9 @@ type EditablePost = {
   featured?: boolean;
   categoryId: string;
   bodyText: string;
+  authorId?: string;
+  seoTitle?: string;
+  seoDescription?: string;
 };
 
 const fieldClass =
@@ -31,10 +34,12 @@ export function AdminPostEditor({
   categories,
   post,
   defaultCategoryId,
+  authors = [],
 }: {
   categories: NewsCategory[];
   post?: EditablePost;
   defaultCategoryId?: string;
+  authors?: { _id: string; name: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -123,6 +128,23 @@ export function AdminPostEditor({
             />
           </label>
         </div>
+        {authors.length > 0 && (
+          <label className="block text-sm font-bold">
+            Author
+            <select
+              className={fieldClass}
+              defaultValue={post?.authorId ?? ""}
+              name="authorId"
+            >
+              <option value="">No author selected</option>
+              {authors.map((author) => (
+                <option key={author._id} value={author._id}>
+                  {author.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="flex items-center gap-3 rounded-xl bg-[#ebe7dc] px-4 py-3 text-sm font-bold">
           <input
             defaultChecked={post?.featured}
@@ -151,19 +173,34 @@ export function AdminPostEditor({
               <strong>Replace article body with the text above.</strong>
               <br />
               Leave unchecked to preserve the current rich text and inline
-              media. Use Sanity Studio for advanced image and block editing.
+              media.
             </span>
           </label>
         )}
+        <div className="grid gap-5 border-t border-[#1e2a24]/10 pt-5 sm:grid-cols-2">
+          <label className="block text-sm font-bold">
+            SEO title{" "}
+            <span className="font-normal text-[#6b786e]">(optional)</span>
+            <input
+              className={fieldClass}
+              defaultValue={post?.seoTitle}
+              maxLength={65}
+              name="seoTitle"
+            />
+          </label>
+          <label className="block text-sm font-bold">
+            SEO description{" "}
+            <span className="font-normal text-[#6b786e]">(optional)</span>
+            <textarea
+              className={fieldClass}
+              defaultValue={post?.seoDescription}
+              maxLength={160}
+              name="seoDescription"
+              rows={3}
+            />
+          </label>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#1e2a24]/10 pt-5">
-          <a
-            className="text-sm font-bold text-[#a45d2d]"
-            href="https://robin-and-laura-news.sanity.studio/"
-            rel="noreferrer"
-            target="_blank"
-          >
-            Open advanced Studio ↗
-          </a>
           <button
             className="rounded-full bg-[#1e2a24] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
             disabled={pending}

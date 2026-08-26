@@ -14,6 +14,10 @@ export type EditableDevotional = {
   scriptureText: string;
   prayer?: string;
   bodyText: string;
+  slug?: string;
+  authorId?: string;
+  seoTitle?: string;
+  seoDescription?: string;
 };
 const fieldClass =
   "mt-2 w-full rounded-xl border border-[#1e2a24]/15 bg-white px-4 py-3 text-sm outline-none focus:border-[#a45d2d] focus:ring-2 focus:ring-[#a45d2d]/15";
@@ -26,8 +30,10 @@ function localDateTimeValue(value: string) {
 
 export function AdminDevotionalEditor({
   devotional,
+  authors = [],
 }: {
-  devotional: EditableDevotional;
+  devotional?: EditableDevotional;
+  authors?: { _id: string; name: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -37,28 +43,48 @@ export function AdminDevotionalEditor({
     startTransition(async () => {
       const response = await saveDevotional(formData);
       setResult(response);
-      if (response.ok) router.refresh();
+      if (response.ok) {
+        router.refresh();
+        if (response.href) router.push(response.href);
+      }
     });
   }
   return (
-    <AdminModal title="Edit devotional" triggerLabel="Edit devotional">
+    <AdminModal
+      mode={devotional ? "edit" : "create"}
+      title={devotional ? "Edit devotional" : "Create devotional"}
+      triggerLabel={devotional ? "Edit devotional" : "New devotional"}
+    >
       <form action={submit} className="space-y-5">
-        <input name="documentId" type="hidden" value={devotional._id} />
+        {devotional && (
+          <input name="documentId" type="hidden" value={devotional._id} />
+        )}
         <label className="block text-sm font-bold">
           Title
           <input
             className={fieldClass}
-            defaultValue={devotional.title}
+            defaultValue={devotional?.title}
             maxLength={100}
             name="title"
             required
           />
         </label>
+        {!devotional && (
+          <label className="block text-sm font-bold">
+            URL slug{" "}
+            <span className="font-normal text-[#6b786e]">(optional)</span>
+            <input
+              className={fieldClass}
+              name="slug"
+              placeholder="generated-from-the-title"
+            />
+          </label>
+        )}
         <label className="block text-sm font-bold">
           Short introduction
           <textarea
             className={fieldClass}
-            defaultValue={devotional.excerpt}
+            defaultValue={devotional?.excerpt}
             maxLength={240}
             name="excerpt"
             required
@@ -69,7 +95,9 @@ export function AdminDevotionalEditor({
           Publish date
           <input
             className={fieldClass}
-            defaultValue={localDateTimeValue(devotional.publishedAt)}
+            defaultValue={localDateTimeValue(
+              devotional?.publishedAt ?? new Date().toISOString(),
+            )}
             name="publishedAt"
             required
             type="datetime-local"
@@ -79,7 +107,7 @@ export function AdminDevotionalEditor({
           Scripture reference
           <input
             className={fieldClass}
-            defaultValue={devotional.scriptureReference}
+            defaultValue={devotional?.scriptureReference}
             maxLength={80}
             name="scriptureReference"
             required
@@ -89,7 +117,7 @@ export function AdminDevotionalEditor({
           Scripture passage
           <textarea
             className={fieldClass}
-            defaultValue={devotional.scriptureText}
+            defaultValue={devotional?.scriptureText}
             name="scriptureText"
             required
             rows={5}
@@ -102,34 +130,81 @@ export function AdminDevotionalEditor({
           </span>
           <textarea
             className={`${fieldClass} font-mono leading-6`}
-            defaultValue={devotional.bodyText}
+            defaultValue={devotional?.bodyText}
             name="bodyText"
+            required={!devotional}
             rows={12}
           />
         </label>
-        <label className="flex items-start gap-3 rounded-xl border border-amber-700/20 bg-amber-50 px-4 py-3 text-sm">
-          <input className="mt-1" name="replaceBody" type="checkbox" />
-          <span>
-            <strong>Replace the reflection with the text above.</strong>
-            <br />
-            Leave unchecked to preserve rich text and inline media.
-          </span>
-        </label>
+        {devotional && (
+          <label className="flex items-start gap-3 rounded-xl border border-amber-700/20 bg-amber-50 px-4 py-3 text-sm">
+            <input className="mt-1" name="replaceBody" type="checkbox" />
+            <span>
+              <strong>Replace the reflection with the text above.</strong>
+              <br />
+              Leave unchecked to preserve rich text and inline media.
+            </span>
+          </label>
+        )}
         <label className="block text-sm font-bold">
           Closing prayer
           <textarea
             className={fieldClass}
-            defaultValue={devotional.prayer}
+            defaultValue={devotional?.prayer}
             name="prayer"
             rows={5}
           />
         </label>
+        {authors.length > 0 && (
+          <label className="block text-sm font-bold">
+            Author
+            <select
+              className={fieldClass}
+              defaultValue={devotional?.authorId ?? ""}
+              name="authorId"
+            >
+              <option value="">No author selected</option>
+              {authors.map((author) => (
+                <option key={author._id} value={author._id}>
+                  {author.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <div className="grid gap-5 border-t border-[#1e2a24]/10 pt-5 sm:grid-cols-2">
+          <label className="block text-sm font-bold">
+            SEO title{" "}
+            <span className="font-normal text-[#6b786e]">(optional)</span>
+            <input
+              className={fieldClass}
+              defaultValue={devotional?.seoTitle}
+              maxLength={65}
+              name="seoTitle"
+            />
+          </label>
+          <label className="block text-sm font-bold">
+            SEO description{" "}
+            <span className="font-normal text-[#6b786e]">(optional)</span>
+            <textarea
+              className={fieldClass}
+              defaultValue={devotional?.seoDescription}
+              maxLength={160}
+              name="seoDescription"
+              rows={3}
+            />
+          </label>
+        </div>
         <div className="flex justify-end border-t border-[#1e2a24]/10 pt-5">
           <button
             className="rounded-full bg-[#1e2a24] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
             disabled={pending}
           >
-            {pending ? "Saving…" : "Save changes"}
+            {pending
+              ? "Saving…"
+              : devotional
+                ? "Save changes"
+                : "Publish devotional"}
           </button>
         </div>
         {result && (
