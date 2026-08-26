@@ -32,17 +32,21 @@ export function ExpandableImage({
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    dialog.showModal();
     try {
-      await dialog.requestFullscreen({ navigationUI: "hide" });
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen({
+          navigationUI: "hide",
+        });
+      }
     } catch {
-      // The dialog already fills the viewport when native fullscreen is unavailable.
+      // The viewer still fills the browser viewport when fullscreen is unavailable.
     }
+    dialog.showModal();
   }
 
   async function close() {
     const dialog = dialogRef.current;
-    if (document.fullscreenElement === dialog) {
+    if (document.fullscreenElement) {
       await document.exitFullscreen();
     }
     dialog?.close();
