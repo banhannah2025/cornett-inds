@@ -182,6 +182,54 @@ export async function saveSiteSettings(
         "Journal paragraph",
         600,
       ),
+      aboutPageEyebrow: required(
+        formData,
+        "aboutPageEyebrow",
+        "About page eyebrow",
+        100,
+      ),
+      aboutPageHeadline: required(
+        formData,
+        "aboutPageHeadline",
+        "About page headline",
+        240,
+      ),
+      aboutPageIntroduction: required(
+        formData,
+        "aboutPageIntroduction",
+        "About page introduction",
+        500,
+      ),
+      robinHeadline: required(formData, "robinHeadline", "Robin headline", 120),
+      robinBio: required(formData, "robinBio", "Robin biography", 2400),
+      lauraHeadline: required(formData, "lauraHeadline", "Laura headline", 120),
+      lauraBio: required(formData, "lauraBio", "Laura biography", 2400),
+      storyHeadline: required(
+        formData,
+        "storyHeadline",
+        "Shared story headline",
+        160,
+      ),
+      storyBody: required(formData, "storyBody", "Shared story", 3000),
+      valuesHeadline: required(
+        formData,
+        "valuesHeadline",
+        "Values headline",
+        180,
+      ),
+      trustPromise: required(formData, "trustPromise", "Trust promise", 1000),
+      servicesHeadline: required(
+        formData,
+        "servicesHeadline",
+        "Services headline",
+        160,
+      ),
+      servicesIntroduction: required(
+        formData,
+        "servicesIntroduction",
+        "Services introduction",
+        700,
+      ),
     };
     await getSanityWriteClient().createOrReplace({
       _id: "siteSettings",
@@ -189,7 +237,12 @@ export async function saveSiteSettings(
       ...settings,
     });
     revalidatePath("/");
-    return { ok: true, message: "Homepage updated." };
+    revalidatePath("/about");
+    revalidatePath("/services");
+    return {
+      ok: true,
+      message: "Homepage, About page, and services page updated.",
+    };
   } catch (error) {
     return {
       ok: false,

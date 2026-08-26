@@ -65,4 +65,17 @@ export type SiteSettings = {
   aboutHeadline: string;
   aboutRobinAndLaura: string;
   aboutJournal: string;
+  aboutPageEyebrow: string;
+  aboutPageHeadline: string;
+  aboutPageIntroduction: string;
+  robinHeadline: string;
+  robinBio: string;
+  lauraHeadline: string;
+  lauraBio: string;
+  storyHeadline: string;
+  storyBody: string;
+  valuesHeadline: string;
+  trustPromise: string;
+  servicesHeadline: string;
+  servicesIntroduction: string;
 };

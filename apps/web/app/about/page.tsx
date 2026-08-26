@@ -8,6 +8,7 @@ import {
   Sprout,
 } from "lucide-react";
 import { NewsHeader } from "@/components/news-header";
+import { getSiteSettings } from "@/sanity/lib/data";
 
 export const metadata: Metadata = {
   title: "About Robin + Laura™ | Blended Works",
@@ -33,7 +34,12 @@ const sharedValues = [
   },
 ];
 
-export default function AboutPage() {
+function paragraphs(value: string) {
+  return value.split(/\n\s*\n/).filter(Boolean);
+}
+
+export default async function AboutPage() {
+  const settings = await getSiteSettings();
   return (
     <div className="min-h-screen bg-[#f6f3eb] text-[#1e2a24]">
       <NewsHeader />
@@ -42,7 +48,7 @@ export default function AboutPage() {
           <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.65fr_1.35fr] lg:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#a45d2d]">
-                Robin + Laura™ · Partners
+                {settings.aboutPageEyebrow}
               </p>
               <p className="mt-5 max-w-sm text-sm leading-7 text-[#657169]">
                 An engaged couple, blended family, and growing business based in
@@ -51,13 +57,10 @@ export default function AboutPage() {
             </div>
             <div>
               <h1 className="max-w-5xl font-serif text-5xl leading-[1.02] tracking-tight sm:text-7xl">
-                We learned to build because life kept asking us to begin again.
+                {settings.aboutPageHeadline}
               </h1>
               <p className="mt-7 max-w-3xl text-lg leading-8 text-[#59665f]">
-                Blended Works brings together our family, faith, skills,
-                creativity, and determination to make the next chapter more
-                useful—not only for us, but for people and businesses building
-                forward too.
+                {settings.aboutPageIntroduction}
               </p>
             </div>
           </div>
@@ -70,29 +73,12 @@ export default function AboutPage() {
                 Robin
               </p>
               <h2 className="mt-5 font-serif text-4xl sm:text-5xl">
-                Builder by necessity. Creator by nature.
+                {settings.robinHeadline}
               </h2>
               <div className="mt-7 space-y-5 text-[1.0625rem] leading-8 text-white/70">
-                <p>
-                  Robin grew up taking on adult responsibilities early. Working,
-                  helping manage a household, and learning trades became the
-                  beginning of an unusually broad practical education.
-                </p>
-                <p>
-                  He holds an associate degree in international business and a
-                  bachelor&rsquo;s degree in legal studies. His experience spans
-                  construction, general contracting, security and private law
-                  enforcement, retail, manufacturing, landscaping, sales,
-                  accounting, management, legal research, programming, and
-                  design. He also holds Coast Guard watercraft licensing and
-                  universal EPA technician certification.
-                </p>
-                <p>
-                  Robin leads technology, design, and product creation. He is
-                  most at home painting, building, solving difficult problems,
-                  or exploring outdoors—but fatherhood, partnership, and family
-                  remain his first priorities.
-                </p>
+                {paragraphs(settings.robinBio).map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
               </div>
             </article>
 
@@ -101,28 +87,12 @@ export default function AboutPage() {
                 Laura
               </p>
               <h2 className="mt-5 font-serif text-4xl sm:text-5xl">
-                The order, warmth, and steady rhythm behind the work.
+                {settings.lauraHeadline}
               </h2>
               <div className="mt-7 space-y-5 text-[1.0625rem] leading-8 text-[#526158]">
-                <p>
-                  Laura is passionate, loving, funny, and deeply committed to
-                  family. Her experience reaches across accounting, business,
-                  administration, customer service, hospitality, caregiving, and
-                  the daily systems that keep a household moving.
-                </p>
-                <p>
-                  She has a gift for numbers, organization, time management, and
-                  making better use of limited space and resources. As the
-                  primary at-home parent, she balances family life with
-                  part-time work and the growing responsibilities of Blended
-                  Works.
-                </p>
-                <p>
-                  Laura leads finance, organization, and operational order. She
-                  also draws and paints, loves gardening, and brings both
-                  compassion and practical clarity to the plans the couple
-                  builds together.
-                </p>
+                {paragraphs(settings.lauraBio).map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
               </div>
             </article>
           </div>
@@ -142,31 +112,11 @@ export default function AboutPage() {
               </div>
               <div className="space-y-6 text-[1.0625rem] leading-8 text-[#59665f]">
                 <h2 className="font-serif text-4xl leading-tight text-[#1e2a24] sm:text-6xl">
-                  Two difficult seasons became one shared direction.
+                  {settings.storyHeadline}
                 </h2>
-                <p>
-                  Robin once stayed at the homeless mission where he now works
-                  in security. Laura later arrived there during a difficult
-                  chapter of her own. Their connection was immediate, but the
-                  mission did not permit relationships between staff and guests,
-                  so Laura stopped using its services before their relationship
-                  moved forward.
-                </p>
-                <p>
-                  They chose to start over together: combining two families,
-                  working toward stable housing, preparing for marriage, and
-                  building a business capable of supporting a close-knit family.
-                  Their household includes four children from prior
-                  relationships; protecting the children&rsquo;s privacy remains
-                  important.
-                </p>
-                <p>
-                  Camping, fishing, stargazing, dancing, laughing, painting,
-                  gardening, dreaming, and planning are part of how they stay
-                  connected. Blended Works grew from that same instinct: take
-                  different lives, talents, and opportunities and cultivate
-                  something stronger together.
-                </p>
+                {paragraphs(settings.storyBody).map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
               </div>
             </div>
           </div>
@@ -178,7 +128,7 @@ export default function AboutPage() {
               What safeguards the work
             </p>
             <h2 className="mt-4 max-w-4xl font-serif text-4xl leading-tight sm:text-6xl">
-              Trust should feel personal—and be supported by excellent practice.
+              {settings.valuesHeadline}
             </h2>
             <div className="mt-12 grid gap-6 lg:grid-cols-3">
               {sharedValues.map(({ icon: Icon, title, copy }) => (
@@ -192,6 +142,9 @@ export default function AboutPage() {
                 </article>
               ))}
             </div>
+            <blockquote className="mt-10 border-l-4 border-[#c8703d] pl-6 text-lg leading-8 text-[#59665f]">
+              {settings.trustPromise}
+            </blockquote>
           </div>
         </section>
 
