@@ -1,11 +1,3 @@
-import { defineQuery } from "next-sanity";
-
-export const currentLocationQuery = defineQuery(/* groq */ `
-  *[_type == "currentLocation" && _id == "currentLocation"][0] {
-    _id, displayName, updatedAt, daypart
-  }
-`);
-
 export const categoriesQuery = `*[_type == "category"] | order(order asc) {
   _id, title, "slug": slug.current, description, order,
   "postCount": count(*[_type == "post" && references(^._id) && defined(publishedAt) && publishedAt <= now()])
