@@ -14,7 +14,7 @@ import { NewsMenu } from "@/components/news-menu";
 import { AdminSiteEditor } from "@/components/admin-site-editor";
 import { AdminSessionControls } from "@/components/admin-session-controls";
 import { getAdminContext } from "@/lib/admin";
-import { getSiteSettings } from "@/sanity/lib/data";
+import { getCurrentLocation, getSiteSettings } from "@/sanity/lib/data";
 import { FieldNotesMenu } from "@/components/field-notes-menu";
 import { NavbarAuth } from "@/components/navbar-auth";
 
@@ -43,9 +43,10 @@ const fieldNotes = [
 ];
 
 export default async function Page() {
-  const [settings, admin] = await Promise.all([
+  const [settings, admin, currentLocation] = await Promise.all([
     getSiteSettings(),
     getAdminContext(),
+    getCurrentLocation(),
   ]);
   return (
     <main className="overflow-hidden bg-[#f6f3eb] text-[#1e2a24]">
@@ -152,8 +153,10 @@ export default async function Page() {
           />
           <InfoItem
             icon={MapPin}
-            title="On the move"
-            detail="New places, real reviews"
+            title="Currently near"
+            detail={
+              currentLocation?.displayName ?? "Location update coming soon"
+            }
           />
           <InfoItem
             icon={Radio}
@@ -162,6 +165,18 @@ export default async function Page() {
           />
         </div>
       </section>
+
+      {currentLocation && (
+        <p className="bg-[#1e2a24] px-6 pb-4 text-center text-[0.65rem] text-white/40">
+          Updated {currentLocation.daypart} · Location names ©{" "}
+          <a
+            className="underline hover:text-white/70"
+            href="https://www.openstreetmap.org/copyright"
+          >
+            OpenStreetMap contributors
+          </a>
+        </p>
+      )}
 
       <section className="px-6 py-24 sm:px-8 lg:px-10 lg:py-32" id="stories">
         <div className="mx-auto max-w-7xl">
