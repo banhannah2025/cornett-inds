@@ -30,7 +30,11 @@ export const postBySlugQuery = `*[_type == "post" && slug.current == $slug && ca
 
 export const siteSettingsQuery = `*[_type == "siteSettings" && _id == "siteSettings"][0] {
   _id, heroEyebrow, heroHeadline, heroAccent, heroIntroduction,
-  aboutHeadline, aboutRobinAndLaura, aboutJournal
+  aboutHeadline, aboutRobinAndLaura, aboutJournal,
+  aboutPageEyebrow, aboutPageHeadline, aboutPageIntroduction,
+  robinHeadline, robinBio, lauraHeadline, lauraBio,
+  storyHeadline, storyBody, valuesHeadline, trustPromise,
+  servicesHeadline, servicesIntroduction
 }`;
 
 export const fieldNoteCategoriesQuery = `*[_type == "fieldNoteCategory"] | order(order asc) {

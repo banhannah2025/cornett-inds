@@ -124,6 +124,27 @@ export const defaultSiteSettings: SiteSettings = {
     "We’re Robin and Laura—engaged partners, parents, artists, outdoorspeople, and the team behind Blended Works. Our story has included homelessness, housing instability, sacrifice, and starting over. It has also taught us how much becomes possible when faith, love, useful skills, and steady work meet.",
   aboutJournal:
     "We’re building an expanding home for honest stories, practical teaching, affordable tools, professional services, daily devotionals, and the ventures that grow from our family’s real needs and lived experience.",
+  aboutPageEyebrow: "Robin + Laura™ · Partners",
+  aboutPageHeadline:
+    "We learned to build because life kept asking us to begin again.",
+  aboutPageIntroduction:
+    "Blended Works brings together our family, faith, skills, creativity, and determination to make the next chapter more useful—not only for us, but for people and businesses building forward too.",
+  robinHeadline: "Builder by necessity. Creator by nature.",
+  robinBio:
+    "Robin grew up taking on adult responsibilities early. Working, helping manage a household, and learning trades became the beginning of an unusually broad practical education.\n\nHe holds an associate degree in international business and a bachelor’s degree in legal studies. His experience spans construction, general contracting, security and private law enforcement, retail, manufacturing, landscaping, sales, accounting, management, legal research, programming, and design. He also holds Coast Guard watercraft licensing and universal EPA technician certification.\n\nRobin leads technology, design, and product creation. He is most at home painting, building, solving difficult problems, or exploring outdoors—but fatherhood, partnership, and family remain his first priorities.",
+  lauraHeadline: "The order, warmth, and steady rhythm behind the work.",
+  lauraBio:
+    "Laura is passionate, loving, funny, and deeply committed to family. Her experience reaches across accounting, business, administration, customer service, hospitality, caregiving, and the daily systems that keep a household moving.\n\nShe has a gift for numbers, organization, time management, and making better use of limited space and resources. As the primary at-home parent, she balances family life with part-time work and the growing responsibilities of Blended Works.\n\nLaura leads finance, organization, and operational order. She also draws and paints, loves gardening, and brings both compassion and practical clarity to the plans the couple builds together.",
+  storyHeadline: "Two difficult seasons became one shared direction.",
+  storyBody:
+    "Robin once stayed at the homeless mission where he now works in security. Laura later arrived there during a difficult chapter of her own. Their connection was immediate, but the mission did not permit relationships between staff and guests, so Laura stopped using its services before their relationship moved forward.\n\nThey chose to start over together: combining two families, working toward stable housing, preparing for marriage, and building a business capable of supporting a close-knit family. Their household includes four children from prior relationships; protecting the children’s privacy remains important.\n\nCamping, fishing, stargazing, dancing, laughing, painting, gardening, dreaming, and planning are part of how they stay connected. Blended Works grew from that same instinct: take different lives, talents, and opportunities and cultivate something stronger together.",
+  valuesHeadline:
+    "Trust should feel personal—and be supported by excellent practice.",
+  trustPromise:
+    "Our goals, intentions, and determination are grounded in faith, excellent business practices, learning and teaching. We rely on God, our morals, and our ethics to safeguard our family, our work, and the people who trust us.",
+  servicesHeadline: "Bring us a real problem worth solving.",
+  servicesIntroduction:
+    "Blended Works combines technology, business experience, organization, creative thinking, research, and practical trade knowledge. We are building the portfolio openly and welcome early conversations, collaborations, and opportunities that align with our ethics.",
 };
 
 export async function getCategories() {
@@ -188,13 +209,13 @@ export async function getPost(category: string, slug: string) {
 
 export async function getSiteSettings() {
   try {
-    return (
+    const settings =
       (await sanityClient.fetch<SiteSettings | null>(
         siteSettingsQuery,
         {},
         options,
-      )) ?? defaultSiteSettings
-    );
+      )) ?? defaultSiteSettings;
+    return { ...defaultSiteSettings, ...settings };
   } catch {
     return defaultSiteSettings;
   }

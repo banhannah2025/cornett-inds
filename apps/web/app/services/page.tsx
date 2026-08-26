@@ -11,6 +11,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { NewsHeader } from "@/components/news-header";
+import { getSiteSettings } from "@/sanity/lib/data";
 
 export const metadata: Metadata = {
   title: "Services & Future Tools | Blended Works",
@@ -51,7 +52,8 @@ const services = [
   },
 ];
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const settings = await getSiteSettings();
   return (
     <div className="min-h-screen bg-[#f6f3eb] text-[#1e2a24]">
       <NewsHeader />
@@ -69,14 +71,10 @@ export default function ServicesPage() {
             </div>
             <div>
               <h1 className="max-w-5xl font-serif text-5xl leading-[1.02] tracking-tight sm:text-7xl">
-                Bring us a real problem worth solving.
+                {settings.servicesHeadline}
               </h1>
               <p className="mt-7 max-w-3xl text-lg leading-8 text-[#59665f]">
-                Blended Works combines technology, business experience,
-                organization, creative thinking, research, and practical trade
-                knowledge. We are building the portfolio openly and welcome
-                early conversations, collaborations, and opportunities that
-                align with our ethics.
+                {settings.servicesIntroduction}
               </p>
             </div>
           </div>
