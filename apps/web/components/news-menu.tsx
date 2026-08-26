@@ -11,7 +11,7 @@ export function NewsMenu({ dark = false }: { dark?: boolean }) {
         News{" "}
         <ChevronDown className="size-3.5 transition group-open:rotate-180" />
       </summary>
-      <div className="absolute left-1/2 top-full z-[60] mt-4 w-64 -translate-x-1/2 overflow-hidden rounded-2xl border border-black/10 bg-[#f6f3eb] p-2 text-[#1e2a24] shadow-2xl shadow-black/20">
+      <div className="absolute right-0 top-full z-[60] mt-4 max-h-[min(70vh,32rem)] w-64 max-w-[calc(100vw-3rem)] overflow-x-hidden overflow-y-auto rounded-2xl border border-black/10 bg-[#f6f3eb] p-2 text-[#1e2a24] shadow-2xl shadow-black/20 sm:left-1/2 sm:right-auto sm:-translate-x-1/2">
         <Link
           className="block rounded-xl px-4 py-3 text-sm font-bold hover:bg-[#ebe7dc]"
           href="/news"

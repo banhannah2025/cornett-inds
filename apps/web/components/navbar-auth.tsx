@@ -10,9 +10,13 @@ export function NavbarAuth({
   enabled: boolean;
   onHero?: boolean;
 }) {
-  const { isLoaded, isSignedIn } = useAuth();
-
   if (!enabled) return null;
+
+  return <EnabledNavbarAuth onHero={onHero} />;
+}
+
+function EnabledNavbarAuth({ onHero }: { onHero: boolean }) {
+  const { isLoaded, isSignedIn } = useAuth();
 
   if (!isLoaded) {
     return <div aria-hidden="true" className="h-10 w-24 shrink-0" />;
