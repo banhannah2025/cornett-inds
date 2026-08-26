@@ -97,7 +97,7 @@ export default async function Page() {
       </header>
 
       <section
-        className="relative flex min-h-[720px] items-end pt-24 sm:pt-20 lg:min-h-screen lg:pt-14"
+        className="relative flex min-h-[720px] items-end pt-24 sm:pt-20 lg:min-h-screen lg:items-center lg:pt-14"
         id="top"
       >
         <Image
