@@ -66,10 +66,3 @@ export type SiteSettings = {
   aboutRobinAndLaura: string;
   aboutJournal: string;
 };
-
-export type CurrentLocation = {
-  _id: string;
-  displayName: string;
-  updatedAt: string;
-  daypart: "morning" | "afternoon" | "evening";
-};
