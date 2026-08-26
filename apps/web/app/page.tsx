@@ -97,7 +97,7 @@ export default async function Page() {
       </header>
 
       <section
-        className="relative flex min-h-[820px] items-end pt-48 sm:pt-36 lg:min-h-[max(100vh,900px)] lg:pt-28"
+        className="relative flex min-h-[720px] items-end pt-24 sm:pt-20 lg:min-h-screen lg:pt-14"
         id="top"
       >
         <Image
@@ -115,23 +115,23 @@ export default async function Page() {
           iconOnly
           src="/images/remote-camp-hero.png"
         />
-        <div className="relative mx-auto w-full max-w-7xl px-6 pb-16 sm:px-8 sm:pb-20 lg:px-10 lg:pb-24">
+        <div className="relative mx-auto w-full max-w-7xl px-6 pb-8 sm:px-8 sm:pb-10 lg:px-10 lg:pb-12">
           <div className="max-w-3xl">
-            <p className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.26em] text-[#f1be72]">
+            <p className="mb-3 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.26em] text-[#f1be72]">
               <span className="h-px w-10 bg-[#f1be72]" />
               {settings.heroEyebrow}
             </p>
-            <h1 className="break-words font-serif text-[clamp(2.75rem,11vw,6.4rem)] font-semibold leading-[0.98] tracking-[-0.035em] text-white">
+            <h1 className="break-words font-serif text-[clamp(2.25rem,8vw,4.5rem)] font-semibold leading-[0.98] tracking-[-0.035em] text-white">
               {settings.heroHeadline}
               <br />
               <span className="italic text-[#f5d5a4]">
                 {settings.heroAccent}
               </span>
             </h1>
-            <p className="mt-7 max-w-xl text-[1.0625rem] leading-8 text-white/85 sm:text-xl">
+            <p className="mt-4 max-w-xl text-base leading-7 text-white/85 sm:text-lg">
               {settings.heroIntroduction}
             </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Link
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#f4b860] px-6 py-3.5 text-sm font-bold text-[#1e2a24] transition hover:bg-[#ffd08a]"
                 href="/field-notes"
