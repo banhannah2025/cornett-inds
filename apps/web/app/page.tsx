@@ -1,8 +1,9 @@
 import {
   ArrowRight,
+  BriefcaseBusiness,
   Compass,
-  MapPin,
-  Radio,
+  Heart,
+  Lightbulb,
   Satellite,
   Signal,
   Sparkles,
@@ -21,24 +22,24 @@ import { NavbarAuth } from "@/components/navbar-auth";
 
 const fieldNotes = [
   {
-    eyebrow: "The setup",
-    title: "How we take reliable work with us",
+    eyebrow: "Real life",
+    title: "Hope for people building forward",
     description:
-      "The connectivity, power, and small routines that turn a faraway campsite into a dependable office.",
-    icon: Satellite,
+      "Honest stories about faith, family, homelessness, starting over, and the practical steps that turn survival into stability.",
+    icon: Heart,
   },
   {
-    eyebrow: "Location notes",
-    title: "Can you actually work from here?",
+    eyebrow: "Useful work",
+    title: "Tools and services grounded in experience",
     description:
-      "Honest notes on signal, quiet, access, weather, and everything we wish we knew before arriving.",
-    icon: MapPin,
+      "Affordable technology, creative work, research, organization, and business support designed around problems people actually face.",
+    icon: BriefcaseBusiness,
   },
   {
-    eyebrow: "Life outside work",
-    title: "What makes a place worth staying",
+    eyebrow: "Open horizons",
+    title: "A wider life, shared as we build it",
     description:
-      "The trails, towns, meals, views, and unplanned moments that make the journey more than a desk with scenery.",
+      "Outdoor life, remote work, art, gardening, future travel, and the experiments that help family, purpose, and income fit together.",
     icon: Compass,
   },
 ];
@@ -57,7 +58,7 @@ export default async function Page() {
               Blended Works
             </span>
             <span className="block text-[10px] font-bold uppercase tracking-[0.24em] text-white/70">
-              Field notes from anywhere
+              Life, work &amp; possibility—blended
             </span>
           </a>
           <nav
@@ -65,24 +66,18 @@ export default async function Page() {
             className="order-3 flex w-full items-center gap-7 border-t border-white/15 pt-4 text-sm font-semibold text-white/85 sm:order-none sm:w-auto sm:border-0 sm:pt-0"
           >
             <FieldNotesMenu />
-            <a
+            <Link
               className="hidden transition hover:text-white md:block"
-              href="#connection"
+              href="/services"
             >
-              The setup
-            </a>
-            <a
-              className="hidden transition hover:text-white md:block"
-              href="#rig"
-            >
-              Dream rig
-            </a>
-            <a
-              className="hidden transition hover:text-white md:block"
-              href="#about"
+              What we do
+            </Link>
+            <Link
+              className="hidden transition hover:text-white lg:block"
+              href="/about"
             >
               Our story
-            </a>
+            </Link>
             <NewsMenu />
           </nav>
           {admin.isAdmin ? (
@@ -136,14 +131,14 @@ export default async function Page() {
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#f4b860] px-6 py-3.5 text-sm font-bold text-[#1e2a24] transition hover:bg-[#ffd08a]"
                 href="/field-notes"
               >
-                Read our field notes <ArrowRight className="size-4" />
+                Explore Blended Works <ArrowRight className="size-4" />
               </Link>
-              <a
+              <Link
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/35 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
-                href="#about"
+                href="/about"
               >
                 Meet Robin &amp; Laura
-              </a>
+              </Link>
               {admin.isAdmin && <AdminSiteEditor settings={settings} />}
             </div>
           </div>
@@ -153,19 +148,19 @@ export default async function Page() {
       <section className="border-b border-[#1e2a24]/10 bg-[#1e2a24] text-white">
         <div className="mx-auto grid max-w-7xl divide-y divide-white/10 px-6 sm:px-8 md:grid-cols-3 md:divide-x md:divide-y-0 lg:px-10">
           <InfoItem
-            icon={Signal}
-            title="Connected"
-            detail="Starlink-powered workdays"
+            icon={Heart}
+            title="Faith-rooted"
+            detail="Values lived without pressure"
           />
           <InfoItem
-            icon={MapPin}
-            title="On the move"
-            detail="New places, real reviews"
+            icon={Lightbulb}
+            title="Experience-built"
+            detail="Real problems, useful answers"
           />
           <InfoItem
-            icon={Radio}
-            title="From the field"
-            detail="What works—and what doesn't"
+            icon={BriefcaseBusiness}
+            title="Opportunity-ready"
+            detail="For families, founders, and teams"
           />
         </div>
       </section>
@@ -174,17 +169,19 @@ export default async function Page() {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 border-b border-[#1e2a24]/15 pb-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-end">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#a45d2d]">
-              Notes from the road
+              One platform, many ways forward
             </p>
             <div>
               <h2 className="max-w-3xl font-serif text-4xl leading-tight tracking-tight sm:text-6xl">
-                More than pretty places.{" "}
-                <span className="italic text-[#6b786e]">Useful details.</span>
+                Built from real life.{" "}
+                <span className="italic text-[#6b786e]">
+                  Made to be useful.
+                </span>
               </h2>
               <p className="mt-6 max-w-2xl text-[1.0625rem] leading-8 text-[#59665f]">
-                We&rsquo;re documenting the full picture: whether we could get
-                there, get online, get our work done, and still remember why we
-                came.
+                Blended Works is where our story, skills, faith, creativity,
+                services, and future ventures meet. Everything starts with a
+                real need and grows through learning, teaching, and building.
               </p>
             </div>
           </div>
@@ -214,7 +211,7 @@ export default async function Page() {
                       {description}
                     </p>
                     <p className="mt-6 inline-flex items-center gap-2 text-sm font-bold">
-                      First field note coming soon{" "}
+                      See where this is growing{" "}
                       <ArrowRight className="size-4 transition group-hover:translate-x-1" />
                     </p>
                   </div>
@@ -398,7 +395,7 @@ export default async function Page() {
       <section className="px-6 py-24 sm:px-8 lg:px-10 lg:py-32" id="about">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.75fr_1.25fr]">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#a45d2d]">
-            Robin + Laura
+            Robin + Laura™
           </p>
           <div>
             <p className="font-serif text-4xl leading-tight tracking-tight sm:text-6xl">
@@ -412,6 +409,12 @@ export default async function Page() {
                 {settings.aboutJournal}
               </p>
             </div>
+            <Link
+              className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[#a45d2d]"
+              href="/about"
+            >
+              Read our full story <ArrowRight className="size-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -419,14 +422,15 @@ export default async function Page() {
       <section className="px-4 pb-4 sm:px-8 sm:pb-8" id="follow">
         <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-[#c8703d] px-7 py-20 text-center text-white sm:rounded-[2.5rem] sm:px-12 sm:py-20">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/70">
-            The next view is still ahead
+            There is room at the table
           </p>
           <h2 className="mx-auto mt-5 max-w-3xl font-serif text-4xl leading-tight sm:text-6xl">
-            Come along as we figure it out.
+            Come build what comes next with us.
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-[1.0625rem] leading-8 text-white/85">
-            New locations, honest workday reports, and the practical details
-            that make remote travel possible.
+            Read the story, follow the journey, explore useful tools, or bring
+            us a problem worth solving. Blended Works is growing one honest
+            connection at a time.
           </p>
           <a
             className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-[#873f21] transition hover:bg-[#fff1df]"
@@ -442,7 +446,9 @@ export default async function Page() {
           <p className="font-serif text-lg font-semibold text-[#1e2a24]">
             Blended Works
           </p>
-          <p>Built on the road by Robin &amp; Laura.</p>
+          <p>
+            Built with faith, family, and practical purpose by Robin + Laura™.
+          </p>
           <a className="font-bold text-[#1e2a24]" href="#top">
             Back to the top ↑
           </a>
