@@ -1,6 +1,6 @@
 import { ArrowRight, BookOpen } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { ExpandableImage } from "@/components/expandable-image";
 import type { Devotional } from "@/sanity/lib/types";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -21,15 +21,14 @@ export function DevotionalCard({
     <article
       className={`group overflow-hidden rounded-[2rem] border border-[#1e2a24]/10 bg-white ${featured ? "lg:grid lg:grid-cols-[1.08fr_0.92fr]" : ""}`}
     >
-      <Link
-        className={`relative block overflow-hidden bg-[#dfe5dc] ${featured ? "min-h-72 lg:min-h-[31rem]" : "aspect-[4/3]"}`}
-        href={href}
+      <div
+        className={`relative overflow-hidden bg-[#dfe5dc] ${featured ? "min-h-72 lg:min-h-[31rem]" : "aspect-[4/3]"}`}
       >
         {devotional.mainImage?.assetUrl ? (
-          <Image
+          <ExpandableImage
             alt={devotional.mainImage.alt ?? ""}
-            className="object-cover transition duration-700 group-hover:scale-[1.025]"
-            fill
+            className="absolute inset-0 size-full"
+            imageClassName="object-cover transition duration-700 group-hover:scale-[1.025]"
             sizes={
               featured
                 ? "(min-width: 1024px) 55vw, 100vw"
@@ -45,7 +44,7 @@ export function DevotionalCard({
             />
           </div>
         )}
-      </Link>
+      </div>
       <div
         className={`flex flex-col justify-center ${featured ? "p-8 sm:p-12" : "p-7"}`}
       >
