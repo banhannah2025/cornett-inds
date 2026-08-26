@@ -19,6 +19,9 @@ export type EditableFieldNote = {
   region?: string;
   visitedFrom?: string;
   visitedTo?: string;
+  authorId?: string;
+  seoTitle?: string;
+  seoDescription?: string;
 };
 const fieldClass =
   "mt-2 w-full rounded-xl border border-[#1e2a24]/15 bg-white px-4 py-3 text-sm outline-none focus:border-[#a45d2d] focus:ring-2 focus:ring-[#a45d2d]/15";
@@ -34,10 +37,12 @@ export function AdminFieldNoteEditor({
   categories,
   note,
   defaultCategoryId,
+  authors = [],
 }: {
   categories: FieldNoteCategory[];
   note?: EditableFieldNote;
   defaultCategoryId?: string;
+  authors?: { _id: string; name: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -122,6 +127,23 @@ export function AdminFieldNoteEditor({
             />
           </label>
         </div>
+        {authors.length > 0 && (
+          <label className="block text-sm font-bold">
+            Author
+            <select
+              className={fieldClass}
+              defaultValue={note?.authorId ?? ""}
+              name="authorId"
+            >
+              <option value="">No author selected</option>
+              {authors.map((author) => (
+                <option key={author._id} value={author._id}>
+                  {author.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block text-sm font-bold">
             Location name
@@ -189,15 +211,30 @@ export function AdminFieldNoteEditor({
             </span>
           </label>
         )}
+        <div className="grid gap-5 border-t border-[#1e2a24]/10 pt-5 sm:grid-cols-2">
+          <label className="block text-sm font-bold">
+            SEO title{" "}
+            <span className="font-normal text-[#6b786e]">(optional)</span>
+            <input
+              className={fieldClass}
+              defaultValue={note?.seoTitle}
+              maxLength={65}
+              name="seoTitle"
+            />
+          </label>
+          <label className="block text-sm font-bold">
+            SEO description{" "}
+            <span className="font-normal text-[#6b786e]">(optional)</span>
+            <textarea
+              className={fieldClass}
+              defaultValue={note?.seoDescription}
+              maxLength={160}
+              name="seoDescription"
+              rows={3}
+            />
+          </label>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#1e2a24]/10 pt-5">
-          <a
-            className="text-sm font-bold text-[#a45d2d]"
-            href="https://robin-and-laura-news.sanity.studio/"
-            rel="noreferrer"
-            target="_blank"
-          >
-            Open advanced Studio ↗
-          </a>
           <button
             className="rounded-full bg-[#1e2a24] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
             disabled={pending}
