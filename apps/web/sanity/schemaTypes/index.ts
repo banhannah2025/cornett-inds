@@ -5,6 +5,7 @@ import { siteSettingsType } from "./siteSettings";
 import { fieldNoteCategoryType } from "./fieldNoteCategory";
 import { fieldNoteType } from "./fieldNote";
 import { devotionalType } from "./devotional";
+import { currentLocationType } from "./currentLocation";
 
 export const schemaTypes = [
   postType,
@@ -14,4 +15,5 @@ export const schemaTypes = [
   devotionalType,
   authorType,
   siteSettingsType,
+  currentLocationType,
 ];
