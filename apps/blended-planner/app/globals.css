@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "@repo/tailwind-config";
+
+:root { color-scheme: light; --forest:#385c50; --ink:#263b35; --paper:#f5f1e8; --cream:#fffdf8; --line:rgb(38 59 53 / 11%); }
+* { box-sizing: border-box; }
+html { background: var(--paper); scroll-behavior: smooth; }
+body { min-height:100vh; margin:0; background: radial-gradient(circle at 90% 0%,rgb(210 139 70 / 12%),transparent 28rem),var(--paper); color:var(--ink); }
+button,input,textarea,select { font:inherit; }
+button,a { -webkit-tap-highlight-color:transparent; }
+.planner-serif { font-family: Georgia,"Times New Roman",serif; }
