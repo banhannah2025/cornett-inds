@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { PortableText, type PortableTextComponents } from "@portabletext/react";
 import { AdminPostEditor } from "@/components/admin-post-editor";
 import { AdminImageEditor } from "@/components/admin-image-editor";
+import { ExpandableImage } from "@/components/expandable-image";
 import { getAdminContext } from "@/lib/admin";
 import { getCategories, getPost } from "@/sanity/lib/data";
 import { getImageAssets } from "@/sanity/lib/assets";
@@ -69,15 +69,14 @@ const components: PortableTextComponents = {
   types: {
     image: ({ value }: { value: SanityImage }) => (
       <figure className="my-12">
-        <div className="relative aspect-[16/10] overflow-hidden rounded-[2rem] bg-[#dfe5dc]">
-          <Image
-            alt={value.alt ?? ""}
-            className="object-cover"
-            fill
-            sizes="(min-width: 1024px) 800px, 100vw"
-            src={urlForImage(value).width(1400).height(875).url()}
-          />
-        </div>
+        <ExpandableImage
+          className="aspect-[16/10] rounded-[2rem] bg-[#dfe5dc]"
+          alt={value.alt ?? ""}
+          caption={value.caption}
+          imageClassName="object-cover"
+          sizes="(min-width: 1024px) 800px, 100vw"
+          src={urlForImage(value).width(1400).height(875).url()}
+        />
         {value.caption && (
           <figcaption className="mt-3 text-sm text-[#6b786e]">
             {value.caption}
@@ -157,10 +156,11 @@ export default async function PostPage({
         {(post.mainImage?.asset?._ref || admin.isAdmin) && (
           <div className="relative mx-auto aspect-[16/8] max-w-7xl overflow-hidden bg-[#dfe5dc] sm:rounded-[2.5rem]">
             {post.mainImage?.asset?._ref ? (
-              <Image
+              <ExpandableImage
                 alt={post.mainImage.alt ?? ""}
-                className="object-cover"
-                fill
+                caption={post.mainImage.caption}
+                className="absolute inset-0 size-full"
+                imageClassName="object-cover"
                 priority
                 sizes="(min-width: 1280px) 1280px, 100vw"
                 src={urlForImage(post.mainImage).width(1800).height(900).url()}
