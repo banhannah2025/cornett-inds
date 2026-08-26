@@ -15,7 +15,7 @@ export async function NewsHeader() {
             Blended Works
           </span>
           <span className="block text-[10px] font-bold uppercase tracking-[0.24em] text-[#6b786e]">
-            Field notes from anywhere
+            Life, work &amp; possibility—blended
           </span>
         </Link>
         <nav
@@ -26,7 +26,13 @@ export async function NewsHeader() {
           <NewsMenu dark />
           <Link
             className="hidden text-sm font-bold uppercase tracking-[0.14em] text-[#1e2a24] transition hover:text-[#a45d2d] sm:block"
-            href="/#about"
+            href="/services"
+          >
+            What we do
+          </Link>
+          <Link
+            className="hidden text-sm font-bold uppercase tracking-[0.14em] text-[#1e2a24] transition hover:text-[#a45d2d] lg:block"
+            href="/about"
           >
             Our story
           </Link>

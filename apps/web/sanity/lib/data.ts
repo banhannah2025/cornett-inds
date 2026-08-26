@@ -14,7 +14,14 @@ import {
   devotionalsQuery,
   devotionalBySlugQuery,
 } from "./queries";
-import type { Devotional, FieldNote, FieldNoteCategory, NewsCategory, NewsPost, SiteSettings } from "./types";
+import type {
+  Devotional,
+  FieldNote,
+  FieldNoteCategory,
+  NewsCategory,
+  NewsPost,
+  SiteSettings,
+} from "./types";
 
 const options = { cache: "no-store" } as const;
 
@@ -70,24 +77,53 @@ export const newsCategories: NewsCategory[] = [
 ];
 
 export const fieldNoteCategories: FieldNoteCategory[] = [
-  { _id: "field-note-category-about-us", title: "About Us", slug: "about-us", description: "The people, values, decisions, and everyday moments behind Blended Works.", order: 1 },
-  { _id: "field-note-category-our-journey", title: "Our Journey", slug: "our-journey", description: "The unfolding story of building a remote-working life together and what we learn along the way.", order: 2 },
-  { _id: "field-note-category-locations", title: "Locations", slug: "locations", description: "Firsthand stories from the places we stay, explore, work, and remember.", order: 3 },
+  {
+    _id: "field-note-category-about-us",
+    title: "About Us",
+    slug: "about-us",
+    description:
+      "The people, values, decisions, and everyday moments behind Blended Works.",
+    order: 1,
+  },
+  {
+    _id: "field-note-category-our-journey",
+    title: "Our Journey",
+    slug: "our-journey",
+    description:
+      "The honest story of faith, family, rebuilding, and creating a life and business together.",
+    order: 2,
+  },
+  {
+    _id: "field-note-category-homeless-to-hero",
+    title: "From Homeless to Hero",
+    slug: "from-homeless-to-hero",
+    description:
+      "Real stories and practical steps for moving from instability toward housing, purpose, freedom, and a life built with intention.",
+    order: 3,
+  },
+  {
+    _id: "field-note-category-locations",
+    title: "Locations",
+    slug: "locations",
+    description:
+      "Firsthand stories from the places we stay, explore, work, and remember.",
+    order: 4,
+  },
 ];
 
 export const defaultSiteSettings: SiteSettings = {
   _id: "siteSettings",
-  heroEyebrow: "Robin & Laura, working beyond the map",
-  heroHeadline: "The work goes on.",
-  heroAccent: "So do we.",
+  heroEyebrow: "Robin + Laura™ · Partners in life and work",
+  heroHeadline: "Build a better life.",
+  heroAccent: "Make the work meaningful.",
   heroIntroduction:
-    "We’re exploring new places without leaving our work behind. These are our honest field notes on remote living, reliable connection, and the view beyond the laptop.",
+    "Blended Works brings faith, family, practical experience, technology, creativity, and entrepreneurship together to help people and businesses move forward.",
   aboutHeadline:
-    "We’re building a life where meaningful work and a wider world can share the same calendar.",
+    "A blended family. A blended set of skills. One shared determination to build what comes next.",
   aboutRobinAndLaura:
-    "We’re a couple learning how to work well while exploring new places. Not on permanent vacation. Not tied to one view. Just building a thoughtful rhythm between responsibility and curiosity.",
+    "We’re Robin and Laura—engaged partners, parents, artists, outdoorspeople, and the team behind Blended Works. Our story has included homelessness, housing instability, sacrifice, and starting over. It has also taught us how much becomes possible when faith, love, useful skills, and steady work meet.",
   aboutJournal:
-    "This journal is where we’ll share what we learn—the practical setup, the places that welcome remote workers, the misses, and the moments worth carrying forward.",
+    "We’re building an expanding home for honest stories, practical teaching, affordable tools, professional services, daily devotionals, and the ventures that grow from our family’s real needs and lived experience.",
 };
 
 export async function getCategories() {
@@ -165,36 +201,86 @@ export async function getSiteSettings() {
 }
 
 export async function getFieldNoteCategories() {
-  try { const categories = await sanityClient.fetch<FieldNoteCategory[]>(fieldNoteCategoriesQuery, {}, options); return categories.length ? categories : fieldNoteCategories; }
-  catch { return fieldNoteCategories; }
+  try {
+    const categories = await sanityClient.fetch<FieldNoteCategory[]>(
+      fieldNoteCategoriesQuery,
+      {},
+      options,
+    );
+    return categories.length ? categories : fieldNoteCategories;
+  } catch {
+    return fieldNoteCategories;
+  }
 }
 
 export async function getAllFieldNotes() {
-  try { return await sanityClient.fetch<FieldNote[]>(fieldNotesQuery, {}, options); }
-  catch { return []; }
+  try {
+    return await sanityClient.fetch<FieldNote[]>(fieldNotesQuery, {}, options);
+  } catch {
+    return [];
+  }
 }
 
 export async function getFieldNoteCategory(slug: string) {
-  try { return (await sanityClient.fetch<FieldNoteCategory | null>(fieldNoteCategoryBySlugQuery, { category: slug }, options)) ?? fieldNoteCategories.find((item) => item.slug === slug) ?? null; }
-  catch { return fieldNoteCategories.find((item) => item.slug === slug) ?? null; }
+  try {
+    return (
+      (await sanityClient.fetch<FieldNoteCategory | null>(
+        fieldNoteCategoryBySlugQuery,
+        { category: slug },
+        options,
+      )) ??
+      fieldNoteCategories.find((item) => item.slug === slug) ??
+      null
+    );
+  } catch {
+    return fieldNoteCategories.find((item) => item.slug === slug) ?? null;
+  }
 }
 
 export async function getFieldNotesByCategory(category: string) {
-  try { return await sanityClient.fetch<FieldNote[]>(fieldNotesByCategoryQuery, { category }, options); }
-  catch { return []; }
+  try {
+    return await sanityClient.fetch<FieldNote[]>(
+      fieldNotesByCategoryQuery,
+      { category },
+      options,
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function getFieldNote(category: string, slug: string) {
-  try { return await sanityClient.fetch<FieldNote | null>(fieldNoteBySlugQuery, { category, slug }, options); }
-  catch { return null; }
+  try {
+    return await sanityClient.fetch<FieldNote | null>(
+      fieldNoteBySlugQuery,
+      { category, slug },
+      options,
+    );
+  } catch {
+    return null;
+  }
 }
 
 export async function getDevotionals() {
-  try { return await sanityClient.fetch<Devotional[]>(devotionalsQuery, {}, options); }
-  catch { return []; }
+  try {
+    return await sanityClient.fetch<Devotional[]>(
+      devotionalsQuery,
+      {},
+      options,
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function getDevotional(slug: string) {
-  try { return await sanityClient.fetch<Devotional | null>(devotionalBySlugQuery, { slug }, options); }
-  catch { return null; }
+  try {
+    return await sanityClient.fetch<Devotional | null>(
+      devotionalBySlugQuery,
+      { slug },
+      options,
+    );
+  } catch {
+    return null;
+  }
 }

@@ -7,9 +7,9 @@ import { BackToTop } from "@/components/back-to-top";
 import { AdminDock } from "@/components/admin-dock";
 
 export const metadata: Metadata = {
-  title: "Blended Works | Remote work beyond the map",
+  title: "Blended Works | Life, work, and possibility—blended",
   description:
-    "Follow Robin and Laura as they work remotely, explore new places, and share honest field notes on Starlink, connectivity, and life beyond the usual office.",
+    "Meet Robin + Laura™ and explore Blended Works: faith-rooted stories, practical tools, creative services, technology, business support, and a family building forward together.",
 };
 
 export default function RootLayout({
