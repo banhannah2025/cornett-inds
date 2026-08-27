@@ -61,6 +61,8 @@ export function TravelStayPlanner() {
     [activeId, setActiveId] = useState<number | null>(null),
     [done, setDone] = useState<Record<string, boolean>>({}),
     [calendarMessage, setCalendarMessage] = useState(""),
+    [estimateMessage, setEstimateMessage] = useState(""),
+    [estimating, setEstimating] = useState(false),
     [vehicles, setVehicles] = useState<VehicleAsset[]>([]),
     [loaded, setLoaded] = useState(false);
   useEffect(() => {
@@ -159,10 +161,22 @@ export function TravelStayPlanner() {
   const selectDestination = (place: Place) =>
     active && setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, destination: place.label, destinationLatitude: place.latitude, destinationLongitude: place.longitude } : plan));
   const selectOrigin = (place: Place) => active && setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, origin: place.label, originLatitude: place.latitude, originLongitude: place.longitude } : plan));
-  const estimateTrip = () => {
-    if (!active?.originLatitude || !active.originLongitude || !active.destinationLatitude || !active.destinationLongitude) return;
-    const radians = (degrees: number) => degrees * Math.PI / 180, dLat = radians(active.destinationLatitude - active.originLatitude), dLon = radians(active.destinationLongitude - active.originLongitude);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(active.originLatitude)) * Math.cos(radians(active.destinationLatitude)) * Math.sin(dLon / 2) ** 2;
+  const resolveLocation = async (label: string, latitude?: number, longitude?: number) => {
+    if (latitude !== undefined && longitude !== undefined) return { latitude, longitude };
+    const response = await fetch(`/api/location-search?q=${encodeURIComponent(label)}`);
+    const data = (await response.json()) as { results?: Place[] };
+    const place = data.results?.[0];
+    if (!response.ok || !place) throw new Error(`Could not locate ${label}`);
+    return { latitude: place.latitude, longitude: place.longitude };
+  };
+  const estimateTrip = async () => {
+    if (!active?.origin?.trim() || !active.destination.trim()) { setEstimateMessage("Enter both a starting location and destination."); return; }
+    setEstimating(true);
+    setEstimateMessage("Locating the route…");
+    try {
+    const [origin, destination] = await Promise.all([resolveLocation(active.origin, active.originLatitude, active.originLongitude), resolveLocation(active.destination, active.destinationLatitude, active.destinationLongitude)]);
+    const radians = (degrees: number) => degrees * Math.PI / 180, dLat = radians(destination.latitude - origin.latitude), dLon = radians(destination.longitude - origin.longitude);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(origin.latitude)) * Math.cos(radians(destination.latitude)) * Math.sin(dLon / 2) ** 2;
     const miles = 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.18;
     const vehicle = vehicles.find((item) => item.id === active.vehicleId), mpg = vehicle?.combinedMpg || active.customMpg || 25;
     const roadMode = active.travelMode === "driving" || active.travelMode === "rv" || active.travelMode === "motorcycle";
@@ -171,10 +185,13 @@ export function TravelStayPlanner() {
     const ownership = roadMode ? miles * (((vehicle?.insuranceBudget ?? 0) + (vehicle?.registrationBudget ?? 0)) / 12000) : 0;
     const total = fuel + maintenance + ownership + (active.otherTravelCost || 0);
     const estimate = { estimatedMiles: Math.round(miles), estimatedFuelCost: fuel, estimatedMaintenance: maintenance, estimatedOwnership: ownership, estimatedTravelTotal: total };
-    setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, ...estimate } : plan));
+    setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, ...estimate, originLatitude: origin.latitude, originLongitude: origin.longitude, destinationLatitude: destination.latitude, destinationLongitude: destination.longitude } : plan));
     const finance = JSON.parse(localStorage.getItem("blended-basecamp-finance") ?? "{}");
     const record = { id: active.id, name: `${active.origin} to ${active.destination}`, date: active.arrival, mode: active.travelMode, vehicleId: active.vehicleId, miles: estimate.estimatedMiles, fuel, maintenance, ownership, other: active.otherTravelCost || 0, total };
     localStorage.setItem("blended-basecamp-finance", JSON.stringify({ ...finance, travelEstimates: [...(finance.travelEstimates ?? []).filter((item: { id: number }) => item.id !== active.id), record] }));
+    setEstimateMessage("Trip estimate updated and sent to Money.");
+    } catch { setEstimateMessage("We could not match one of those locations. Select a suggestion or add a more specific city, state, or address."); }
+    finally { setEstimating(false); }
   };
   return (
     <section id="travel-planner" className="mb-10">
@@ -358,7 +375,7 @@ export function TravelStayPlanner() {
                 />
               </Field>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-sm font-bold text-white disabled:opacity-45" disabled={!active.originLatitude || !active.destinationLatitude} onClick={estimateTrip} type="button"><Route size={18}/> Estimate trip costs</button>
+                <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-sm font-bold text-white disabled:opacity-45" disabled={estimating || !active.origin?.trim() || !active.destination.trim()} onClick={estimateTrip} type="button"><Route size={18}/> {estimating ? "Calculating…" : "Estimate trip costs"}</button>
                 <button
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#b66e38] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
                   disabled={!active.destination || !active.arrival}
@@ -370,6 +387,7 @@ export function TravelStayPlanner() {
                 </button>
                 {calendarMessage ? <p className="text-xs font-bold text-[#527568]" role="status">{calendarMessage}</p> : null}
               </div>
+              {estimateMessage ? <p className="mt-2 text-xs font-bold text-[#527568]" role="status">{estimateMessage}</p> : null}
             </>
           )}
         </div>
