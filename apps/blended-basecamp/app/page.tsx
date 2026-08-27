@@ -28,6 +28,7 @@ import { EquipmentChecklist } from "../components/equipment-checklist";
 import { ExpenseMileageTracker } from "../components/expense-mileage-tracker";
 import { LocationJournal } from "../components/location-journal";
 import { EmergencyCheckins } from "../components/emergency-checkins";
+import { WorkspaceSwitcher } from "../components/workspace-switcher";
 type Task = {
   id: number;
   text: string;
@@ -176,6 +177,7 @@ export default function BasecampPage() {
           </nav>
         )}
       </header>
+      <WorkspaceSwitcher />
       <section
         id="top"
         className="hero-grid border-b border-[#d7d0c0] px-4 py-8 sm:px-7 sm:py-12"
