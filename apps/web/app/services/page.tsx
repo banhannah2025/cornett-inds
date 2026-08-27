@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Calculator,
+  CalendarDays,
   Code2,
   Compass,
   FileSearch,
@@ -54,6 +55,10 @@ const services = [
 
 export default async function ServicesPage() {
   const settings = await getSiteSettings();
+  const plannerUrl =
+    process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
+    "https://blended-planner.specopsrecon82.chatgpt.site";
+
   return (
     <div className="min-h-screen bg-[#f6f3eb] text-[#1e2a24]">
       <NewsHeader />
@@ -119,7 +124,28 @@ export default async function ServicesPage() {
                 Apps that grow from the life we are actually living.
               </h2>
             </div>
-            <div className="space-y-6 text-[1.0625rem] leading-8 text-white/65">
+            <div>
+              <div className="rounded-[2rem] border border-white/15 bg-white/5 p-8 sm:p-10">
+                <CalendarDays className="size-10 text-[#f4b860]" strokeWidth={1.5} />
+                <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-[#f4b860]">
+                  Available now · Free
+                </p>
+                <h3 className="mt-4 font-serif text-4xl text-white">
+                  The Blended Planner
+                </h3>
+                <p className="mt-5 text-[1.0625rem] leading-8 text-white/65">
+                  A purpose-centered calendar and planning journal for bringing
+                  faith, family, work, mission, and the future into one clear
+                  rhythm.
+                </p>
+                <Link
+                  className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#f4b860] px-6 py-3.5 text-sm font-bold text-[#1e2a24] transition hover:bg-[#ffd08a]"
+                  href={plannerUrl}
+                >
+                  Open the free planner <ArrowRight className="size-4" />
+                </Link>
+              </div>
+              <div className="mt-8 space-y-6 text-[1.0625rem] leading-8 text-white/65">
               <p>
                 Our planned tools span business and contractor workflows,
                 general legal research and self-help, faith and devotionals,
@@ -130,11 +156,12 @@ export default async function ServicesPage() {
                 affordable and accessible, save time or money, reflect our
                 values, and come from experience we can explain honestly.
               </p>
-              <p>
-                Access may eventually blend free resources, one-time purchases,
-                optional subscriptions, paid services, sponsored access, and
-                selective sliding-scale support.
-              </p>
+                <p>
+                  Access may eventually blend free resources, one-time purchases,
+                  optional subscriptions, paid services, sponsored access, and
+                  selective sliding-scale support.
+                </p>
+              </div>
             </div>
           </div>
         </section>
