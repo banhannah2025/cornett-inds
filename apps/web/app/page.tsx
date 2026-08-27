@@ -49,6 +49,10 @@ export default async function Page() {
     getSiteSettings(),
     getAdminContext(),
   ]);
+  const plannerUrl =
+    process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
+    "https://blended-planner.specopsrecon82.chatgpt.site";
+
   return (
     <main className="overflow-hidden bg-[#f6f3eb] text-[#1e2a24]">
       <header className="absolute inset-x-0 top-0 z-50 bg-gradient-to-b from-[#0f1915]/85 via-[#0f1915]/45 to-transparent pb-8">
@@ -66,6 +70,12 @@ export default async function Page() {
             className="order-3 flex w-full items-center gap-7 border-t border-white/15 pt-4 text-sm font-semibold text-white/85 sm:order-none sm:w-auto sm:border-0 sm:pt-0"
           >
             <FieldNotesMenu />
+            <Link
+              className="transition hover:text-white"
+              href={plannerUrl}
+            >
+              Planner
+            </Link>
             <Link
               className="hidden transition hover:text-white md:block"
               href="/services"
@@ -135,6 +145,12 @@ export default async function Page() {
               </Link>
               <Link
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/35 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
+                href={plannerUrl}
+              >
+                Open the Blended Planner <ArrowRight className="size-4" />
+              </Link>
+              <Link
+                className="inline-flex min-h-12 items-center justify-center gap-2 px-3 py-3.5 text-sm font-bold text-white/85 transition hover:text-white"
                 href="/about"
               >
                 Meet Robin &amp; Laura
@@ -449,9 +465,14 @@ export default async function Page() {
           <p>
             Built with faith, family, and practical purpose by Robin + Laura™.
           </p>
-          <a className="font-bold text-[#1e2a24]" href="#top">
-            Back to the top ↑
-          </a>
+          <div className="flex items-center gap-5">
+            <Link className="font-bold text-[#a45d2d]" href={plannerUrl}>
+              Open Planner
+            </Link>
+            <a className="font-bold text-[#1e2a24]" href="#top">
+              Back to the top ↑
+            </a>
+          </div>
         </div>
       </footer>
     </main>
