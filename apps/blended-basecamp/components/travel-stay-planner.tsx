@@ -2,6 +2,7 @@
 import { cloneElement, useEffect, useMemo, useState } from "react";
 import {
   BedDouble,
+  CalendarCheck,
   CalendarRange,
   Check,
   CircleDollarSign,
@@ -21,7 +22,9 @@ type Stay = {
   property: string;
   type: StayType;
   arrival: string;
+  arrivalTime?: string;
   departure: string;
+  departureTime?: string;
   confirmation: string;
   cost: string;
   notes: string;
@@ -43,6 +46,7 @@ export function TravelStayPlanner() {
   const [plans, setPlans] = useState<Stay[]>([]),
     [activeId, setActiveId] = useState<number | null>(null),
     [done, setDone] = useState<Record<string, boolean>>({}),
+    [calendarMessage, setCalendarMessage] = useState(""),
     [loaded, setLoaded] = useState(false);
   useEffect(() => {
     try {
@@ -88,7 +92,9 @@ export function TravelStayPlanner() {
         property: "",
         type: "campsite",
         arrival: "",
+        arrivalTime: "15:00",
         departure: "",
+        departureTime: "11:00",
         confirmation: "",
         cost: "",
         notes: "",
@@ -97,11 +103,33 @@ export function TravelStayPlanner() {
     setPlans((v) => [...v, p]);
     setActiveId(id);
   };
-  const update = <K extends keyof Stay>(key: K, value: Stay[K]) =>
-    active &&
-    setPlans((v) =>
-      v.map((p) => (p.id === active.id ? { ...p, [key]: value } : p)),
-    );
+  const update = <K extends keyof Stay>(key: K, value: Stay[K]) => {
+    if (!active) return;
+    setCalendarMessage("");
+    setPlans((v) => v.map((p) => (p.id === active.id ? { ...p, [key]: value } : p)));
+  };
+  const calendarIds = (stayId: number): [number, number] => [stayId * 10 + 1, stayId * 10 + 2];
+  const removeCalendarStay = (stayId: number) => {
+    try {
+      const ids = new Set(calendarIds(stayId));
+      const items = JSON.parse(localStorage.getItem("blended-basecamp-calendar") ?? "[]") as { id: number }[];
+      localStorage.setItem("blended-basecamp-calendar", JSON.stringify(items.filter((item) => !ids.has(item.id))));
+    } catch { localStorage.removeItem("blended-basecamp-calendar"); }
+  };
+  const syncStayToCalendar = () => {
+    if (!active?.destination || !active.arrival) return;
+    try {
+      const ids = calendarIds(active.id);
+      const saved = JSON.parse(localStorage.getItem("blended-basecamp-calendar") ?? "[]") as { id: number; date: string; title: string; type: "travel"; time: string }[];
+      const location = active.property || active.destination;
+      const next = saved.filter((item) => !ids.includes(item.id));
+      next.push({ id: ids[0], date: active.arrival, title: `Check in: ${location}`, type: "travel", time: active.arrivalTime || "15:00" });
+      if (active.departure) next.push({ id: ids[1], date: active.departure, title: `Check out: ${location}`, type: "travel", time: active.departureTime || "11:00" });
+      localStorage.setItem("blended-basecamp-calendar", JSON.stringify(next));
+      localStorage.setItem("blended-basecamp-calendar-focus", active.arrival);
+      setCalendarMessage("Stay added to the calendar.");
+    } catch { setCalendarMessage("The stay could not be added to the calendar."); }
+  };
   const selectDestination = (place: Place) => active && setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, destination: place.label, destinationLatitude: place.latitude, destinationLongitude: place.longitude } : plan));
   return (
     <section id="travel-planner" className="mb-10">
@@ -175,6 +203,7 @@ export function TravelStayPlanner() {
                 <button
                   aria-label="Delete stay"
                   onClick={() => {
+                    removeCalendarStay(active.id);
                     setPlans((v) => v.filter((p) => p.id !== active.id));
                     setActiveId(null);
                   }}
@@ -234,6 +263,12 @@ export function TravelStayPlanner() {
                     onChange={(e) => update("departure", e.target.value)}
                   />
                 </Field>
+                <Field label="Arrival time">
+                  <input type="time" value={active.arrivalTime || "15:00"} onChange={(e) => update("arrivalTime", e.target.value)} />
+                </Field>
+                <Field label="Departure time">
+                  <input type="time" value={active.departureTime || "11:00"} onChange={(e) => update("departureTime", e.target.value)} />
+                </Field>
                 <Field label="Estimated total">
                   <input
                     value={active.cost}
@@ -258,6 +293,12 @@ export function TravelStayPlanner() {
                   placeholder="Directions, gate code, workspace notes..."
                 />
               </Field>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#b66e38] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45" disabled={!active.destination || !active.arrival} onClick={syncStayToCalendar} type="button">
+                  <CalendarCheck size={18} /> Save stay to calendar
+                </button>
+                {calendarMessage ? <p className="text-xs font-bold text-[#527568]" role="status">{calendarMessage}</p> : null}
+              </div>
             </>
           )}
         </div>

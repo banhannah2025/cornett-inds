@@ -53,6 +53,15 @@ export function CalendarPlanner() {
     try {
       const saved = localStorage.getItem("blended-basecamp-calendar");
       if (saved) setItems(JSON.parse(saved));
+      const focus = localStorage.getItem("blended-basecamp-calendar-focus");
+      if (focus) {
+        const [year, month, day] = focus.split("-").map(Number);
+        if (year && month && day) {
+          setView(new Date(year, month - 1, 1));
+          setSelectedDay(day);
+        }
+        localStorage.removeItem("blended-basecamp-calendar-focus");
+      }
     } catch {
       localStorage.removeItem("blended-basecamp-calendar");
     }
