@@ -26,6 +26,7 @@ type Trip = {
   vehicleId?: string;
 };
 type VehicleBudget = { vehicleId: string; name: string; fuel: number; maintenance: number; insurance: number; registration: number };
+type TravelEstimate = { id: number; name: string; date: string; mode: string; miles: number; fuel: number; maintenance: number; ownership: number; other: number; total: number };
 const today = () => new Date().toISOString().slice(0, 10),
   categories = [
     "Fuel",
@@ -42,6 +43,7 @@ export function ExpenseMileageTracker() {
     [trips, setTrips] = useState<Trip[]>([]),
     [rate, setRate] = useState(0.7),
     [vehicleBudgets, setVehicleBudgets] = useState<VehicleBudget[]>([]),
+    [travelEstimates, setTravelEstimates] = useState<TravelEstimate[]>([]),
     [vehicleId, setVehicleId] = useState(""),
     [tab, setTab] = useState<"expense" | "mileage">("expense"),
     [loaded, setLoaded] = useState(false);
@@ -63,6 +65,7 @@ export function ExpenseMileageTracker() {
         setTrips(d.trips ?? []);
         setRate(d.rate ?? 0.7);
         setVehicleBudgets(d.vehicleBudgets ?? []);
+        setTravelEstimates(d.travelEstimates ?? []);
       }
     } catch {}
     setLoaded(true);
@@ -71,9 +74,9 @@ export function ExpenseMileageTracker() {
     if (loaded)
       localStorage.setItem(
         "blended-basecamp-finance",
-        JSON.stringify({ expenses, trips, rate, vehicleBudgets }),
+        JSON.stringify({ expenses, trips, rate, vehicleBudgets, travelEstimates }),
       );
-  }, [expenses, trips, rate, vehicleBudgets, loaded]);
+  }, [expenses, trips, rate, vehicleBudgets, travelEstimates, loaded]);
   const totals = useMemo(
     () => ({
       expenses: expenses.reduce((t, e) => t + e.amount, 0),
@@ -194,6 +197,7 @@ export function ExpenseMileageTracker() {
         />
       </div>
       {vehicleBudgets.length ? <div className="mb-5 rounded-[26px] bg-[#203f37] p-5 text-white"><p className="text-[10px] font-bold uppercase tracking-wider text-[#e6c57d]">Vehicle asset budgets</p><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{vehicleBudgets.map((budget) => { const total = budget.fuel + budget.maintenance + budget.insurance + budget.registration, spent = expenses.filter((expense) => expense.vehicleId === budget.vehicleId).reduce((sum, expense) => sum + expense.amount, 0); return <div className="rounded-xl bg-white/10 p-4" key={budget.vehicleId}><b className="text-sm">{budget.name}</b><p className="mt-2 text-2xl font-bold">{money(total)}<small className="ml-1 text-xs font-normal text-white/60">/ year planned</small></p><p className="mt-1 text-xs text-[#e6c57d]">{money(spent)} recorded against this vehicle</p><p className="mt-1 text-[10px] text-white/55">Fuel {money(budget.fuel)} · Maintenance {money(budget.maintenance)} · Insurance {money(budget.insurance)} · Registration {money(budget.registration)}</p></div>; })}</div></div> : null}
+      {travelEstimates.length ? <div className="mb-5 rounded-[26px] border border-[#b66e38]/25 bg-[#f5e4dc] p-5"><p className="text-[10px] font-bold uppercase tracking-wider text-[#884936]">Planned travel estimates</p><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{travelEstimates.map((estimate) => <div className="rounded-xl bg-white p-4" key={estimate.id}><b className="text-sm">{estimate.name}</b><p className="mt-1 text-[10px] uppercase text-[#78827e]">{estimate.date || "Date not set"} · {estimate.mode} · {estimate.miles} miles</p><p className="mt-2 text-2xl font-bold">{money(estimate.total)}</p><p className="text-[10px] text-[#68746f]">Fuel {money(estimate.fuel)} · Maintenance {money(estimate.maintenance)} · Ownership {money(estimate.ownership)} · Other {money(estimate.other)}</p></div>)}</div></div> : null}
       <div className="grid items-start gap-5 xl:grid-cols-[.7fr_1.3fr]">
         <aside className="panel p-5 sm:p-6">
           <div className="grid grid-cols-2 rounded-xl bg-[#e8e1d5] p-1">
