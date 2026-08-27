@@ -9,6 +9,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { VehicleAssetManager } from "./vehicle-asset-manager";
 type Category = "work" | "camp" | "safety" | "food" | "tools" | "vehicle";
 type Item = {
   id: number;
@@ -137,6 +138,7 @@ export function EquipmentChecklist() {
           )}
         </div>
       </div>
+      <VehicleAssetManager />
       <div className="grid items-start gap-5 xl:grid-cols-[.65fr_1.35fr]">
         <aside className="panel p-5 sm:p-6">
           <div className="flex items-center justify-between">
