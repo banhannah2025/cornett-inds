@@ -91,6 +91,8 @@ export function TravelStayPlanner() {
           ),
     [active],
   );
+  const lodgingEstimate = Number((active?.cost || "").replace(/[^0-9.-]/g, "")) || 0;
+  const combinedEstimate = lodgingEstimate + (active?.estimatedTravelTotal ?? 0);
   const add = () => {
     const id = Date.now(),
       p: Stay = {
@@ -337,15 +339,15 @@ export function TravelStayPlanner() {
               />
               <Summary
                 icon={CircleDollarSign}
-                value={active?.cost || "—"}
-                label="Estimated"
+                value={lodgingEstimate || active?.estimatedTravelTotal !== undefined ? `$${combinedEstimate.toFixed(2)}` : "—"}
+                label="Trip + stay"
               />
             </div>
             <p className="mt-4 flex gap-2 rounded-xl bg-white/10 p-3 text-xs">
               <MapPinned size={16} />
               {active?.destination || "Destination not set"}
             </p>
-            {active?.estimatedTravelTotal !== undefined ? <div className="mt-3 rounded-xl bg-[#e6c57d] p-3 text-[#203f37]"><p className="text-[9px] font-extrabold uppercase tracking-wider">Estimated travel cost</p><b className="mt-1 block text-2xl">${active.estimatedTravelTotal.toFixed(2)}</b><p className="mt-1 text-[10px]">{active.estimatedMiles} mi · Fuel ${active.estimatedFuelCost?.toFixed(2)} · Maintenance ${active.estimatedMaintenance?.toFixed(2)} · Ownership ${active.estimatedOwnership?.toFixed(2)}</p></div> : null}
+            {active?.estimatedTravelTotal !== undefined ? <div className="mt-3 rounded-xl bg-[#e6c57d] p-3 text-[#203f37]"><p className="text-[9px] font-extrabold uppercase tracking-wider">Estimated travel cost</p><b className="mt-1 block text-2xl">${active.estimatedTravelTotal.toFixed(2)}</b><p className="mt-1 text-[10px]">{active.estimatedMiles} mi · Fuel ${active.estimatedFuelCost?.toFixed(2)} · Maintenance ${active.estimatedMaintenance?.toFixed(2)} · Ownership ${active.estimatedOwnership?.toFixed(2)}</p>{lodgingEstimate > 0 ? <p className="mt-2 border-t border-[#203f37]/20 pt-2 text-xs font-bold">Travel ${active.estimatedTravelTotal.toFixed(2)} + stay ${lodgingEstimate.toFixed(2)} = ${combinedEstimate.toFixed(2)}</p> : null}</div> : null}
           </div>
           <div className="panel p-5">
             <p className="eyebrow">Before arrival</p>
