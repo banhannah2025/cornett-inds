@@ -4,13 +4,10 @@ import { AdminSessionControls } from "./admin-session-controls";
 import { getAdminContext } from "@/lib/admin";
 import { FieldNotesMenu } from "./field-notes-menu";
 import { NavbarAuth } from "./navbar-auth";
+import { AppsMenu } from "./apps-menu";
 
 export async function NewsHeader() {
   const admin = await getAdminContext();
-  const plannerUrl =
-    process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
-    "https://blended-planner.specopsrecon82.chatgpt.site";
-
   return (
     <header className="border-b border-[#1e2a24]/10 bg-[#f6f3eb]/95 backdrop-blur">
       <div className="mx-auto flex min-h-20 max-w-7xl flex-wrap items-center justify-between gap-x-5 gap-y-4 px-6 py-4 sm:flex-nowrap sm:px-8 sm:py-0 lg:px-10">
@@ -26,13 +23,8 @@ export async function NewsHeader() {
           aria-label="News navigation"
           className="order-3 flex w-full items-center gap-6 border-t border-[#1e2a24]/10 pt-4 sm:order-none sm:w-auto sm:border-0 sm:pt-0 sm:gap-8"
         >
+          <AppsMenu dark />
           <FieldNotesMenu dark />
-          <Link
-            className="text-sm font-bold uppercase tracking-[0.14em] text-[#a45d2d] transition hover:text-[#1e2a24]"
-            href={plannerUrl}
-          >
-            Planner
-          </Link>
           <NewsMenu dark />
           <Link
             className="hidden text-sm font-bold uppercase tracking-[0.14em] text-[#1e2a24] transition hover:text-[#a45d2d] sm:block"

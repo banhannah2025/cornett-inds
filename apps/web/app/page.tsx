@@ -19,6 +19,7 @@ import { getAdminContext } from "@/lib/admin";
 import { getSiteSettings } from "@/sanity/lib/data";
 import { FieldNotesMenu } from "@/components/field-notes-menu";
 import { NavbarAuth } from "@/components/navbar-auth";
+import { AppsMenu } from "@/components/apps-menu";
 
 const fieldNotes = [
   {
@@ -69,13 +70,8 @@ export default async function Page() {
             aria-label="Primary navigation"
             className="order-3 flex w-full items-center gap-7 border-t border-white/15 pt-4 text-sm font-semibold text-white/85 sm:order-none sm:w-auto sm:border-0 sm:pt-0"
           >
+            <AppsMenu />
             <FieldNotesMenu />
-            <Link
-              className="transition hover:text-white"
-              href={plannerUrl}
-            >
-              Planner
-            </Link>
             <Link
               className="hidden transition hover:text-white md:block"
               href="/services"
