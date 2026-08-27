@@ -6,7 +6,7 @@ export function AppsMenu({ dark = false }: { dark?: boolean }) {
     process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
     "https://blended-planner.specopsrecon82.chatgpt.site";
   const businessComposerUrl = process.env.NEXT_PUBLIC_BUSINESS_COMPOSER_URL;
-  const basecampUrl = process.env.NEXT_PUBLIC_BLENDED_BASECAMP_URL ?? "https://blended-basecamp.vercel.app";
+  const basecampUrl = "/apps/blended-basecamp";
 
   return (
     <details className="group relative">
