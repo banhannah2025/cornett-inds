@@ -11,11 +11,13 @@ import {
   TentTree,
   Trash2,
 } from "lucide-react";
-import { LocationAutocomplete } from "./location-autocomplete";
+import { LocationAutocomplete, type Place } from "./location-autocomplete";
 type StayType = "campsite" | "hotel" | "rental" | "boondocking";
 type Stay = {
   id: number;
   destination: string;
+  destinationLatitude?: number;
+  destinationLongitude?: number;
   property: string;
   type: StayType;
   arrival: string;
@@ -100,6 +102,7 @@ export function TravelStayPlanner() {
     setPlans((v) =>
       v.map((p) => (p.id === active.id ? { ...p, [key]: value } : p)),
     );
+  const selectDestination = (place: Place) => active && setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, destination: place.label, destinationLatitude: place.latitude, destinationLongitude: place.longitude } : plan));
   return (
     <section id="travel-planner" className="mb-10">
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -184,13 +187,15 @@ export function TravelStayPlanner() {
                   <LocationAutocomplete
                     label="Destination"
                     value={active.destination}
-                    onChange={(value) => update("destination", value)}
+                    onChange={(value) => { update("destination", value); update("destinationLatitude", undefined); update("destinationLongitude", undefined); }}
+                    onSelect={selectDestination}
                     placeholder="City, park, or region"
                   />
                 </Field>
                 <Field label="Property or campground">
                   <LocationAutocomplete
                     label="Property or campground"
+                    near={{ label: active.destination, latitude: active.destinationLatitude, longitude: active.destinationLongitude }}
                     value={active.property}
                     onChange={(value) => update("property", value)}
                     placeholder="Campground, hotel, or address"
