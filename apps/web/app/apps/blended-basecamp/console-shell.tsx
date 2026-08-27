@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   BatteryCharging,
   BookOpen,
@@ -12,6 +13,7 @@ import {
   ShieldCheck,
   Signal,
   TentTree,
+  SlidersHorizontal,
 } from "lucide-react";
 import { CalendarPlanner } from "./calendar-planner";
 import { ConnectivityLog } from "./connectivity-log";
@@ -61,7 +63,7 @@ const commands = [
   },
 ] as const;
 type Id = (typeof commands)[number]["id"];
-export function ConsoleShell() {
+export function ConsoleShell({ showAdminLink = false }: { showAdminLink?: boolean }) {
   const [active, setActive] = useState<Id>("home");
   useEffect(() => {
     const s = localStorage.getItem(
@@ -94,7 +96,19 @@ export function ConsoleShell() {
             </small>
           </span>
         </button>
-        <WorkspaceSwitcher />
+        <div className="flex items-center gap-2">
+          {showAdminLink ? (
+            <Link
+              aria-label="Open Blended Works admin console"
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#668274]/35 bg-white/5 px-3 text-xs font-bold text-[#d8e4de] transition hover:border-[#e7b65f]/60 hover:bg-[#e7b65f]/10 hover:text-[#f2cf88]"
+              href="/admin"
+            >
+              <SlidersHorizontal size={16} />
+              <span className="hidden sm:inline">Admin</span>
+            </Link>
+          ) : null}
+          <WorkspaceSwitcher />
+        </div>
       </header>
       <div className="flex min-h-0 flex-1">
         <nav className="hidden w-[76px] shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-[#668274]/25 bg-[#101d19] py-3 md:flex">

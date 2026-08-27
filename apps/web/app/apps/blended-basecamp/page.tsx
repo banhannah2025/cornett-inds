@@ -1,4 +1,7 @@
 import { ConsoleShell } from "./console-shell";
-export default function BasecampPage() {
-  return <ConsoleShell />;
+import { getAdminContext } from "@/lib/admin";
+
+export default async function BasecampPage() {
+  const admin = await getAdminContext();
+  return <ConsoleShell showAdminLink={admin.isAdmin} />;
 }

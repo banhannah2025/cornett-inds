@@ -4,7 +4,6 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { BackToTop } from "@/components/back-to-top";
-import { AdminDock } from "@/components/admin-dock";
 
 export const metadata: Metadata = {
   title: "Blended Works | Life, work, and possibility—blended",
@@ -22,7 +21,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={GeistSans.className}>
         {children}
-        <AdminDock />
         <BackToTop />
       </body>
     </html>
