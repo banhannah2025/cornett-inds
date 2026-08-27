@@ -171,10 +171,9 @@ export function TravelStayPlanner() {
     if (!response.ok || !place) throw new Error(`Could not locate ${label}`);
     return { latitude: place.latitude, longitude: place.longitude };
   };
-  const estimateTrip = async () => {
-    if (!active?.origin?.trim() || !active.destination.trim()) { setEstimateMessage("Enter both a starting location and destination."); return; }
-    setEstimating(true);
-    setEstimateMessage("Locating the route…");
+  const estimateTrip = async (silent = false) => {
+    if (!active?.origin?.trim() || !active.destination.trim()) { if (!silent) setEstimateMessage("Enter both a starting location and destination."); return; }
+    if (!silent) { setEstimating(true); setEstimateMessage("Locating the route…"); }
     try {
     const [origin, destination] = await Promise.all([resolveLocation(active.origin, active.originLatitude, active.originLongitude), resolveLocation(active.destination, active.destinationLatitude, active.destinationLongitude)]);
     const radians = (degrees: number) => degrees * Math.PI / 180, dLat = radians(destination.latitude - origin.latitude), dLon = radians(destination.longitude - origin.longitude);
@@ -186,15 +185,18 @@ export function TravelStayPlanner() {
     const maintenance = roadMode ? miles * ((vehicle?.maintenanceBudget ?? 1200) / 12000) : 0;
     const ownership = roadMode ? miles * (((vehicle?.insuranceBudget ?? 0) + (vehicle?.registrationBudget ?? 0)) / 12000) : 0;
     const total = fuel + maintenance + ownership + (active.otherTravelCost || 0);
-    const estimate = { estimatedMiles: Math.round(miles), estimatedFuelCost: fuel, estimatedMaintenance: maintenance, estimatedOwnership: ownership, estimatedTravelTotal: total };
+    const estimate = { estimatedMiles: Math.round(miles * 100) / 100, estimatedFuelCost: fuel, estimatedMaintenance: maintenance, estimatedOwnership: ownership, estimatedTravelTotal: total };
     setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, ...estimate, originLatitude: origin.latitude, originLongitude: origin.longitude, destinationLatitude: destination.latitude, destinationLongitude: destination.longitude } : plan));
     const finance = JSON.parse(localStorage.getItem("blended-basecamp-finance") ?? "{}");
     const record = { id: active.id, name: `${active.origin} to ${active.destination}`, date: active.arrival, mode: active.travelMode, vehicleId: active.vehicleId, miles: estimate.estimatedMiles, fuel, maintenance, ownership, other: active.otherTravelCost || 0, total };
     localStorage.setItem("blended-basecamp-finance", JSON.stringify({ ...finance, travelEstimates: [...(finance.travelEstimates ?? []).filter((item: { id: number }) => item.id !== active.id), record] }));
-    setEstimateMessage("Trip estimate updated and sent to Money.");
-    } catch { setEstimateMessage("We could not match one of those locations. Select a suggestion or add a more specific city, state, or address."); }
-    finally { setEstimating(false); }
+    if (!silent) setEstimateMessage("Trip estimate updated and sent to Money.");
+    } catch { if (!silent) setEstimateMessage("We could not match one of those locations. Select a suggestion or add a more specific city, state, or address."); }
+    finally { if (!silent) setEstimating(false); }
   };
+  useEffect(() => {
+    if (active?.originLatitude !== undefined && active.originLongitude !== undefined && active.destinationLatitude !== undefined && active.destinationLongitude !== undefined) void estimateTrip(true);
+  }, [active?.originLatitude, active?.originLongitude, active?.destinationLatitude, active?.destinationLongitude, active?.travelMode, active?.vehicleId, active?.fuelPrice, active?.customMpg, active?.otherTravelCost]);
   return (
     <section id="travel-planner" className="mb-10">
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -377,7 +379,7 @@ export function TravelStayPlanner() {
                 />
               </Field>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-sm font-bold text-white disabled:opacity-45" disabled={estimating || !active.origin?.trim() || !active.destination.trim()} onClick={estimateTrip} type="button"><Route size={18}/> {estimating ? "Calculating…" : "Estimate trip costs"}</button>
+                <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-sm font-bold text-white disabled:opacity-45" disabled={estimating || !active.origin?.trim() || !active.destination.trim()} onClick={() => void estimateTrip()} type="button"><Route size={18}/> {estimating ? "Calculating…" : "Estimate trip costs"}</button>
                 <button
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#b66e38] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
                   disabled={!active.destination || !active.arrival}
