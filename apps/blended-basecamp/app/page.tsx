@@ -25,6 +25,7 @@ import { TravelStayPlanner } from "../components/travel-stay-planner";
 import { WeatherHazardCenter } from "../components/weather-hazard-center";
 import { SolarBatteryPlanner } from "../components/solar-battery-planner";
 import { EquipmentChecklist } from "../components/equipment-checklist";
+import { ExpenseMileageTracker } from "../components/expense-mileage-tracker";
 type Task = {
   id: number;
   text: string;
@@ -128,6 +129,7 @@ export default function BasecampPage() {
             <a href="#weather-hazards">Weather</a>
             <a href="#power-planner">Power</a>
             <a href="#equipment-checklist">Gear</a>
+            <a href="#expense-mileage">Expenses</a>
             <a href="#travel-planner">Travel</a>
             <a href="#systems">Systems</a>
             <a href="#journal">Journal</a>
@@ -150,6 +152,7 @@ export default function BasecampPage() {
               ["Weather", "#weather-hazards"],
               ["Power", "#power-planner"],
               ["Gear", "#equipment-checklist"],
+              ["Expenses", "#expense-mileage"],
               ["Travel", "#travel-planner"],
               ["Systems", "#systems"],
               ["Journal", "#journal"],
@@ -302,6 +305,7 @@ export default function BasecampPage() {
         <WeatherHazardCenter />
         <SolarBatteryPlanner />
         <EquipmentChecklist />
+        <ExpenseMileageTracker />
         <TravelStayPlanner />
         <section id="systems" className="mb-10">
           <p className="eyebrow">Essential systems</p>
