@@ -23,6 +23,7 @@ import { AdminImageEditor } from "@/components/admin-image-editor";
 import { AdminPostEditor } from "@/components/admin-post-editor";
 import { AdminSessionControls } from "@/components/admin-session-controls";
 import { AdminSiteEditor } from "@/components/admin-site-editor";
+import { AdminPlatformConsole } from "@/components/admin-platform-console";
 import { getAdminContext } from "@/lib/admin";
 import { getImageAssets } from "@/sanity/lib/assets";
 import { getSiteSettings } from "@/sanity/lib/data";
@@ -100,6 +101,9 @@ export default async function AdminPage() {
   const devotionals = data.content.filter(
     (item) => item._type === "devotional",
   );
+  const plannerUrl =
+    process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
+    "https://blended-planner.specopsrecon82.chatgpt.site";
 
   return (
     <main className="min-h-screen bg-[#f6f3eb] px-5 py-8 text-[#1e2a24] sm:px-8 lg:px-10">
@@ -122,6 +126,11 @@ export default async function AdminPage() {
           <AdminSessionControls name={admin.displayName ?? "Administrator"} />
         </header>
 
+        <AdminPlatformConsole
+          businessComposerUrl={process.env.NEXT_PUBLIC_BUSINESS_COMPOSER_URL}
+          plannerUrl={plannerUrl}
+        />
+
         <section className="grid gap-4 py-8 sm:grid-cols-2 lg:grid-cols-4">
           <Summary icon={FileText} label="News posts" value={news.length} />
           <Summary icon={MapPinned} label="Field notes" value={notes.length} />
@@ -133,7 +142,7 @@ export default async function AdminPage() {
           <Summary icon={Users} label="Authors" value={data.authors.length} />
         </section>
 
-        <section className="rounded-[2rem] bg-[#1e2a24] p-6 text-white sm:p-8">
+        <section className="rounded-[2rem] bg-[#1e2a24] p-6 text-white sm:p-8" id="website-settings">
           <div className="flex flex-wrap items-center justify-between gap-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f4b860]">
@@ -156,14 +165,16 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        <ContentSection
-          assets={assets}
-          authors={authorOptions}
-          categories={data.newsCategories}
-          items={news}
-          kind="news"
-          title="News posts"
-        />
+        <div id="content-library">
+          <ContentSection
+            assets={assets}
+            authors={authorOptions}
+            categories={data.newsCategories}
+            items={news}
+            kind="news"
+            title="News posts"
+          />
+        </div>
         <ContentSection
           assets={assets}
           authors={authorOptions}
