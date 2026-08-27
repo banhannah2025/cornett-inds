@@ -180,15 +180,15 @@ export function TravelStayPlanner() {
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(origin.latitude)) * Math.cos(radians(destination.latitude)) * Math.sin(dLon / 2) ** 2;
     const miles = 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.18;
     const vehicle = vehicles.find((item) => item.id === active.vehicleId), mpg = vehicle?.combinedMpg || active.customMpg || 25;
-    const roadMode = active.travelMode === "driving" || active.travelMode === "rv" || active.travelMode === "motorcycle";
-    const fuel = roadMode ? miles / mpg * (active.fuelPrice || 0) : 0;
+    const roadMode = ["driving", "rv", "motorcycle"].includes(active.travelMode || "driving");
+    const fuel = roadMode ? miles / mpg * (active.fuelPrice ?? 4) : 0;
     const maintenance = roadMode ? miles * ((vehicle?.maintenanceBudget ?? 1200) / 12000) : 0;
     const ownership = roadMode ? miles * (((vehicle?.insuranceBudget ?? 0) + (vehicle?.registrationBudget ?? 0)) / 12000) : 0;
     const total = fuel + maintenance + ownership + (active.otherTravelCost || 0);
     const estimate = { estimatedMiles: Math.round(miles * 100) / 100, estimatedFuelCost: fuel, estimatedMaintenance: maintenance, estimatedOwnership: ownership, estimatedTravelTotal: total };
     setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, ...estimate, originLatitude: origin.latitude, originLongitude: origin.longitude, destinationLatitude: destination.latitude, destinationLongitude: destination.longitude } : plan));
     const finance = JSON.parse(localStorage.getItem("blended-basecamp-finance") ?? "{}");
-    const record = { id: active.id, name: `${active.origin} to ${active.destination}`, date: active.arrival, mode: active.travelMode, vehicleId: active.vehicleId, miles: estimate.estimatedMiles, fuel, maintenance, ownership, other: active.otherTravelCost || 0, total };
+    const record = { id: active.id, name: `${active.origin} to ${active.destination}`, date: active.arrival, mode: active.travelMode || "driving", vehicleId: active.vehicleId, miles: estimate.estimatedMiles, fuel, maintenance, ownership, other: active.otherTravelCost || 0, total };
     localStorage.setItem("blended-basecamp-finance", JSON.stringify({ ...finance, travelEstimates: [...(finance.travelEstimates ?? []).filter((item: { id: number }) => item.id !== active.id), record] }));
     if (!silent) setEstimateMessage("Trip estimate updated and sent to Money.");
     } catch { if (!silent) setEstimateMessage("We could not match one of those locations. Select a suggestion or add a more specific city, state, or address."); }
