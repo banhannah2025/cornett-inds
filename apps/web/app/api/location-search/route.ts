@@ -33,14 +33,29 @@ function milesBetween(aLat: number, aLon: number, bLat: number, bLon: number) {
 }
 
 export async function GET(request: Request) {
-  const query = new URL(request.url).searchParams.get("q")?.trim();
-  if (!query || query.length < 3) return NextResponse.json({ results: [] });
-
   const params = new URL(request.url).searchParams;
+  const query = params.get("q")?.trim();
   const near = params.get("near")?.trim();
   const hasCoordinates = params.has("lat") && params.has("lon");
   const suppliedLatitude = Number(params.get("lat"));
   const suppliedLongitude = Number(params.get("lon"));
+
+  if (!query && hasCoordinates && Number.isFinite(suppliedLatitude) && Number.isFinite(suppliedLongitude)) {
+    const reverseUrl = new URL("https://nominatim.openstreetmap.org/reverse");
+    reverseUrl.searchParams.set("format", "jsonv2");
+    reverseUrl.searchParams.set("lat", String(suppliedLatitude));
+    reverseUrl.searchParams.set("lon", String(suppliedLongitude));
+    reverseUrl.searchParams.set("zoom", "16");
+    try {
+      const response = await fetch(reverseUrl, { headers, next: { revalidate: 86400 } });
+      if (!response.ok) throw new Error("Location provider unavailable");
+      const place = (await response.json()) as NominatimPlace;
+      return NextResponse.json({ result: { id: place.place_id, label: place.display_name, latitude: Number(place.lat), longitude: Number(place.lon), type: place.type } });
+    } catch {
+      return NextResponse.json({ result: null }, { status: 503 });
+    }
+  }
+  if (!query || query.length < 3) return NextResponse.json({ results: [] });
 
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", query);
