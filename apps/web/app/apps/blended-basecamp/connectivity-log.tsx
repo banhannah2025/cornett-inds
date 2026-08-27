@@ -1,0 +1,371 @@
+"use client";
+import { cloneElement, useEffect, useMemo, useState } from "react";
+import {
+  Activity,
+  MapPinned,
+  Plus,
+  Radio,
+  Router,
+  Satellite,
+  Signal,
+  Trash2,
+  Wifi,
+} from "lucide-react";
+type Kind = "starlink" | "cellular" | "wifi";
+type Log = {
+  id: number;
+  kind: Kind;
+  provider: string;
+  network: string;
+  location: string;
+  download: string;
+  upload: string;
+  ping: string;
+  signal: string;
+  obstructions: string;
+  reliability: number;
+  notes: string;
+  created: string;
+};
+const kinds = {
+  starlink: { label: "Starlink", icon: Satellite, color: "#527568" },
+  cellular: { label: "Cellular", icon: Radio, color: "#b66e38" },
+  wifi: { label: "Wi-Fi", icon: Wifi, color: "#806b9a" },
+} as const;
+const empty = {
+  kind: "starlink" as Kind,
+  provider: "Starlink",
+  network: "",
+  location: "",
+  download: "",
+  upload: "",
+  ping: "",
+  signal: "",
+  obstructions: "",
+  reliability: 4,
+  notes: "",
+};
+export function ConnectivityLog() {
+  const [logs, setLogs] = useState<Log[]>([]),
+    [form, setForm] = useState(empty),
+    [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("blended-basecamp-connectivity");
+      if (raw) setLogs(JSON.parse(raw));
+    } catch {
+      localStorage.removeItem("blended-basecamp-connectivity");
+    }
+    setLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (loaded)
+      localStorage.setItem(
+        "blended-basecamp-connectivity",
+        JSON.stringify(logs),
+      );
+  }, [logs, loaded]);
+  const averages = useMemo(() => {
+    const nums = (k: "download" | "upload" | "ping") =>
+      logs.map((l) => Number(l[k])).filter(Number.isFinite);
+    const avg = (v: number[]) =>
+      v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0;
+    return {
+      down: avg(nums("download")),
+      up: avg(nums("upload")),
+      ping: avg(nums("ping")),
+    };
+  }, [logs]);
+  const set = <K extends keyof typeof empty>(
+    key: K,
+    value: (typeof empty)[K],
+  ) => setForm((v) => ({ ...v, [key]: value }));
+  const save = () => {
+    if (!form.location.trim()) return;
+    setLogs((v) => [
+      { ...form, id: Date.now(), created: new Date().toLocaleString() },
+      ...v,
+    ]);
+    setForm((v) => ({ ...empty, kind: v.kind, provider: v.provider }));
+  };
+  return (
+    <section id="connectivity-log" className="mb-10">
+      <div className="mb-5">
+        <p className="eyebrow">Starlink & cellular</p>
+        <h2 className="basecamp-serif text-3xl font-bold sm:text-4xl">
+          Build a connectivity map you can trust.
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#68746f]">
+          Record real-world connection quality at every campsite, lodging stop,
+          and remote workspace.
+        </p>
+      </div>
+      <div className="grid items-start gap-5 xl:grid-cols-[.82fr_1.18fr]">
+        <div className="panel p-5 sm:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="eyebrow">New connection test</p>
+              <h3 className="basecamp-serif text-2xl font-bold">
+                Log this signal.
+              </h3>
+            </div>
+            <Signal className="text-[#527568]" />
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {Object.entries(kinds).map(([key, v]) => {
+              const Icon = v.icon;
+              return (
+                <button
+                  key={key}
+                  onClick={() => set("kind", key as Kind)}
+                  className={`rounded-xl border p-3 text-center text-xs font-bold ${form.kind === key ? "border-[#527568] bg-[#e8efe8]" : "border-black/10 bg-white"}`}
+                >
+                  <Icon className="mx-auto mb-1" size={18} />
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Field label="Provider">
+              <input
+                value={form.provider}
+                onChange={(e) => set("provider", e.target.value)}
+                placeholder="Starlink, Verizon, T-Mobile..."
+              />
+            </Field>
+            <Field label="Network / plan">
+              <input
+                value={form.network}
+                onChange={(e) => set("network", e.target.value)}
+                placeholder="5G, LTE, Roam..."
+              />
+            </Field>
+            <Field label="Location">
+              <input
+                value={form.location}
+                onChange={(e) => set("location", e.target.value)}
+                placeholder="Campground, city, coordinates..."
+              />
+            </Field>
+            <Field label="Signal strength">
+              <input
+                value={form.signal}
+                onChange={(e) => set("signal", e.target.value)}
+                placeholder="Bars, dBm, or quality"
+              />
+            </Field>
+            <Field label="Download Mbps">
+              <input
+                inputMode="decimal"
+                value={form.download}
+                onChange={(e) => set("download", e.target.value)}
+                placeholder="0"
+              />
+            </Field>
+            <Field label="Upload Mbps">
+              <input
+                inputMode="decimal"
+                value={form.upload}
+                onChange={(e) => set("upload", e.target.value)}
+                placeholder="0"
+              />
+            </Field>
+            <Field label="Ping ms">
+              <input
+                inputMode="numeric"
+                value={form.ping}
+                onChange={(e) => set("ping", e.target.value)}
+                placeholder="0"
+              />
+            </Field>
+            <Field label="Obstructions / interruptions">
+              <input
+                value={form.obstructions}
+                onChange={(e) => set("obstructions", e.target.value)}
+                placeholder="Trees, drops, congestion..."
+              />
+            </Field>
+          </div>
+          <label className="mt-4 block text-[10px] font-extrabold uppercase tracking-wider text-[#766c5e]">
+            Remote-work reliability: {form.reliability}/5
+            <input
+              aria-label="Remote work reliability"
+              type="range"
+              min="1"
+              max="5"
+              value={form.reliability}
+              onChange={(e) => set("reliability", Number(e.target.value))}
+              className="mt-2 block w-full accent-[#527568]"
+            />
+          </label>
+          <Field label="Work and call notes">
+            <textarea
+              value={form.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              placeholder="Video-call quality, outages, best dish placement, usable hours..."
+            />
+          </Field>
+          <button
+            onClick={save}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-sm font-bold text-white"
+          >
+            <Plus size={18} />
+            Save connection test
+          </button>
+        </div>
+        <div className="space-y-5">
+          <div className="grid grid-cols-3 gap-3">
+            <Metric
+              icon={Router}
+              value={averages.down ? String(averages.down) : "—"}
+              unit="Mbps"
+              label="Avg. down"
+            />
+            <Metric
+              icon={Activity}
+              value={averages.up ? String(averages.up) : "—"}
+              unit="Mbps"
+              label="Avg. up"
+            />
+            <Metric
+              icon={Radio}
+              value={averages.ping ? String(averages.ping) : "—"}
+              unit="ms"
+              label="Avg. ping"
+            />
+          </div>
+          <div className="panel overflow-hidden">
+            <div className="flex items-center justify-between border-b border-black/10 p-5">
+              <div>
+                <p className="eyebrow">Connection history</p>
+                <h3 className="basecamp-serif text-2xl font-bold">
+                  Tested locations
+                </h3>
+              </div>
+              <span className="rounded-full bg-[#eee9df] px-3 py-1 text-xs font-bold">
+                {logs.length} logs
+              </span>
+            </div>
+            {logs.length === 0 ? (
+              <div className="grid min-h-56 place-items-center p-6 text-center">
+                <div>
+                  <MapPinned className="mx-auto text-[#b66e38]" size={32} />
+                  <p className="mt-3 text-sm text-[#68746f]">
+                    No tests saved yet. Log the connection where you are now.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div>
+                {logs.map((log) => {
+                  const meta = kinds[log.kind],
+                    Icon = meta.icon;
+                  return (
+                    <article
+                      key={log.id}
+                      className="border-b border-black/10 p-5 last:border-0"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span
+                          className="grid size-10 shrink-0 place-items-center rounded-xl text-white"
+                          style={{ background: meta.color }}
+                        >
+                          <Icon size={19} />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <b>{log.location}</b>
+                            <span className="rounded-full bg-[#eee9df] px-2 py-0.5 text-[9px] font-bold uppercase">
+                              {meta.label}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-[#68746f]">
+                            {log.provider}
+                            {log.network && ` · ${log.network}`} · {log.created}
+                          </p>
+                          <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+                            <Reading value={log.download || "—"} label="Down" />
+                            <Reading value={log.upload || "—"} label="Up" />
+                            <Reading value={log.ping || "—"} label="Ping" />
+                            <Reading
+                              value={`${log.reliability}/5`}
+                              label="Work"
+                            />
+                          </div>
+                          {(log.obstructions || log.notes) && (
+                            <p className="mt-3 text-xs leading-5 text-[#65716c]">
+                              {[log.obstructions, log.notes]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          aria-label="Delete log"
+                          onClick={() =>
+                            setLogs((v) => v.filter((x) => x.id !== log.id))
+                          }
+                          className="text-[#9a5845]"
+                        >
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+const control =
+  "mt-2 w-full rounded-xl border border-black/10 bg-[#fffdf8] px-3 py-3 text-sm font-medium text-[#1d352f] outline-[#527568]";
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  const child = children as React.ReactElement<{ className?: string }>;
+  return (
+    <label className="mt-3 block text-[10px] font-extrabold uppercase tracking-wider text-[#766c5e]">
+      {label}
+      {cloneElement(child, { className: control })}
+    </label>
+  );
+}
+function Metric({
+  icon: Icon,
+  value,
+  unit,
+  label,
+}: {
+  icon: typeof Router;
+  value: string;
+  unit: string;
+  label: string;
+}) {
+  return (
+    <div className="panel p-3 text-center sm:p-4">
+      <Icon className="mx-auto text-[#527568]" size={18} />
+      <b className="mt-2 block text-xl">{value}</b>
+      <span className="block text-[9px] font-bold text-[#77817d]">{unit}</span>
+      <small className="mt-1 block text-[9px] uppercase tracking-wider">
+        {label}
+      </small>
+    </div>
+  );
+}
+function Reading({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-lg bg-[#eee9df] p-2">
+      <b className="block text-xs">{value}</b>
+      <small className="text-[8px] uppercase tracking-wider">{label}</small>
+    </div>
+  );
+}
