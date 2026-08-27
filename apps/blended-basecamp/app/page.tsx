@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { CalendarPlanner } from "../components/calendar-planner";
+import { TravelStayPlanner } from "../components/travel-stay-planner";
 type Task = {
   id: number;
   text: string;
@@ -119,6 +120,7 @@ export default function BasecampPage() {
           <nav className="hidden items-center gap-7 text-xs font-bold uppercase tracking-[.16em] md:flex">
             <a href="#today">Today</a>
             <a href="#planner">Planner</a>
+            <a href="#travel-planner">Travel</a>
             <a href="#systems">Systems</a>
             <a href="#journal">Journal</a>
             <a href="#road">Road ahead</a>
@@ -136,6 +138,7 @@ export default function BasecampPage() {
             {[
               ["Today", "#today"],
               ["Planner", "#planner"],
+              ["Travel", "#travel-planner"],
               ["Systems", "#systems"],
               ["Journal", "#journal"],
               ["Road ahead", "#road"],
@@ -283,6 +286,7 @@ export default function BasecampPage() {
           </div>
         </section>
         <CalendarPlanner />
+        <TravelStayPlanner />
         <section id="systems" className="mb-10">
           <p className="eyebrow">Essential systems</p>
           <h2 className="basecamp-serif mb-5 text-3xl font-bold sm:text-4xl">
