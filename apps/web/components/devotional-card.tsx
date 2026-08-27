@@ -22,13 +22,13 @@ export function DevotionalCard({
       className={`group overflow-hidden rounded-[2rem] border border-[#1e2a24]/10 bg-white ${featured ? "lg:grid lg:grid-cols-[1.08fr_0.92fr]" : ""}`}
     >
       <div
-        className={`relative overflow-hidden bg-[#dfe5dc] ${featured ? "min-h-72 lg:min-h-[31rem]" : "aspect-[4/3]"}`}
+        className={`relative overflow-hidden bg-[#dfe5dc] ${featured ? "aspect-[16/10] lg:aspect-auto lg:min-h-[31rem]" : "aspect-[4/3]"}`}
       >
         {devotional.mainImage?.assetUrl ? (
           <ExpandableImage
             alt={devotional.mainImage.alt ?? ""}
             className="absolute inset-0 size-full"
-            imageClassName="object-cover transition duration-700 group-hover:scale-[1.025]"
+            imageClassName="object-contain transition duration-700 group-hover:scale-[1.01]"
             sizes={
               featured
                 ? "(min-width: 1024px) 55vw, 100vw"
