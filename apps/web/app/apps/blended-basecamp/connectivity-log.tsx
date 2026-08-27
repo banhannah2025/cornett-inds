@@ -2,6 +2,7 @@
 import { cloneElement, useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  Gauge,
   LoaderCircle,
   LocateFixed,
   MapPinned,
@@ -57,7 +58,8 @@ export function ConnectivityLog() {
     [form, setForm] = useState(empty),
     [loaded, setLoaded] = useState(false),
     [locating, setLocating] = useState(false),
-    [locationMessage, setLocationMessage] = useState("");
+    [locationMessage, setLocationMessage] = useState(""),
+    [testing, setTesting] = useState(false);
   useEffect(() => {
     try {
       const raw = localStorage.getItem("blended-basecamp-connectivity");
@@ -131,6 +133,72 @@ export function ConnectivityLog() {
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
     );
+  };
+  const testConnection = async () => {
+    setTesting(true);
+    setLocationMessage("Testing connection and checking location…");
+    try {
+      const currentLocation = new Promise<{ label: string; latitude: number; longitude: number } | null>((resolve) => {
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+          const latitude = coords.latitude, longitude = coords.longitude;
+          let label = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+          try {
+            const response = await fetch(`/api/location-search?lat=${latitude}&lon=${longitude}`);
+            const data = (await response.json()) as { result?: Place };
+            if (response.ok && data.result?.label) label = data.result.label;
+          } catch { /* Keep exact coordinates as the fallback. */ }
+          resolve({ label, latitude, longitude });
+        }, () => resolve(null), { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+      });
+
+      const pings: number[] = [];
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const started = performance.now();
+        await fetch(`/api/connectivity-test?mode=ping&t=${Date.now()}-${attempt}`, { cache: "no-store" });
+        pings.push(performance.now() - started);
+      }
+      const downloadStarted = performance.now();
+      const downloadResponse = await fetch(`/api/connectivity-test?mode=download&t=${Date.now()}`, { cache: "no-store" });
+      if (!downloadResponse.ok) throw new Error("Download test failed");
+      const downloadBytes = (await downloadResponse.arrayBuffer()).byteLength;
+      const downloadSeconds = Math.max((performance.now() - downloadStarted) / 1000, 0.001);
+
+      const uploadPayload = new ArrayBuffer(256 * 1024);
+      const uploadStarted = performance.now();
+      const uploadResponse = await fetch("/api/connectivity-test", { method: "POST", body: uploadPayload, cache: "no-store" });
+      if (!uploadResponse.ok) throw new Error("Upload test failed");
+      const uploadSeconds = Math.max((performance.now() - uploadStarted) / 1000, 0.001);
+
+      const download = (downloadBytes * 8) / downloadSeconds / 1_000_000;
+      const upload = (uploadPayload.byteLength * 8) / uploadSeconds / 1_000_000;
+      const ping = pings.reduce((total, value) => total + value, 0) / pings.length;
+      const connection = (navigator as Navigator & { connection?: { effectiveType?: string; downlink?: number; rtt?: number; type?: string } }).connection;
+      const location = await currentLocation;
+      const reliability = Math.min(5, 2 + Number(download >= 25) + Number(upload >= 5) + Number(ping <= 100));
+      const network = [connection?.type, connection?.effectiveType?.toUpperCase()].filter(Boolean).join(" · ") || "Internet connection";
+
+      setForm((value) => ({
+        ...value,
+        provider: value.provider.trim() || kinds[value.kind].label,
+        network,
+        location: location?.label || value.location || "Location permission not shared",
+        latitude: location?.latitude,
+        longitude: location?.longitude,
+        download: download.toFixed(1),
+        upload: upload.toFixed(1),
+        ping: Math.round(ping).toString(),
+        signal: connection?.downlink ? `${connection.downlink} Mbps device estimate` : `${network} detected`,
+        obstructions: "No interruptions detected during this test",
+        reliability,
+        notes: `Automatic connection test completed. ${download.toFixed(1)} Mbps down, ${upload.toFixed(1)} Mbps up, ${Math.round(ping)} ms ping.`,
+      }));
+      setLocationMessage(location ? "Connection tested and current location added." : "Connection tested. Location was not shared; you can select it manually.");
+    } catch {
+      setLocationMessage("The connection test could not finish. Check your connection and try again.");
+    } finally {
+      setTesting(false);
+    }
   };
   return (
     <section id="connectivity-log" className="mb-10">
@@ -252,6 +320,15 @@ export function ConnectivityLog() {
               placeholder="Video-call quality, outages, best dish placement, usable hours..."
             />
           </Field>
+          <button
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#244a40]/25 bg-[#e8efe8] px-4 py-3 text-sm font-bold text-[#244a40] disabled:opacity-60"
+            disabled={testing}
+            onClick={testConnection}
+            type="button"
+          >
+            {testing ? <LoaderCircle className="size-[18px] animate-spin" /> : <Gauge size={18} />}
+            {testing ? "Testing connection…" : "Test connection & fill fields"}
+          </button>
           <button
             onClick={save}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-sm font-bold text-white"
