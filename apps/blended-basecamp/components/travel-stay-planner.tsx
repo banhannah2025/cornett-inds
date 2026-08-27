@@ -11,6 +11,7 @@ import {
   TentTree,
   Trash2,
 } from "lucide-react";
+import { LocationAutocomplete } from "./location-autocomplete";
 type StayType = "campsite" | "hotel" | "rental" | "boondocking";
 type Stay = {
   id: number;
@@ -180,17 +181,19 @@ export function TravelStayPlanner() {
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Field label="Destination">
-                  <input
+                  <LocationAutocomplete
+                    label="Destination"
                     value={active.destination}
-                    onChange={(e) => update("destination", e.target.value)}
+                    onChange={(value) => update("destination", value)}
                     placeholder="City, park, or region"
                   />
                 </Field>
                 <Field label="Property or campground">
-                  <input
+                  <LocationAutocomplete
+                    label="Property or campground"
                     value={active.property}
-                    onChange={(e) => update("property", e.target.value)}
-                    placeholder="Name of the stay"
+                    onChange={(value) => update("property", value)}
+                    placeholder="Campground, hotel, or address"
                   />
                 </Field>
                 <Field label="Stay type">
