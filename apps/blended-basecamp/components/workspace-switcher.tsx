@@ -1,38 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
-import {
-  BriefcaseBusiness,
-  Caravan,
-  House,
-  Plus,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { Plus, Settings2, Trash2, X } from "lucide-react";
 type Kind = "personal" | "family" | "business" | "trip";
 type WS = { id: string; name: string; kind: Kind };
 const keys = [
-    "blended-basecamp",
-    "blended-basecamp-calendar",
-    "blended-basecamp-travel",
-    "blended-basecamp-connectivity",
-    "blended-basecamp-hazards",
-    "blended-basecamp-power",
-    "blended-basecamp-equipment",
-    "blended-basecamp-finance",
-    "blended-basecamp-location-journal",
-    "blended-basecamp-checkins",
-  ],
-  icons = {
-    personal: House,
-    family: Users,
-    business: BriefcaseBusiness,
-    trip: Caravan,
-  };
+  "blended-basecamp",
+  "blended-basecamp-calendar",
+  "blended-basecamp-travel",
+  "blended-basecamp-connectivity",
+  "blended-basecamp-hazards",
+  "blended-basecamp-power",
+  "blended-basecamp-equipment",
+  "blended-basecamp-finance",
+  "blended-basecamp-location-journal",
+  "blended-basecamp-checkins",
+];
 export function WorkspaceSwitcher() {
   const [list, setList] = useState<WS[]>([
       { id: "personal", name: "Personal Basecamp", kind: "personal" },
     ]),
     [active, setActive] = useState("personal"),
+    [manage, setManage] = useState(false),
     [name, setName] = useState(""),
     [kind, setKind] = useState<Kind>("business"),
     [loaded, setLoaded] = useState(false);
@@ -46,11 +34,9 @@ export function WorkspaceSwitcher() {
     setLoaded(true);
   }, []);
   useEffect(() => {
-    if (loaded) {
+    if (loaded)
       localStorage.setItem("blended-basecamp-workspaces", JSON.stringify(list));
-      localStorage.setItem("blended-basecamp-active-workspace", active);
-    }
-  }, [list, active, loaded]);
+  }, [list, loaded]);
   const save = (id: string) =>
       keys.forEach((k) => {
         const v = localStorage.getItem(k),
@@ -73,8 +59,10 @@ export function WorkspaceSwitcher() {
       if (!name.trim()) return;
       const w = { id: `ws-${Date.now()}`, name: name.trim(), kind };
       save(active);
-      const next = [...list, w];
-      localStorage.setItem("blended-basecamp-workspaces", JSON.stringify(next));
+      localStorage.setItem(
+        "blended-basecamp-workspaces",
+        JSON.stringify([...list, w]),
+      );
       keys.forEach((k) => localStorage.removeItem(k));
       localStorage.setItem("blended-basecamp-active-workspace", w.id);
       location.reload();
@@ -87,26 +75,44 @@ export function WorkspaceSwitcher() {
       setList((v) => v.filter((w) => w.id !== id));
     };
   return (
-    <section className="border-b border-[#d7d0c0] bg-[#e9e2d4] px-4 py-4 sm:px-7">
-      <div className="mx-auto max-w-[1500px]">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="eyebrow">Separate workspaces</p>
-            <h2 className="basecamp-serif text-2xl font-bold">
-              Choose the Basecamp you’re working in.
-            </h2>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="relative flex items-center gap-2">
+      <label className="text-[9px] font-bold uppercase tracking-wider text-[#789488]">
+        Workspace
+      </label>
+      <select
+        value={active}
+        onChange={(e) => change(e.target.value)}
+        className="max-w-44 rounded-lg border border-white/10 bg-[#20342e] px-3 py-2 text-xs font-bold text-white outline-none sm:max-w-56"
+      >
+        {list.map((w) => (
+          <option key={w.id} value={w.id}>
+            {w.name}
+          </option>
+        ))}
+      </select>
+      <button
+        aria-label="Manage workspaces"
+        onClick={() => setManage(!manage)}
+        className="grid size-9 place-items-center rounded-lg border border-white/10 text-[#acc0b7] hover:bg-white/5"
+      >
+        {manage ? <X size={16} /> : <Settings2 size={16} />}
+      </button>
+      {manage && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-[#6d8e7f]/30 bg-[#182a25] p-4 text-white shadow-2xl">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-[#7fa393]">
+            Manage workspaces
+          </p>
+          <div className="mt-3 grid grid-cols-[1fr_90px_auto] gap-2">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="New workspace name"
-              className="rounded-xl border border-black/10 bg-white px-3 py-3 text-sm"
+              placeholder="Workspace name"
+              className="min-w-0 rounded-lg border border-white/10 bg-white/5 px-3 text-xs"
             />
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as Kind)}
-              className="rounded-xl border border-black/10 bg-white px-3 py-3 text-sm"
+              className="min-w-0 rounded-lg border border-white/10 bg-[#20342e] px-2 text-xs"
             >
               <option value="personal">Personal</option>
               <option value="family">Family</option>
@@ -115,49 +121,34 @@ export function WorkspaceSwitcher() {
             </select>
             <button
               onClick={create}
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-xs font-bold text-white"
+              className="grid size-9 place-items-center rounded-lg bg-[#e7b65f] text-[#182a25]"
             >
               <Plus size={16} />
-              New workspace
             </button>
           </div>
-        </div>
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-          {list.map((w) => {
-            const I = icons[w.kind];
-            return (
+          <div className="mt-3 space-y-1">
+            {list.map((w) => (
               <div
                 key={w.id}
-                className={`flex shrink-0 items-center rounded-xl border p-1 ${w.id === active ? "border-[#527568] bg-[#e2eee7]" : "border-black/10 bg-[#fffdf8]"}`}
+                className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2"
               >
-                <button
-                  onClick={() => change(w.id)}
-                  className="flex items-center gap-2 px-3 py-2 text-left"
-                >
-                  <I size={17} />
-                  <span>
-                    <b className="block text-xs">{w.name}</b>
-                    <small className="capitalize">{w.kind}</small>
-                  </span>
-                </button>
+                <span>
+                  <b className="block text-xs">{w.name}</b>
+                  <small className="capitalize text-[#8fa79c]">{w.kind}</small>
+                </span>
                 {w.id !== active && (
                   <button
-                    aria-label="Delete workspace"
                     onClick={() => remove(w.id)}
-                    className="p-2 text-[#9a5845]"
+                    className="text-[#dc8c75]"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={15} />
                   </button>
                 )}
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-        <p className="mt-2 text-[10px] text-[#68746f]">
-          The active workspace keeps separate plans, logs, finances, journals,
-          equipment, and check-ins on this device.
-        </p>
-      </div>
-    </section>
+      )}
+    </div>
   );
 }
