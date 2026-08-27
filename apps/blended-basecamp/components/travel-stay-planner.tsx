@@ -16,6 +16,7 @@ import { LocationAutocomplete, type Place } from "./location-autocomplete";
 type StayType = "campsite" | "hotel" | "rental" | "boondocking";
 type Stay = {
   id: number;
+  origin?: string; originLatitude?: number; originLongitude?: number;
   destination: string;
   destinationLatitude?: number;
   destinationLongitude?: number;
@@ -29,7 +30,9 @@ type Stay = {
   cost: string;
   notes: string;
   reserved: boolean;
+  travelMode?: string; vehicleId?: string; fuelPrice?: number; customMpg?: number; otherTravelCost?: number; estimatedMiles?: number; estimatedFuelCost?: number; estimatedMaintenance?: number; estimatedOwnership?: number; estimatedTravelTotal?: number;
 };
+type VehicleAsset = { id: string; year: number; make: string; model: string; combinedMpg: number | null; maintenanceBudget?: number; insuranceBudget?: number; registrationBudget?: number };
 const labels: Record<StayType, string> = {
   campsite: "Campsite",
   hotel: "Hotel / motel",
@@ -47,6 +50,7 @@ export function TravelStayPlanner() {
     [activeId, setActiveId] = useState<number | null>(null),
     [done, setDone] = useState<Record<string, boolean>>({}),
     [calendarMessage, setCalendarMessage] = useState(""),
+    [vehicles, setVehicles] = useState<VehicleAsset[]>([]),
     [loaded, setLoaded] = useState(false);
   useEffect(() => {
     try {
@@ -61,6 +65,7 @@ export function TravelStayPlanner() {
       localStorage.removeItem("blended-basecamp-travel");
     }
     setLoaded(true);
+    try { setVehicles(JSON.parse(localStorage.getItem("blended-basecamp-vehicles") ?? "[]")); } catch { setVehicles([]); }
   }, []);
   useEffect(() => {
     if (loaded)
@@ -88,6 +93,7 @@ export function TravelStayPlanner() {
     const id = Date.now(),
       p: Stay = {
         id,
+        origin: "",
         destination: "",
         property: "",
         type: "campsite",
@@ -99,6 +105,7 @@ export function TravelStayPlanner() {
         cost: "",
         notes: "",
         reserved: false,
+        travelMode: "driving", fuelPrice: 4, customMpg: 25, otherTravelCost: 0,
       };
     setPlans((v) => [...v, p]);
     setActiveId(id);
@@ -106,7 +113,7 @@ export function TravelStayPlanner() {
   const update = <K extends keyof Stay>(key: K, value: Stay[K]) => {
     if (!active) return;
     setCalendarMessage("");
-    setPlans((v) => v.map((p) => (p.id === active.id ? { ...p, [key]: value } : p)));
+    setPlans((v) => v.map((p) => (p.id === active.id ? { ...p, [key]: value, estimatedTravelTotal: undefined } : p)));
   };
   const calendarIds = (stayId: number): [number, number] => [stayId * 10 + 1, stayId * 10 + 2];
   const removeCalendarStay = (stayId: number) => {
@@ -116,6 +123,7 @@ export function TravelStayPlanner() {
       localStorage.setItem("blended-basecamp-calendar", JSON.stringify(items.filter((item) => !ids.has(item.id))));
     } catch { localStorage.removeItem("blended-basecamp-calendar"); }
   };
+  const removeTravelEstimate = (stayId: number) => { try { const finance = JSON.parse(localStorage.getItem("blended-basecamp-finance") ?? "{}"); localStorage.setItem("blended-basecamp-finance", JSON.stringify({ ...finance, travelEstimates: (finance.travelEstimates ?? []).filter((item: { id: number }) => item.id !== stayId) })); } catch {} };
   const syncStayToCalendar = () => {
     if (!active?.destination || !active.arrival) return;
     try {
@@ -131,6 +139,8 @@ export function TravelStayPlanner() {
     } catch { setCalendarMessage("The stay could not be added to the calendar."); }
   };
   const selectDestination = (place: Place) => active && setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, destination: place.label, destinationLatitude: place.latitude, destinationLongitude: place.longitude } : plan));
+  const selectOrigin = (place: Place) => active && setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, origin: place.label, originLatitude: place.latitude, originLongitude: place.longitude } : plan));
+  const estimateTrip = () => { if (!active?.originLatitude || !active.originLongitude || !active.destinationLatitude || !active.destinationLongitude) return; const radians = (degrees: number) => degrees * Math.PI / 180, dLat = radians(active.destinationLatitude - active.originLatitude), dLon = radians(active.destinationLongitude - active.originLongitude), a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(active.originLatitude)) * Math.cos(radians(active.destinationLatitude)) * Math.sin(dLon / 2) ** 2, miles = 3958.8 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.18, vehicle = vehicles.find((item) => item.id === active.vehicleId), mpg = vehicle?.combinedMpg || active.customMpg || 25, roadMode = ["driving", "rv", "motorcycle"].includes(active.travelMode || "driving"), fuel = roadMode ? miles / mpg * (active.fuelPrice || 0) : 0, maintenance = roadMode ? miles * ((vehicle?.maintenanceBudget ?? 1200) / 12000) : 0, ownership = roadMode ? miles * (((vehicle?.insuranceBudget ?? 0) + (vehicle?.registrationBudget ?? 0)) / 12000) : 0, total = fuel + maintenance + ownership + (active.otherTravelCost || 0), estimate = { estimatedMiles: Math.round(miles), estimatedFuelCost: fuel, estimatedMaintenance: maintenance, estimatedOwnership: ownership, estimatedTravelTotal: total }; setPlans((plans) => plans.map((plan) => plan.id === active.id ? { ...plan, ...estimate } : plan)); const finance = JSON.parse(localStorage.getItem("blended-basecamp-finance") ?? "{}"), record = { id: active.id, name: `${active.origin} to ${active.destination}`, date: active.arrival, mode: active.travelMode, vehicleId: active.vehicleId, miles: estimate.estimatedMiles, fuel, maintenance, ownership, other: active.otherTravelCost || 0, total }; localStorage.setItem("blended-basecamp-finance", JSON.stringify({ ...finance, travelEstimates: [...(finance.travelEstimates ?? []).filter((item: { id: number }) => item.id !== active.id), record] })); };
   return (
     <section id="travel-planner" className="mb-10">
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -204,6 +214,7 @@ export function TravelStayPlanner() {
                   aria-label="Delete stay"
                   onClick={() => {
                     removeCalendarStay(active.id);
+                    removeTravelEstimate(active.id);
                     setPlans((v) => v.filter((p) => p.id !== active.id));
                     setActiveId(null);
                   }}
@@ -212,6 +223,7 @@ export function TravelStayPlanner() {
                 </button>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Field label="Starting location"><LocationAutocomplete label="Starting location" value={active.origin || ""} onChange={(value) => { update("origin", value); update("originLatitude", undefined); update("originLongitude", undefined); }} onSelect={selectOrigin} placeholder="Address, city, or current camp" /></Field>
                 <Field label="Destination">
                   <LocationAutocomplete
                     label="Destination"
@@ -230,6 +242,11 @@ export function TravelStayPlanner() {
                     placeholder="Campground, hotel, or address"
                   />
                 </Field>
+                <Field label="Mode of travel"><select value={active.travelMode || "driving"} onChange={(e) => update("travelMode", e.target.value)}><option value="driving">Driving</option><option value="rv">RV / towing</option><option value="motorcycle">Motorcycle</option><option value="flight">Air travel</option><option value="transit">Bus / train / transit</option><option value="other">Other</option></select></Field>
+                {vehicles.length ? <Field label="Managed vehicle"><select value={active.vehicleId || ""} onChange={(e) => update("vehicleId", e.target.value)}><option value="">Use a custom MPG</option>{vehicles.map((vehicle) => <option value={vehicle.id} key={vehicle.id}>{vehicle.year} {vehicle.make} {vehicle.model}</option>)}</select></Field> : null}
+                <Field label="Fuel price per gallon"><input type="number" min="0" step=".01" value={active.fuelPrice ?? 4} onChange={(e) => update("fuelPrice", Number(e.target.value))} /></Field>
+                {!active.vehicleId ? <Field label="Estimated MPG"><input type="number" min="1" step=".1" value={active.customMpg ?? 25} onChange={(e) => update("customMpg", Number(e.target.value))} /></Field> : null}
+                <Field label="Tolls, tickets, or other travel cost"><input type="number" min="0" step=".01" value={active.otherTravelCost || ""} onChange={(e) => update("otherTravelCost", Number(e.target.value))} placeholder="0.00" /></Field>
                 <Field label="Stay type">
                   <select
                     value={active.type}
@@ -294,6 +311,7 @@ export function TravelStayPlanner() {
                 />
               </Field>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-sm font-bold text-white disabled:opacity-45" disabled={!active.originLatitude || !active.destinationLatitude} onClick={estimateTrip} type="button"><Route size={18}/> Estimate trip costs</button>
                 <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#b66e38] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45" disabled={!active.destination || !active.arrival} onClick={syncStayToCalendar} type="button">
                   <CalendarCheck size={18} /> Save stay to calendar
                 </button>
@@ -323,6 +341,7 @@ export function TravelStayPlanner() {
               <MapPinned size={16} />
               {active?.destination || "Destination not set"}
             </p>
+            {active?.estimatedTravelTotal !== undefined ? <div className="mt-3 rounded-xl bg-[#e6c57d] p-3 text-[#203f37]"><p className="text-[9px] font-extrabold uppercase tracking-wider">Estimated travel cost</p><b className="mt-1 block text-2xl">${active.estimatedTravelTotal.toFixed(2)}</b><p className="mt-1 text-[10px]">{active.estimatedMiles} mi · Fuel ${active.estimatedFuelCost?.toFixed(2)} · Maintenance ${active.estimatedMaintenance?.toFixed(2)} · Ownership ${active.estimatedOwnership?.toFixed(2)}</p></div> : null}
           </div>
           <div className="panel p-5">
             <p className="eyebrow">Before arrival</p>
