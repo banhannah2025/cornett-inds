@@ -2,6 +2,8 @@
 import { cloneElement, useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  LoaderCircle,
+  LocateFixed,
   MapPinned,
   Plus,
   Radio,
@@ -11,6 +13,7 @@ import {
   Trash2,
   Wifi,
 } from "lucide-react";
+import { LocationAutocomplete, type Place } from "./location-autocomplete";
 type Kind = "starlink" | "cellular" | "wifi";
 type Log = {
   id: number;
@@ -18,6 +21,8 @@ type Log = {
   provider: string;
   network: string;
   location: string;
+  latitude?: number;
+  longitude?: number;
   download: string;
   upload: string;
   ping: string;
@@ -37,6 +42,8 @@ const empty = {
   provider: "Starlink",
   network: "",
   location: "",
+  latitude: undefined as number | undefined,
+  longitude: undefined as number | undefined,
   download: "",
   upload: "",
   ping: "",
@@ -48,7 +55,9 @@ const empty = {
 export function ConnectivityLog() {
   const [logs, setLogs] = useState<Log[]>([]),
     [form, setForm] = useState(empty),
-    [loaded, setLoaded] = useState(false);
+    [loaded, setLoaded] = useState(false),
+    [locating, setLocating] = useState(false),
+    [locationMessage, setLocationMessage] = useState("");
   useEffect(() => {
     try {
       const raw = localStorage.getItem("blended-basecamp-connectivity");
@@ -87,6 +96,41 @@ export function ConnectivityLog() {
       ...v,
     ]);
     setForm((v) => ({ ...empty, kind: v.kind, provider: v.provider }));
+    setLocationMessage("");
+  };
+  const selectLocation = (place: Place) => {
+    setForm((value) => ({ ...value, location: place.label, latitude: place.latitude, longitude: place.longitude }));
+    setLocationMessage("Location selected.");
+  };
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationMessage("Current location is not available in this browser.");
+      return;
+    }
+    setLocating(true);
+    setLocationMessage("Requesting your current location…");
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        const latitude = coords.latitude;
+        const longitude = coords.longitude;
+        let label = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+        try {
+          const response = await fetch(`/api/location-search?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`);
+          const data = (await response.json()) as { result?: Place };
+          if (response.ok && data.result?.label) label = data.result.label;
+        } catch {
+          // Coordinates remain useful if a readable place cannot be resolved.
+        }
+        setForm((value) => ({ ...value, location: label, latitude, longitude }));
+        setLocationMessage("Current location added.");
+        setLocating(false);
+      },
+      (error) => {
+        setLocationMessage(error.code === error.PERMISSION_DENIED ? "Location permission was denied. You can still search for a place." : "We could not determine your current location. Try again or search manually.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
+    );
   };
   return (
     <section id="connectivity-log" className="mb-10">
@@ -141,13 +185,15 @@ export function ConnectivityLog() {
                 placeholder="5G, LTE, Roam..."
               />
             </Field>
-            <Field label="Location">
-              <input
-                value={form.location}
-                onChange={(e) => set("location", e.target.value)}
-                placeholder="Campground, city, coordinates..."
-              />
-            </Field>
+            <div className="mt-3">
+              <span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#766c5e]">Location</span>
+              <LocationAutocomplete className={control} label="Signal test location" onChange={(location) => setForm((value) => ({ ...value, location, latitude: undefined, longitude: undefined }))} onSelect={selectLocation} placeholder="Campground, hotel, city..." value={form.location} />
+              <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#527568]/25 bg-[#e8efe8] px-3 py-2.5 text-xs font-bold text-[#244a40] disabled:opacity-60" disabled={locating} onClick={useCurrentLocation} type="button">
+                {locating ? <LoaderCircle className="size-4 animate-spin" /> : <LocateFixed className="size-4" />}
+                {locating ? "Locating…" : "Use current location"}
+              </button>
+              {locationMessage ? <p className="mt-2 text-xs font-medium normal-case tracking-normal text-[#68746f]" role="status">{locationMessage}</p> : null}
+            </div>
             <Field label="Signal strength">
               <input
                 value={form.signal}
