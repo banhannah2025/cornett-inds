@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { CalendarDays, ChevronDown, FilePenLine } from "lucide-react";
+import { CalendarDays, ChevronDown, FilePenLine, TentTree } from "lucide-react";
 
 export function AppsMenu({ dark = false }: { dark?: boolean }) {
   const plannerUrl =
     process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
     "https://blended-planner.specopsrecon82.chatgpt.site";
   const businessComposerUrl = process.env.NEXT_PUBLIC_BUSINESS_COMPOSER_URL;
+  const basecampUrl = process.env.NEXT_PUBLIC_BLENDED_BASECAMP_URL ?? "https://blended-basecamp.vercel.app";
 
   return (
     <details className="group relative">
@@ -16,6 +17,10 @@ export function AppsMenu({ dark = false }: { dark?: boolean }) {
         <ChevronDown className="size-3.5 transition group-open:rotate-180" />
       </summary>
       <div className="absolute left-0 top-full z-[60] mt-4 w-72 max-w-[calc(100vw-3rem)] rounded-2xl border border-black/10 bg-[#f6f3eb] p-2 text-[#1e2a24] shadow-2xl shadow-black/20">
+        <Link className="flex gap-3 rounded-xl px-4 py-3 transition hover:bg-[#ebe7dc]" href={basecampUrl}>
+          <TentTree className="mt-0.5 size-5 shrink-0 text-[#a45d2d]" />
+          <span><span className="block text-sm font-bold">Blended Basecamp</span><span className="mt-1 block text-xs leading-5 text-[#657169]">Remote work, power, travel, and camp readiness</span></span>
+        </Link>
         <Link
           className="flex gap-3 rounded-xl px-4 py-3 transition hover:bg-[#ebe7dc]"
           href={plannerUrl}
