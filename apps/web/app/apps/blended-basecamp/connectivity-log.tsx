@@ -151,48 +151,53 @@ export function ConnectivityLog() {
           resolve({ label, latitude, longitude });
         }, () => resolve(null), { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
       });
+      const profilePromise = fetch(`/api/connectivity-test?mode=profile&t=${Date.now()}`, { cache: "no-store" })
+        .then(async (response) => response.ok ? await response.json() as { provider?: string | null; organization?: string | null } : null)
+        .catch(() => null);
 
+      await fetch(`/api/connectivity-test?mode=ping&warmup=${Date.now()}`, { cache: "no-store" });
       const pings: number[] = [];
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
         const started = performance.now();
         await fetch(`/api/connectivity-test?mode=ping&t=${Date.now()}-${attempt}`, { cache: "no-store" });
         pings.push(performance.now() - started);
       }
       const downloadStarted = performance.now();
-      const downloadResponse = await fetch(`/api/connectivity-test?mode=download&t=${Date.now()}`, { cache: "no-store" });
-      if (!downloadResponse.ok) throw new Error("Download test failed");
-      const downloadBytes = (await downloadResponse.arrayBuffer()).byteLength;
+      const downloadResponses = await Promise.all(Array.from({ length: 3 }, (_, stream) => fetch(`/api/connectivity-test?mode=download&t=${Date.now()}-${stream}`, { cache: "no-store" })));
+      if (downloadResponses.some((response) => !response.ok)) throw new Error("Download test failed");
+      const downloadBuffers = await Promise.all(downloadResponses.map((response) => response.arrayBuffer()));
+      const downloadBytes = downloadBuffers.reduce((total, buffer) => total + buffer.byteLength, 0);
       const downloadSeconds = Math.max((performance.now() - downloadStarted) / 1000, 0.001);
 
-      const uploadPayload = new ArrayBuffer(256 * 1024);
       const uploadStarted = performance.now();
-      const uploadResponse = await fetch("/api/connectivity-test", { method: "POST", body: uploadPayload, cache: "no-store" });
-      if (!uploadResponse.ok) throw new Error("Upload test failed");
+      const uploadResponses = await Promise.all(Array.from({ length: 3 }, () => fetch("/api/connectivity-test", { method: "POST", body: new ArrayBuffer(1024 * 1024), cache: "no-store" })));
+      if (uploadResponses.some((response) => !response.ok)) throw new Error("Upload test failed");
       const uploadSeconds = Math.max((performance.now() - uploadStarted) / 1000, 0.001);
 
       const download = (downloadBytes * 8) / downloadSeconds / 1_000_000;
-      const upload = (uploadPayload.byteLength * 8) / uploadSeconds / 1_000_000;
-      const ping = pings.reduce((total, value) => total + value, 0) / pings.length;
-      const connection = (navigator as Navigator & { connection?: { effectiveType?: string; downlink?: number; rtt?: number; type?: string } }).connection;
-      const location = await currentLocation;
+      const upload = (3 * 1024 * 1024 * 8) / uploadSeconds / 1_000_000;
+      const ping = [...pings].sort((a, b) => a - b)[Math.floor(pings.length / 2)] ?? 0;
+      const [location, profile] = await Promise.all([currentLocation, profilePromise]);
       const reliability = Math.min(5, 2 + Number(download >= 25) + Number(upload >= 5) + Number(ping <= 100));
-      const network = [connection?.type, connection?.effectiveType?.toUpperCase()].filter(Boolean).join(" · ") || "Internet connection";
 
-      setForm((value) => ({
+      setForm((value) => {
+        const detectedKind = profile?.provider && /starlink|spacex/i.test(profile.provider) ? "starlink" : profile?.provider && /verizon|t-mobile|at&t|wireless|cellular|mobile/i.test(profile.provider) ? "cellular" : value.kind;
+        return ({
         ...value,
-        provider: value.provider.trim() || kinds[value.kind].label,
-        network,
+        kind: detectedKind,
+        provider: profile?.provider || profile?.organization || value.provider.trim() || "Provider not identified",
+        network: detectedKind === "cellular" ? "Cellular data · 5G/LTE unavailable to browser" : detectedKind === "starlink" ? "Satellite internet" : "Internet connection",
         location: location?.label || value.location || "Location permission not shared",
         latitude: location?.latitude,
         longitude: location?.longitude,
         download: download.toFixed(1),
         upload: upload.toFixed(1),
         ping: Math.round(ping).toString(),
-        signal: connection?.downlink ? `${connection.downlink} Mbps device estimate` : `${network} detected`,
-        obstructions: "No interruptions detected during this test",
+        signal: detectedKind === "cellular" ? "Bars and dBm unavailable to web browser" : "Signal level unavailable to web browser",
+        obstructions: "No transfer failures detected during this test",
         reliability,
-        notes: `Automatic connection test completed. ${download.toFixed(1)} Mbps down, ${upload.toFixed(1)} Mbps up, ${Math.round(ping)} ms ping.`,
-      }));
+        notes: `Multi-stream connection test: ${download.toFixed(1)} Mbps down, ${upload.toFixed(1)} Mbps up, ${Math.round(ping)} ms median ping. Cellular generation and radio strength require a native device app.`,
+      }); });
       setLocationMessage(location ? "Connection tested and current location added." : "Connection tested. Location was not shared; you can select it manually.");
     } catch {
       setLocationMessage("The connection test could not finish. Check your connection and try again.");
