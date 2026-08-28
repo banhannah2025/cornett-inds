@@ -6,11 +6,11 @@ The fragment avoids placing cellular diagnostics in HTTP request logs. Basecamp 
 
 ## Install the current Android beta
 
-Download the APK from the stable release address:
+Basecamp serves the APK directly from its own download path to avoid mobile-browser hangs caused by GitHub's release redirect chain:
 
-https://github.com/banhannah2025/cornett-inds/releases/download/android-signal-latest/basecamp-signal-android.apk
+https://cornettinds.vercel.app/downloads/basecamp-signal-android.apk
 
-The Install Android Companion control in Basecamp uses this same stable release address, so future APK releases do not require changing the website link.
+The GitHub Release remains available as a backup source.
 
 ## Local build
 
