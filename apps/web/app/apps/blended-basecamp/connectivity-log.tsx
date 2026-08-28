@@ -356,9 +356,10 @@ export function ConnectivityLog() {
             <div className="flex items-center gap-2 font-bold text-[#244a40]"><Smartphone size={16} /> Android precise radio data</div>
             <p className="mt-1 leading-5">Install the Android companion to add the real carrier, 5G/LTE generation, dBm, RSRP, RSRQ, and SINR when your phone exposes them.</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              <a className="rounded-lg border border-[#527568]/30 bg-white px-3 py-2 text-center font-bold" href="https://github.com/banhannah2025/cornett-inds/releases/download/android-signal-latest/basecamp-signal-android.apk">Install Android companion</a>
+              <a className="rounded-lg border border-[#527568]/30 bg-white px-3 py-2 text-center font-bold" download href="/downloads/basecamp-signal-android.apk">Download Android companion</a>
               <button className="rounded-lg bg-[#527568] px-3 py-2 font-bold text-white" onClick={() => { const returnUrl = window.location.href.split("#")[0] ?? window.location.href; window.location.href = `basecampsignal://measure?return=${encodeURIComponent(returnUrl)}`; }} type="button">Open signal companion</button>
             </div>
+            <p className="mt-2 text-[10px] leading-4 text-[#68746f]">The APK downloads directly from Blended Works. If Android asks, allow your browser to install this app.</p>
             {nativeSignal ? <p className="mt-2 font-bold text-[#356454]" role="status">Android reading ready: {nativeSignal.carrier || "carrier"} · {nativeSignal.networkType || "cellular"}{nativeSignal.dbm !== undefined ? ` · ${nativeSignal.dbm} dBm` : ""}</p> : null}
           </div>
           <button
