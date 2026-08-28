@@ -87,17 +87,20 @@ export function TravelStayPlanner() {
     [vehicles, setVehicles] = useState<VehicleAsset[]>([]),
     [loaded, setLoaded] = useState(false),
     [syncEnabled, setSyncEnabled] = useState(false),
+    [archivedPlans, setArchivedPlans] = useState<Stay[]>([]),
     [syncMessage, setSyncMessage] = useState("Loading saved trips…"),
     saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const load = async () => {
       let localPlans: Stay[] = [];
+      let localTripsForMigration: Stay[] = [];
       let localDone: Record<string, boolean> = {};
       try {
         const raw = localStorage.getItem("blended-basecamp-travel");
         if (raw) {
           const data = JSON.parse(raw);
           const restored = (data.plans ?? []).map((trip: Stay) => ({ ...trip, timeZoneOffsetMinutes: trip.timeZoneOffsetMinutes ?? new Date().getTimezoneOffset() }));
+          localTripsForMigration = restored;
           const completedIds = restored.filter(completedLocally).map((trip: Stay) => trip.id);
           completedIds.forEach((id: number) => { removeCalendarStay(id); removeTravelEstimate(id); });
           localPlans = restored.filter((trip: Stay) => !completedLocally(trip));
@@ -112,15 +115,16 @@ export function TravelStayPlanner() {
         if (response.status === 401) { setSyncMessage("Sign in to save trips across devices."); return; }
         if (!response.ok) throw new Error();
         const migrationKey = "blended-basecamp-travel-sanity-migrated";
-        if (localPlans.length && !localStorage.getItem(migrationKey)) {
-          const migration = await fetch("/api/basecamp/trips", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ trips: localPlans, done: localDone }) });
+        if (localTripsForMigration.length && !localStorage.getItem(migrationKey)) {
+          const migration = await fetch("/api/basecamp/trips", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ trips: localTripsForMigration, done: localDone }) });
           if (!migration.ok) throw new Error();
           localStorage.setItem(migrationKey, "true");
           response = await fetch("/api/basecamp/trips", { cache: "no-store" });
         }
-        const data = await response.json() as { trips?: Stay[]; done?: Record<string, boolean>; deletedIds?: number[] };
-        for (const id of data.deletedIds ?? []) { removeCalendarStay(id); removeTravelEstimate(id); }
+        const data = await response.json() as { trips?: Stay[]; archivedTrips?: Stay[]; done?: Record<string, boolean>; archivedIds?: number[] };
+        for (const id of data.archivedIds ?? []) { removeCalendarStay(id); removeTravelEstimate(id); }
         const remotePlans = data.trips ?? [];
+        setArchivedPlans(data.archivedTrips ?? []);
         setDone(data.done ?? {});
         setPlans(remotePlans);
         setActiveId(remotePlans[0]?.id ?? null);
@@ -144,12 +148,13 @@ export function TravelStayPlanner() {
           try {
             const response = await fetch("/api/basecamp/trips", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ trips: plans, done }) });
             if (!response.ok) throw new Error();
-            const result = await response.json() as { deletedIds?: number[] };
-            if (result.deletedIds?.length) {
-              const deleted = new Set(result.deletedIds);
-              result.deletedIds.forEach((id) => { removeCalendarStay(id); removeTravelEstimate(id); });
-              setPlans((value) => value.filter((trip) => !deleted.has(trip.id)));
-              setActiveId((value) => value && deleted.has(value) ? null : value);
+            const result = await response.json() as { archivedIds?: number[] };
+            if (result.archivedIds?.length) {
+              const archived = new Set(result.archivedIds);
+              result.archivedIds.forEach((id) => { removeCalendarStay(id); removeTravelEstimate(id); });
+              setArchivedPlans((value) => [...plans.filter((trip) => archived.has(trip.id)), ...value.filter((trip) => !archived.has(trip.id))]);
+              setPlans((value) => value.filter((trip) => !archived.has(trip.id)));
+              setActiveId((value) => value && archived.has(value) ? null : value);
             }
             setSyncMessage("Trips are synced securely.");
           } catch { setSyncMessage("Trip sync failed. Changes remain on this device."); }
@@ -512,6 +517,30 @@ export function TravelStayPlanner() {
           </div>
         </aside>
       </div>
+      {archivedPlans.length ? (
+        <section className="panel mt-6 p-5 sm:p-6" aria-labelledby="trip-archive-title">
+          <p className="eyebrow">Completed travel</p>
+          <h3 className="basecamp-serif text-2xl font-bold" id="trip-archive-title">Trip archive</h3>
+          <p className="mt-1 text-xs text-[#68746f]">Completed trips remain available here for future reference.</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {archivedPlans.map((trip) => (
+              <details className="rounded-xl border border-black/10 bg-[#fffdf8] p-4" key={trip.id}>
+                <summary className="cursor-pointer text-sm font-bold text-[#244a40]">
+                  {trip.property || trip.destination || "Archived trip"}
+                  <span className="mt-1 block text-[10px] font-medium uppercase text-[#78827e]">{trip.arrival || "Date unknown"} – {trip.departure || "Date unknown"}</span>
+                </summary>
+                <div className="mt-3 space-y-2 border-t border-black/10 pt-3 text-xs text-[#52615c]">
+                  {trip.origin ? <p><b>Route:</b> {trip.origin} to {trip.destination}</p> : null}
+                  {trip.confirmation ? <p><b>Confirmation:</b> {trip.confirmation}</p> : null}
+                  {trip.cost ? <p><b>Stay cost:</b> {trip.cost}</p> : null}
+                  {trip.estimatedTravelTotal !== undefined ? <p><b>Travel estimate:</b> ${trip.estimatedTravelTotal.toFixed(2)}</p> : null}
+                  {trip.notes ? <p className="whitespace-pre-wrap"><b>Notes:</b> {trip.notes}</p> : null}
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </section>
   );
 }

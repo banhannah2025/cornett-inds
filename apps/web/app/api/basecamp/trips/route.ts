@@ -48,6 +48,7 @@ function sanitizeTrip(userId: string, trip: TripInput, done: ReadinessDone): { _
     _type: "basecampTrip",
     ownerId: userId,
     localId: trip.id,
+    archived: false,
     stayType: ["campsite", "hotel", "rental", "boondocking"].includes(String(trip.type)) ? trip.type : "campsite",
     readinessDone: Object.fromEntries(Object.entries(readinessLabels).map(([key, label]) => [key, Boolean(done[label])])),
   };
@@ -71,23 +72,27 @@ export async function GET() {
     const documents = await client.fetch<Array<TripInput & { _id: string; stayType?: string }>>(
       `*[_type == "basecampTrip" && ownerId == $userId] | order(arrival asc){...}`, { userId },
     );
-    const completed = documents.filter(isCompleted);
+    const completed = documents.filter((trip) => !trip.archived && isCompleted(trip));
     if (completed.length) {
       const transaction = client.transaction();
-      completed.forEach((trip) => transaction.delete(trip._id));
+      const archivedAt = new Date().toISOString();
+      completed.forEach((trip) => transaction.patch(trip._id, (patch) => patch.set({ archived: true, archivedAt })));
       await transaction.commit();
     }
-    const trips = documents.filter((trip) => !isCompleted(trip)).map((trip) => {
+    const archivedIds = new Set(completed.map((trip) => trip.localId));
+    const serialize = (trip: TripInput & { stayType?: string }) => {
       const result: Record<string, unknown> = { id: trip.localId, type: trip.stayType ?? "campsite" };
       for (const key of allowedFields) {
         const value = trip[key];
         if (value !== undefined) result[key] = value;
       }
       return result;
-    });
-    const readiness = documents.find((trip) => !isCompleted(trip))?.readinessDone as Record<string, boolean> | undefined;
+    };
+    const trips = documents.filter((trip) => !trip.archived && !archivedIds.has(trip.localId)).map(serialize);
+    const archivedTrips = documents.filter((trip) => trip.archived || archivedIds.has(trip.localId)).map(serialize);
+    const readiness = documents.find((trip) => !trip.archived && !archivedIds.has(trip.localId))?.readinessDone as Record<string, boolean> | undefined;
     const done = Object.fromEntries(Object.entries(readinessLabels).map(([key, label]) => [label, Boolean(readiness?.[key])]));
-    return Response.json({ trips, done, deletedIds: completed.map((trip) => trip.localId) });
+    return Response.json({ trips, archivedTrips, done, archivedIds: [...archivedIds] });
   } catch (error) {
     console.error("[basecamp-trips] load failed", error);
     return Response.json({ error: "Trips could not be loaded." }, { status: 500 });
@@ -104,9 +109,10 @@ export async function POST(request: Request) {
     const client = getSanityWriteClient();
     const transaction = client.transaction();
     for (const trip of activeTrips) transaction.createOrReplace(sanitizeTrip(userId, trip, body.done ?? {}));
-    for (const trip of body.trips.filter(isCompleted)) transaction.delete(tripDocumentId(userId, trip.id));
+    const archivedAt = new Date().toISOString();
+    for (const trip of body.trips.filter(isCompleted)) transaction.createOrReplace({ ...sanitizeTrip(userId, trip, body.done ?? {}), archived: true, archivedAt });
     if (body.trips.length) await transaction.commit();
-    return Response.json({ saved: activeTrips.length, deletedIds: body.trips.filter(isCompleted).map((trip) => trip.id) });
+    return Response.json({ saved: activeTrips.length, archivedIds: body.trips.filter(isCompleted).map((trip) => trip.id) });
   } catch (error) {
     console.error("[basecamp-trips] save failed", error);
     return Response.json({ error: "Trips could not be saved." }, { status: 500 });

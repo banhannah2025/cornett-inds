@@ -7,6 +7,8 @@ export const basecampTripType = defineType({
   fields: [
     defineField({ name: "ownerId", title: "Owner ID", type: "string", readOnly: true, hidden: true }),
     defineField({ name: "localId", title: "Trip ID", type: "number", readOnly: true }),
+    defineField({ name: "archived", title: "Archived", type: "boolean", initialValue: false }),
+    defineField({ name: "archivedAt", title: "Archived at", type: "datetime", readOnly: true }),
     defineField({ name: "origin", title: "Starting location", type: "string" }),
     defineField({ name: "originLatitude", title: "Origin latitude", type: "number", hidden: true }),
     defineField({ name: "originLongitude", title: "Origin longitude", type: "number", hidden: true }),
