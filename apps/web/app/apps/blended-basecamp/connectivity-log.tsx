@@ -11,13 +11,11 @@ import {
   Router,
   Satellite,
   Signal,
-  Smartphone,
   Trash2,
   Wifi,
 } from "lucide-react";
 import { LocationAutocomplete, type Place } from "./location-autocomplete";
 type Kind = "starlink" | "cellular" | "wifi";
-type NativeSignal = { carrier?: string; networkType?: string; dbm?: number; rsrp?: number; rsrq?: number; sinr?: number; level?: number; bandChannel?: number; cellId?: number; pci?: number; tac?: number; roaming?: boolean; capturedAt?: number };
 type Log = {
   id: number;
   kind: Kind;
@@ -61,8 +59,7 @@ export function ConnectivityLog() {
     [loaded, setLoaded] = useState(false),
     [locating, setLocating] = useState(false),
     [locationMessage, setLocationMessage] = useState(""),
-    [testing, setTesting] = useState(false),
-    [nativeSignal, setNativeSignal] = useState<NativeSignal | null>(null);
+    [testing, setTesting] = useState(false);
   useEffect(() => {
     try {
       const raw = localStorage.getItem("blended-basecamp-connectivity");
@@ -79,21 +76,6 @@ export function ConnectivityLog() {
         JSON.stringify(logs),
       );
   }, [logs, loaded]);
-  useEffect(() => {
-    const encoded = new URLSearchParams(window.location.hash.slice(1)).get("basecamp-signal");
-    if (!encoded) return;
-    try {
-      const padded = encoded.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(encoded.length / 4) * 4, "=");
-      const bytes = Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
-      const reading = JSON.parse(new TextDecoder().decode(bytes)) as NativeSignal;
-      setNativeSignal(reading);
-      setForm((value) => ({ ...value, kind: "cellular", provider: reading.carrier || value.provider, network: reading.networkType || value.network, signal: reading.dbm !== undefined ? `${reading.dbm} dBm${reading.level !== undefined ? ` · level ${reading.level}/4` : ""}` : value.signal, notes: `Android radio reading imported${reading.rsrp !== undefined ? ` · RSRP ${reading.rsrp} dBm` : ""}${reading.rsrq !== undefined ? ` · RSRQ ${reading.rsrq} dB` : ""}${reading.sinr !== undefined ? ` · SINR ${reading.sinr} dB` : ""}. Run the connection test to add current speeds.` }));
-      setLocationMessage("Android radio reading imported. Run the connection test to add speed and location.");
-      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
-    } catch {
-      setLocationMessage("The Android radio reading could not be imported. Try measuring again.");
-    }
-  }, []);
   const averages = useMemo(() => {
     const nums = (k: "download" | "upload" | "ping") =>
       logs.map((l) => Number(l[k])).filter(Number.isFinite);
@@ -203,18 +185,18 @@ export function ConnectivityLog() {
         return ({
         ...value,
         kind: detectedKind,
-        provider: nativeSignal?.carrier || profile?.provider || profile?.organization || value.provider.trim() || "Provider not identified",
-        network: nativeSignal?.networkType || (detectedKind === "cellular" ? "Cellular data · use Android companion for 5G/LTE" : detectedKind === "starlink" ? "Satellite internet" : "Internet connection"),
+        provider: profile?.provider || profile?.organization || value.provider.trim() || "Provider not identified",
+        network: detectedKind === "cellular" ? "Cellular data · 5G/LTE unavailable to browser" : detectedKind === "starlink" ? "Satellite internet" : "Internet connection",
         location: location?.label || value.location || "Location permission not shared",
         latitude: location?.latitude,
         longitude: location?.longitude,
         download: download.toFixed(1),
         upload: upload.toFixed(1),
         ping: Math.round(ping).toString(),
-        signal: nativeSignal?.dbm !== undefined ? `${nativeSignal.dbm} dBm${nativeSignal.level !== undefined ? ` · level ${nativeSignal.level}/4` : ""}` : detectedKind === "cellular" ? "Use Android companion for bars and dBm" : "Signal level unavailable to web browser",
+        signal: detectedKind === "cellular" ? "Bars and dBm unavailable to web browser" : "Signal level unavailable to web browser",
         obstructions: "No transfer failures detected during this test",
         reliability,
-        notes: `Multi-stream connection test: ${download.toFixed(1)} Mbps down, ${upload.toFixed(1)} Mbps up, ${Math.round(ping)} ms median ping.${nativeSignal ? ` Android radio: ${nativeSignal.networkType || "cellular"}${nativeSignal.rsrp !== undefined ? `, RSRP ${nativeSignal.rsrp} dBm` : ""}${nativeSignal.rsrq !== undefined ? `, RSRQ ${nativeSignal.rsrq} dB` : ""}${nativeSignal.sinr !== undefined ? `, SINR ${nativeSignal.sinr} dB` : ""}.` : " Install the Android companion for cellular generation and radio strength."}`,
+        notes: `Multi-stream connection test: ${download.toFixed(1)} Mbps down, ${upload.toFixed(1)} Mbps up, ${Math.round(ping)} ms median ping. Cellular generation and radio strength require a native device app.`,
       }); });
       setLocationMessage(location ? "Connection tested and current location added." : "Connection tested. Location was not shared; you can select it manually.");
     } catch {
@@ -352,16 +334,6 @@ export function ConnectivityLog() {
             {testing ? <LoaderCircle className="size-[18px] animate-spin" /> : <Gauge size={18} />}
             {testing ? "Testing connection…" : "Test connection & fill fields"}
           </button>
-          <div className="mt-3 rounded-xl border border-[#527568]/20 bg-[#f2f5ef] p-3 text-xs text-[#425b53]">
-            <div className="flex items-center gap-2 font-bold text-[#244a40]"><Smartphone size={16} /> Android precise radio data</div>
-            <p className="mt-1 leading-5">Install the Android companion to add the real carrier, 5G/LTE generation, dBm, RSRP, RSRQ, and SINR when your phone exposes them.</p>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              <a className="rounded-lg border border-[#527568]/30 bg-white px-3 py-2 text-center font-bold" download href="/downloads/basecamp-signal-android.apk">Download Android companion</a>
-              <button className="rounded-lg bg-[#527568] px-3 py-2 font-bold text-white" onClick={() => { const returnUrl = window.location.href.split("#")[0] ?? window.location.href; window.location.href = `basecampsignal://measure?return=${encodeURIComponent(returnUrl)}`; }} type="button">Open signal companion</button>
-            </div>
-            <p className="mt-2 text-[10px] leading-4 text-[#68746f]">The APK downloads directly from Blended Works. If Android asks, allow your browser to install this app.</p>
-            {nativeSignal ? <p className="mt-2 font-bold text-[#356454]" role="status">Android reading ready: {nativeSignal.carrier || "carrier"} · {nativeSignal.networkType || "cellular"}{nativeSignal.dbm !== undefined ? ` · ${nativeSignal.dbm} dBm` : ""}</p> : null}
-          </div>
           <button
             onClick={save}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#244a40] px-4 py-3 text-sm font-bold text-white"
