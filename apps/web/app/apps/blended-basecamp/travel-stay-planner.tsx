@@ -1,5 +1,5 @@
 "use client";
-import { cloneElement, useEffect, useMemo, useState } from "react";
+import { cloneElement, useEffect, useMemo, useRef, useState } from "react";
 import {
   BedDouble,
   CalendarCheck,
@@ -28,6 +28,7 @@ type Stay = {
   arrivalTime?: string;
   departure: string;
   departureTime?: string;
+  timeZoneOffsetMinutes?: number;
   confirmation: string;
   cost: string;
   notes: string;
@@ -56,6 +57,26 @@ const checks = [
   "Check power, water, and hookups",
   "Review weather and road conditions",
 ];
+function completedLocally(trip: Stay) {
+  if (!trip.departure) return false;
+  const time = trip.departureTime || "23:59";
+  const value = new Date(`${trip.departure}T${time}:00`);
+  return !Number.isNaN(value.getTime()) && value.getTime() < Date.now();
+}
+const calendarIds = (stayId: number): [number, number] => [stayId * 10 + 1, stayId * 10 + 2];
+function removeCalendarStay(stayId: number) {
+  try {
+    const ids = new Set(calendarIds(stayId));
+    const items = JSON.parse(localStorage.getItem("blended-basecamp-calendar") ?? "[]") as { id: number }[];
+    localStorage.setItem("blended-basecamp-calendar", JSON.stringify(items.filter((item) => !ids.has(item.id))));
+  } catch { localStorage.removeItem("blended-basecamp-calendar"); }
+}
+function removeTravelEstimate(stayId: number) {
+  try {
+    const finance = JSON.parse(localStorage.getItem("blended-basecamp-finance") ?? "{}");
+    localStorage.setItem("blended-basecamp-finance", JSON.stringify({ ...finance, travelEstimates: (finance.travelEstimates ?? []).filter((item: { id: number }) => item.id !== stayId) }));
+  } catch { return; }
+}
 export function TravelStayPlanner() {
   const [plans, setPlans] = useState<Stay[]>([]),
     [activeId, setActiveId] = useState<number | null>(null),
@@ -64,29 +85,84 @@ export function TravelStayPlanner() {
     [estimateMessage, setEstimateMessage] = useState(""),
     [estimating, setEstimating] = useState(false),
     [vehicles, setVehicles] = useState<VehicleAsset[]>([]),
-    [loaded, setLoaded] = useState(false);
+    [loaded, setLoaded] = useState(false),
+    [syncEnabled, setSyncEnabled] = useState(false),
+    [archivedPlans, setArchivedPlans] = useState<Stay[]>([]),
+    [syncMessage, setSyncMessage] = useState("Loading saved trips…"),
+    saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("blended-basecamp-travel");
-      if (raw) {
-        const d = JSON.parse(raw);
-        setPlans(d.plans ?? []);
-        setDone(d.done ?? {});
-        setActiveId(d.plans?.[0]?.id ?? null);
-      }
-    } catch {
-      localStorage.removeItem("blended-basecamp-travel");
-    }
-    setLoaded(true);
+    const load = async () => {
+      let localPlans: Stay[] = [];
+      let localTripsForMigration: Stay[] = [];
+      let localDone: Record<string, boolean> = {};
+      try {
+        const raw = localStorage.getItem("blended-basecamp-travel");
+        if (raw) {
+          const data = JSON.parse(raw);
+          const restored = (data.plans ?? []).map((trip: Stay) => ({ ...trip, timeZoneOffsetMinutes: trip.timeZoneOffsetMinutes ?? new Date().getTimezoneOffset() }));
+          localTripsForMigration = restored;
+          const completedIds = restored.filter(completedLocally).map((trip: Stay) => trip.id);
+          completedIds.forEach((id: number) => { removeCalendarStay(id); removeTravelEstimate(id); });
+          localPlans = restored.filter((trip: Stay) => !completedLocally(trip));
+          localDone = data.done ?? {};
+          setDone(localDone);
+        }
+      } catch { localStorage.removeItem("blended-basecamp-travel"); }
+      setPlans(localPlans);
+      setActiveId(localPlans[0]?.id ?? null);
+      try {
+        let response = await fetch("/api/basecamp/trips", { cache: "no-store" });
+        if (response.status === 401) { setSyncMessage("Sign in to save trips across devices."); return; }
+        if (!response.ok) throw new Error();
+        const migrationKey = "blended-basecamp-travel-sanity-migrated";
+        if (localTripsForMigration.length && !localStorage.getItem(migrationKey)) {
+          const migration = await fetch("/api/basecamp/trips", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ trips: localTripsForMigration, done: localDone }) });
+          if (!migration.ok) throw new Error();
+          localStorage.setItem(migrationKey, "true");
+          response = await fetch("/api/basecamp/trips", { cache: "no-store" });
+        }
+        const data = await response.json() as { trips?: Stay[]; archivedTrips?: Stay[]; done?: Record<string, boolean>; archivedIds?: number[] };
+        for (const id of data.archivedIds ?? []) { removeCalendarStay(id); removeTravelEstimate(id); }
+        const remotePlans = data.trips ?? [];
+        setArchivedPlans(data.archivedTrips ?? []);
+        setDone(data.done ?? {});
+        setPlans(remotePlans);
+        setActiveId(remotePlans[0]?.id ?? null);
+        setSyncEnabled(true);
+        setSyncMessage("Trips are synced securely.");
+      } catch { setSyncMessage("Trip sync is temporarily unavailable. Changes remain on this device."); }
+      finally { setLoaded(true); }
+    };
+    void load();
     try { setVehicles(JSON.parse(localStorage.getItem("blended-basecamp-vehicles") ?? "[]")); } catch { setVehicles([]); }
   }, []);
   useEffect(() => {
-    if (loaded)
+    if (loaded) {
       localStorage.setItem(
         "blended-basecamp-travel",
         JSON.stringify({ plans, done }),
       );
-  }, [plans, done, loaded]);
+      if (syncEnabled) {
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(async () => {
+          try {
+            const response = await fetch("/api/basecamp/trips", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ trips: plans, done }) });
+            if (!response.ok) throw new Error();
+            const result = await response.json() as { archivedIds?: number[] };
+            if (result.archivedIds?.length) {
+              const archived = new Set(result.archivedIds);
+              result.archivedIds.forEach((id) => { removeCalendarStay(id); removeTravelEstimate(id); });
+              setArchivedPlans((value) => [...plans.filter((trip) => archived.has(trip.id)), ...value.filter((trip) => !archived.has(trip.id))]);
+              setPlans((value) => value.filter((trip) => !archived.has(trip.id)));
+              setActiveId((value) => value && archived.has(value) ? null : value);
+            }
+            setSyncMessage("Trips are synced securely.");
+          } catch { setSyncMessage("Trip sync failed. Changes remain on this device."); }
+        }, 700);
+      }
+    }
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+  }, [plans, done, loaded, syncEnabled]);
   const active = plans.find((p) => p.id === activeId) ?? plans[0];
   const nights = useMemo(
     () =>
@@ -116,6 +192,7 @@ export function TravelStayPlanner() {
         arrivalTime: "15:00",
         departure: "",
         departureTime: "11:00",
+        timeZoneOffsetMinutes: new Date().getTimezoneOffset(),
         confirmation: "",
         cost: "",
         notes: "",
@@ -133,17 +210,17 @@ export function TravelStayPlanner() {
     setCalendarMessage("");
     setPlans((v) => v.map((p) => (p.id === active.id ? { ...p, [key]: value, estimatedTravelTotal: undefined } : p)));
   };
-  const calendarIds = (stayId: number): [number, number] => [stayId * 10 + 1, stayId * 10 + 2];
-  const removeCalendarStay = (stayId: number) => {
+  const deleteStay = async (stayId: number) => {
+    removeCalendarStay(stayId);
+    removeTravelEstimate(stayId);
+    setPlans((value) => value.filter((plan) => plan.id !== stayId));
+    setActiveId(null);
+    if (!syncEnabled) return;
     try {
-      const ids = new Set(calendarIds(stayId));
-      const items = JSON.parse(localStorage.getItem("blended-basecamp-calendar") ?? "[]") as { id: number }[];
-      localStorage.setItem("blended-basecamp-calendar", JSON.stringify(items.filter((item) => !ids.has(item.id))));
-    } catch {
-      localStorage.removeItem("blended-basecamp-calendar");
-    }
+      const response = await fetch(`/api/basecamp/trips?id=${stayId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error();
+    } catch { setSyncMessage("The trip was removed here, but cloud deletion needs to be retried."); }
   };
-  const removeTravelEstimate = (stayId: number) => { try { const finance = JSON.parse(localStorage.getItem("blended-basecamp-finance") ?? "{}"); localStorage.setItem("blended-basecamp-finance", JSON.stringify({ ...finance, travelEstimates: (finance.travelEstimates ?? []).filter((item: { id: number }) => item.id !== stayId) })); } catch {} };
   const syncStayToCalendar = () => {
     if (!active?.destination || !active.arrival) return;
     try {
@@ -214,6 +291,7 @@ export function TravelStayPlanner() {
           Add a stay
         </button>
       </div>
+      <p className="mb-4 text-xs font-bold text-[#527568]" role="status">{syncMessage}</p>
       <div className="grid items-start gap-5 xl:grid-cols-[.42fr_1fr_.58fr]">
         <aside className="panel overflow-hidden">
           <div className="border-b border-black/10 p-4 text-[10px] font-extrabold uppercase tracking-wider">
@@ -269,10 +347,7 @@ export function TravelStayPlanner() {
                 <button
                   aria-label="Delete stay"
                   onClick={() => {
-                    removeCalendarStay(active.id);
-                    removeTravelEstimate(active.id);
-                    setPlans((v) => v.filter((p) => p.id !== active.id));
-                    setActiveId(null);
+                    void deleteStay(active.id);
                   }}
                 >
                   <Trash2 className="text-[#9a5845]" size={18} />
@@ -442,6 +517,30 @@ export function TravelStayPlanner() {
           </div>
         </aside>
       </div>
+      {archivedPlans.length ? (
+        <section className="panel mt-6 p-5 sm:p-6" aria-labelledby="trip-archive-title">
+          <p className="eyebrow">Completed travel</p>
+          <h3 className="basecamp-serif text-2xl font-bold" id="trip-archive-title">Trip archive</h3>
+          <p className="mt-1 text-xs text-[#68746f]">Completed trips remain available here for future reference.</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {archivedPlans.map((trip) => (
+              <details className="rounded-xl border border-black/10 bg-[#fffdf8] p-4" key={trip.id}>
+                <summary className="cursor-pointer text-sm font-bold text-[#244a40]">
+                  {trip.property || trip.destination || "Archived trip"}
+                  <span className="mt-1 block text-[10px] font-medium uppercase text-[#78827e]">{trip.arrival || "Date unknown"} – {trip.departure || "Date unknown"}</span>
+                </summary>
+                <div className="mt-3 space-y-2 border-t border-black/10 pt-3 text-xs text-[#52615c]">
+                  {trip.origin ? <p><b>Route:</b> {trip.origin} to {trip.destination}</p> : null}
+                  {trip.confirmation ? <p><b>Confirmation:</b> {trip.confirmation}</p> : null}
+                  {trip.cost ? <p><b>Stay cost:</b> {trip.cost}</p> : null}
+                  {trip.estimatedTravelTotal !== undefined ? <p><b>Travel estimate:</b> ${trip.estimatedTravelTotal.toFixed(2)}</p> : null}
+                  {trip.notes ? <p className="whitespace-pre-wrap"><b>Notes:</b> {trip.notes}</p> : null}
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </section>
   );
 }
