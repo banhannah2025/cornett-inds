@@ -1,0 +1,46 @@
+name: Build Android Signal APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/basecamp-signal-android/**"
+      - ".github/workflows/android-signal-apk.yml"
+  pull_request:
+    paths:
+      - "apps/basecamp-signal-android/**"
+      - ".github/workflows/android-signal-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/basecamp-signal-android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+      - run: gradle :app:assembleDebug --no-daemon
+      - run: cp app/build/outputs/apk/debug/app-debug.apk basecamp-signal-android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: basecamp-signal-android
+          path: apps/basecamp-signal-android/basecamp-signal-android.apk
+      - name: Publish latest installable APK
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view android-signal-latest >/dev/null 2>&1 || gh release create android-signal-latest --title "Basecamp Signal for Android" --notes "Android companion beta build for Blended Basecamp."
+          gh release upload android-signal-latest apps/basecamp-signal-android/basecamp-signal-android.apk --clobber
