@@ -106,14 +106,14 @@ class MainActivity : Activity() {
                         val signal = cell.cellSignalStrength
                         val identity = cell.cellIdentity
                         put("dbm", signal.dbm)
-                        put("rsrp", signal.ssRsrp)
-                        put("rsrq", signal.ssRsrq)
-                        put("sinr", signal.ssSinr)
                         put("level", signal.level)
-                        put("bandChannel", identity.nrarfcn)
-                        put("cellId", identity.nci)
-                        put("pci", identity.pci)
-                        put("tac", identity.tac)
+                        putIfAvailable(this, "rsrp", readNumber(signal, "getSsRsrp"))
+                        putIfAvailable(this, "rsrq", readNumber(signal, "getSsRsrq"))
+                        putIfAvailable(this, "sinr", readNumber(signal, "getSsSinr"))
+                        putIfAvailable(this, "bandChannel", readNumber(identity, "getNrarfcn"))
+                        putIfAvailable(this, "cellId", readNumber(identity, "getNci"))
+                        putIfAvailable(this, "pci", readNumber(identity, "getPci"))
+                        putIfAvailable(this, "tac", readNumber(identity, "getTac"))
                     }
                     is CellInfoLte -> {
                         val signal = cell.cellSignalStrength
@@ -155,6 +155,16 @@ class MainActivity : Activity() {
         value.optInt("rsrq", Int.MAX_VALUE).takeIf { it != Int.MAX_VALUE }?.let { "RSRQ $it dB" },
         value.optInt("sinr", Int.MAX_VALUE).takeIf { it != Int.MAX_VALUE }?.let { "SINR $it dB" }
     ).joinToString("\n")
+
+    private fun readNumber(target: Any, getter: String): Number? = try {
+        target.javaClass.getMethod(getter).invoke(target) as? Number
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun putIfAvailable(target: JSONObject, key: String, value: Number?) {
+        if (value != null) target.put(key, value)
+    }
 
     private fun returnToBasecamp() {
         val destination = returnUrl ?: return
