@@ -10,6 +10,8 @@ Download the APK from the stable release address:
 
 https://github.com/banhannah2025/cornett-inds/releases/download/android-signal-latest/basecamp-signal-android.apk
 
+The Install Android Companion control in Basecamp uses this same stable release address, so future APK releases do not require changing the website link.
+
 ## Local build
 
 Install Android SDK 35, JDK 17, and Gradle 8.10.2, then run:
