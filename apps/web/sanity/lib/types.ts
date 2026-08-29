@@ -1,4 +1,4 @@
-import type { PortableTextBlock } from "next-sanity";
+import type { PortableTextBlock } from "@portabletext/types";
 
 export type SanityImage = {
   asset?: { _ref?: string; _type?: "reference" };

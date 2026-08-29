@@ -29,7 +29,7 @@ import { getImageAssets } from "@/sanity/lib/assets";
 import { getSiteSettings } from "@/sanity/lib/data";
 import { portableTextToEditorText } from "@/sanity/lib/editor";
 import { getSanityWriteClient } from "@/sanity/lib/writeClient";
-import type { PortableTextBlock } from "next-sanity";
+import type { PortableTextBlock } from "@portabletext/types";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {

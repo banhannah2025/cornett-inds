@@ -13,17 +13,15 @@
   "dependencies": {
     "@clerk/nextjs": "^7.7.1",
     "@portabletext/react": "^7.0.1",
+    "@portabletext/types": "^4.0.2",
     "@repo/platform": "*",
     "@repo/ui": "*",
+    "@sanity/client": "^7.26.2",
     "@sanity/image-url": "^2.1.1",
-    "@sanity/vision": "^6.9.2",
     "geist": "^1.7.1",
     "next": "16.3.0",
-    "next-sanity": "^13.3.2",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "sanity": "^6.9.2",
-    "styled-components": "^6.5.2"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.3.0",
