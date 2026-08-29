@@ -64,6 +64,19 @@ function completedLocally(trip: Stay) {
   return !Number.isNaN(value.getTime()) && value.getTime() < Date.now();
 }
 const calendarIds = (stayId: number): [number, number] => [stayId * 10 + 1, stayId * 10 + 2];
+type TripCalendarItem = { id: number; date: string; title: string; type: "travel"; time: string; source?: "trip"; tripId?: number };
+function syncTripsToCalendar(trips: Stay[]) {
+  const saved = JSON.parse(localStorage.getItem("blended-basecamp-calendar") ?? "[]") as TripCalendarItem[];
+  const currentIds = new Set(trips.flatMap((trip) => calendarIds(trip.id)));
+  const next = saved.filter((item) => item.source !== "trip" && !currentIds.has(item.id));
+  for (const trip of trips) {
+    if (!trip.destination || !trip.arrival) continue;
+    const ids = calendarIds(trip.id), location = trip.property || trip.destination;
+    next.push({ id: ids[0], date: trip.arrival, title: `Check in: ${location}`, type: "travel", time: trip.arrivalTime || "15:00", source: "trip", tripId: trip.id });
+    if (trip.departure) next.push({ id: ids[1], date: trip.departure, title: `Check out: ${location}`, type: "travel", time: trip.departureTime || "11:00", source: "trip", tripId: trip.id });
+  }
+  localStorage.setItem("blended-basecamp-calendar", JSON.stringify(next));
+}
 function removeCalendarStay(stayId: number) {
   try {
     const ids = new Set(calendarIds(stayId));
@@ -142,6 +155,8 @@ export function TravelStayPlanner() {
         "blended-basecamp-travel",
         JSON.stringify({ plans, done }),
       );
+      try { syncTripsToCalendar(plans); }
+      catch { setCalendarMessage("Trips are saved, but the calendar could not be updated."); }
       if (syncEnabled) {
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(async () => {
@@ -224,15 +239,9 @@ export function TravelStayPlanner() {
   const syncStayToCalendar = () => {
     if (!active?.destination || !active.arrival) return;
     try {
-      const ids = calendarIds(active.id);
-      const saved = JSON.parse(localStorage.getItem("blended-basecamp-calendar") ?? "[]") as { id: number; date: string; title: string; type: "travel"; time: string }[];
-      const location = active.property || active.destination;
-      const next = saved.filter((item) => !ids.includes(item.id));
-      next.push({ id: ids[0], date: active.arrival, title: `Check in: ${location}`, type: "travel", time: active.arrivalTime || "15:00" });
-      if (active.departure) next.push({ id: ids[1], date: active.departure, title: `Check out: ${location}`, type: "travel", time: active.departureTime || "11:00" });
-      localStorage.setItem("blended-basecamp-calendar", JSON.stringify(next));
+      syncTripsToCalendar(plans);
       localStorage.setItem("blended-basecamp-calendar-focus", active.arrival);
-      setCalendarMessage("Stay added to the calendar.");
+      setCalendarMessage("Trip is synced to the calendar.");
     } catch {
       setCalendarMessage("The stay could not be added to the calendar.");
     }
@@ -462,7 +471,7 @@ export function TravelStayPlanner() {
                   type="button"
                 >
                   <CalendarCheck size={18} />
-                  Save stay to calendar
+                  Refresh calendar entry
                 </button>
                 {calendarMessage ? <p className="text-xs font-bold text-[#527568]" role="status">{calendarMessage}</p> : null}
               </div>
