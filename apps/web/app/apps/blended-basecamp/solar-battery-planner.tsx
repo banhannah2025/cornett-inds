@@ -4,16 +4,14 @@ import {
   BatteryCharging,
   ExternalLink,
   Fuel,
-  LoaderCircle,
   Plus,
-  Search,
   Sun,
   Trash2,
   Zap,
 } from "lucide-react";
-type Load = { id: number; name: string; watts: number; hours: number };
-type PowerSource = { id: number; name: string; category: string; watts: number; capacityWh: number; hours: number; sourceUrl?: string };
-type EquipmentResult = { id: string; kind: "load" | "source"; category: string; name: string; watts: number; capacityWh?: number; sourceUrl?: string; description: string; confidence: "catalog" | "web-estimate" };
+import { PowerEquipmentConfigurator, type EquipmentResult } from "./power-equipment-configurator";
+type Load = { id: number; name: string; watts: number; surgeWatts?: number; hours: number };
+type PowerSource = { id: number; name: string; category: string; watts: number; surgeWatts?: number; capacityWh: number; hours: number; sourceUrl?: string };
 export function SolarBatteryPlanner() {
   const [capacity, setCapacity] = useState(5120),
     [charge, setCharge] = useState(78),
@@ -73,8 +71,8 @@ export function SolarBatteryPlanner() {
     solarYield = Math.round(solar * sunHours * (efficiency / 100)),
     addedSupply = Math.round(sources.reduce((total, source) => total + (source.category === "Battery" ? 0 : source.watts * source.hours * (source.category === "Solar" ? efficiency / 100 : 1)), 0)),
     addedCapacity = sources.reduce((total, source) => total + source.capacityWh, 0),
-    peakSupply = solar + sources.reduce((total, source) => total + source.watts, 0),
-    peakLoad = loads.reduce((highest, load) => Math.max(highest, load.watts), 0),
+    peakSupply = solar + sources.reduce((total, source) => total + (source.surgeWatts ?? source.watts), 0),
+    peakLoad = loads.reduce((highest, load) => Math.max(highest, load.surgeWatts ?? load.watts), 0),
     totalIn = solarYield + backup + addedSupply,
     balance = totalIn - dailyUse,
     available = Math.round((capacity + addedCapacity) * (charge / 100)),
@@ -92,9 +90,9 @@ export function SolarBatteryPlanner() {
   };
   const addResult = (result: EquipmentResult) => {
     if (result.kind === "load") {
-      setLoads((value) => [...value, { id: Date.now(), name: result.name, watts: result.watts || 100, hours: 1 }]);
+      setLoads((value) => [...value, { id: Date.now(), name: result.name, watts: result.watts || 100, surgeWatts: result.surgeWatts, hours: 1 }]);
     } else {
-      setSources((value) => [...value, { id: Date.now(), name: result.name, category: result.category, watts: result.watts || 100, capacityWh: result.capacityWh ?? 0, hours: result.category === "Solar" ? sunHours : 1, sourceUrl: result.sourceUrl }]);
+      setSources((value) => [...value, { id: Date.now(), name: result.name, category: result.category, watts: result.watts || 100, surgeWatts: result.surgeWatts, capacityWh: result.capacityWh ?? 0, hours: result.category === "Solar" ? sunHours : 1, sourceUrl: result.sourceUrl }]);
     }
   };
   return (
@@ -144,7 +142,7 @@ export function SolarBatteryPlanner() {
           <div className="mt-5 border-t border-black/10 pt-5">
             <p className="eyebrow">Add power sources</p>
             <p className="mt-1 text-xs leading-5 text-[#68746f]">Search solar panels, battery stations, generators, shore power, or vehicle inverters.</p>
-            <EquipmentSearch kind="source" onAdd={addResult} />
+            <PowerEquipmentConfigurator kind="source" onAdd={addResult} />
           </div>
           <div className="mt-4 space-y-2">
             {sources.map((source) => (
@@ -154,8 +152,9 @@ export function SolarBatteryPlanner() {
                   {source.sourceUrl ? <a aria-label={`Open specifications for ${source.name}`} href={source.sourceUrl} rel="noreferrer" target="_blank"><ExternalLink size={15} /></a> : null}
                   <button aria-label={`Remove ${source.name}`} onClick={() => setSources((value) => value.filter((item) => item.id !== source.id))} className="text-[#9a5845]"><Trash2 size={15} /></button>
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-2">
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <SmallNum label="Output W" value={source.watts} set={(value) => setSources((items) => items.map((item) => item.id === source.id ? { ...item, watts: value } : item))} />
+                  <SmallNum label="Surge W" value={source.surgeWatts ?? 0} set={(value) => setSources((items) => items.map((item) => item.id === source.id ? { ...item, surgeWatts: value || undefined } : item))} />
                   <SmallNum label="Capacity Wh" value={source.capacityWh} set={(value) => setSources((items) => items.map((item) => item.id === source.id ? { ...item, capacityWh: value } : item))} />
                   <SmallNum label="Hours/day" value={source.hours} step=".25" set={(value) => setSources((items) => items.map((item) => item.id === source.id ? { ...item, hours: value } : item))} />
                 </div>
@@ -169,7 +168,7 @@ export function SolarBatteryPlanner() {
             />
           </div>
           <p className="mt-2 text-xs font-bold">
-            {charge}% charged · {available.toLocaleString()} Wh available
+            {charge}% charged Ãƒâ€šÃ‚Â· {available.toLocaleString()} Wh available
           </p>
         </div>
         <div className="space-y-5">
@@ -199,7 +198,7 @@ export function SolarBatteryPlanner() {
           >
             {balance >= 0
               ? `Projected daily surplus: ${balance.toLocaleString()} Wh`
-              : `Projected daily deficit: ${Math.abs(balance).toLocaleString()} Wh — reduce loads or add charging.`}
+              : `Projected daily deficit: ${Math.abs(balance).toLocaleString()} Wh ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â reduce loads or add charging.`}
           </div>
           {peakLoad > peakSupply ? <div className="rounded-2xl bg-[#f5e4dc] p-4 text-sm font-bold text-[#884936]">Peak-load warning: the largest device needs {peakLoad.toLocaleString()}W, but configured sources provide {peakSupply.toLocaleString()}W. Check inverter surge and continuous ratings.</div> : null}
           <div className="panel overflow-hidden">
@@ -209,7 +208,7 @@ export function SolarBatteryPlanner() {
                 What needs power?
               </h3>
               <p className="mt-1 text-xs leading-5 text-[#68746f]">Search for a device to estimate its load, then adjust the result using its nameplate or manual.</p>
-              <EquipmentSearch kind="load" onAdd={addResult} />
+              <PowerEquipmentConfigurator kind="load" onAdd={addResult} />
               <div className="mt-3 grid grid-cols-[1fr_80px_70px_auto] gap-2">
                 <input
                   value={name}
@@ -252,6 +251,7 @@ export function SolarBatteryPlanner() {
                   <div className="mt-1 flex flex-wrap gap-2">
                     <label className="text-[9px] text-[#68746f]">Watts <input className="ml-1 w-16 rounded border border-black/10 px-1 py-0.5" min="0" onChange={(event) => setLoads((items) => items.map((item) => item.id === l.id ? { ...item, watts: Math.max(0, Number(event.target.value)) } : item))} type="number" value={l.watts} /></label>
                     <label className="text-[9px] text-[#68746f]">Hours/day <input className="ml-1 w-14 rounded border border-black/10 px-1 py-0.5" min="0" onChange={(event) => setLoads((items) => items.map((item) => item.id === l.id ? { ...item, hours: Math.max(0, Number(event.target.value)) } : item))} step=".25" type="number" value={l.hours} /></label>
+                    <label className="text-[9px] text-[#68746f]">Surge W <input className="ml-1 w-16 rounded border border-black/10 px-1 py-0.5" min="0" onChange={(event) => setLoads((items) => items.map((item) => item.id === l.id ? { ...item, surgeWatts: Math.max(0, Number(event.target.value)) || undefined } : item))} type="number" value={l.surgeWatts ?? 0} /></label>
                   </div>
                 </div>
                 <b className="text-xs">
@@ -300,33 +300,6 @@ function Num({
 function SmallNum({ label, value, set, step = "1" }: { label: string; value: number; set: (n: number) => void; step?: string }) {
   return <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#766c5e]">{label}<input className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2 py-2 text-xs" min="0" onChange={(event) => set(Math.max(0, Number(event.target.value)))} step={step} type="number" value={value} /></label>;
 }
-function EquipmentSearch({ kind, onAdd }: { kind: "load" | "source"; onAdd: (result: EquipmentResult) => void }) {
-  const [query, setQuery] = useState(""), [results, setResults] = useState<EquipmentResult[]>([]), [searching, setSearching] = useState(false), [webEnabled, setWebEnabled] = useState<boolean | null>(null), [warning, setWarning] = useState("");
-  useEffect(() => {
-    const value = query.trim();
-    if (value.length < 2) { setResults([]); setSearching(false); return; }
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      setSearching(true); setWarning("");
-      try {
-        const response = await fetch(`/api/power-equipment/search?kind=${kind}&q=${encodeURIComponent(value)}`, { signal: controller.signal });
-        const data = (await response.json()) as { results?: EquipmentResult[]; webEnabled?: boolean; warning?: string };
-        if (!response.ok) throw new Error();
-        setResults(data.results ?? []); setWebEnabled(Boolean(data.webEnabled)); setWarning(data.warning ?? "");
-      } catch (error) {
-        if (!(error instanceof DOMException && error.name === "AbortError")) { setResults([]); setWarning("Equipment search is temporarily unavailable."); }
-      } finally { if (!controller.signal.aborted) setSearching(false); }
-    }, 400);
-    return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [kind, query]);
-  return <div className="relative mt-3">
-    <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#78827e]" size={16} /><input aria-label={`Search ${kind === "source" ? "power sources" : "powered devices"}`} autoComplete="off" className="h-11 w-full rounded-xl border border-black/10 bg-white pl-9 pr-9 text-sm outline-[#527568]" onChange={(event) => setQuery(event.target.value)} placeholder={kind === "source" ? "Solar panel, generator, vehicle inverter…" : "Laptop, refrigerator, Starlink…"} value={query} />{searching ? <LoaderCircle className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#527568]" size={16} /> : null}</div>
-    {results.length ? <div className="absolute z-40 mt-1 max-h-80 w-full overflow-y-auto rounded-xl border border-black/10 bg-[#fffdf8] p-1 shadow-2xl">{results.map((result) => <button className="flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-[#e8efe8]" key={result.id} onClick={() => { onAdd(result); setQuery(""); setResults([]); }} type="button"><span className="min-w-0"><b className="block truncate text-xs">{result.name}</b><small className="mt-0.5 block line-clamp-2 text-[10px] leading-4 text-[#68746f]">{result.description}</small><small className="mt-1 block text-[9px] font-bold uppercase text-[#a76536]">{result.confidence === "catalog" ? "Catalog specification" : "Web estimate — verify"}</small></span><span className="shrink-0 text-right text-[10px] font-bold">{result.watts ? `${result.watts.toLocaleString()} W` : "Enter watts"}{result.capacityWh ? <small className="block">{result.capacityWh.toLocaleString()} Wh</small> : null}</span></button>)}</div> : null}
-    {query.trim().length >= 2 && !searching && !results.length ? <p className="mt-2 text-[10px] text-[#78827e]">No matching equipment found. Use the manual fields below.</p> : null}
-    {webEnabled === false ? <p className="mt-2 text-[10px] text-[#8a6846]">Showing the built-in catalog. Add BRAVE_SEARCH_API_KEY to enable live web results.</p> : null}
-    {warning ? <p className="mt-2 text-[10px] text-[#9a4937]">{warning}</p> : null}
-  </div>;
-}
 function Metric({
   icon: Icon,
   value,
@@ -349,3 +322,4 @@ function Metric({
     </div>
   );
 }
+
