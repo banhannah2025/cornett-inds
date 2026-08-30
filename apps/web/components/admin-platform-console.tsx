@@ -2,35 +2,15 @@ import Link from "next/link";
 import {
   AppWindow,
   ArrowUpRight,
-  BatteryCharging,
-  BookOpen,
   CalendarDays,
-  CloudSun,
-  Compass,
   Database,
   FilePenLine,
   Gauge,
   KeyRound,
-  PackageCheck,
-  ReceiptText,
   Settings2,
-  ShieldCheck,
-  Signal,
   TentTree,
   Users,
 } from "lucide-react";
-
-const basecampModules = [
-  { label: "Calendar & work planner", icon: CalendarDays },
-  { label: "Travel & lodging", icon: Compass },
-  { label: "Connectivity log", icon: Signal },
-  { label: "Weather & hazards", icon: CloudSun },
-  { label: "Solar & batteries", icon: BatteryCharging },
-  { label: "Equipment & supplies", icon: PackageCheck },
-  { label: "Expenses & mileage", icon: ReceiptText },
-  { label: "Location journal", icon: BookOpen },
-  { label: "Emergency check-ins", icon: ShieldCheck },
-] as const;
 
 const managementAreas = [
   {
@@ -84,7 +64,7 @@ export function AdminPlatformConsole({
             </p>
             <h2 className="mt-2 font-serif text-3xl sm:text-4xl">Run all of Blended Works.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65">
-              Open every app, review Basecamp features, manage people, and reach the systems that power the platform.
+              Open available apps, manage people, and reach the systems that power the platform.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs font-bold">
@@ -94,14 +74,7 @@ export function AdminPlatformConsole({
           </div>
         </div>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-3" id="apps">
-          <AppCard
-            description="The command console for travel, remote work, power, safety, equipment, and field operations."
-            href="/apps/blended-basecamp"
-            icon={TentTree}
-            name="Blended Basecamp"
-            status="9 features active"
-          />
+        <div className="mt-8 grid gap-4 lg:grid-cols-2" id="apps">
           <AppCard
             description="Purpose-centered calendar and planning journal for Blended Works."
             href={plannerUrl}
@@ -118,26 +91,6 @@ export function AdminPlatformConsole({
           />
         </div>
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="font-serif text-xl">Basecamp feature inventory</h3>
-              <p className="mt-1 text-xs text-white/55">All operational modules currently wired into the command console.</p>
-            </div>
-            <Link className="inline-flex items-center gap-2 rounded-full bg-[#f4b860] px-4 py-2.5 text-xs font-bold text-[#1e2a24]" href="/apps/blended-basecamp">
-              Open Basecamp <ArrowUpRight className="size-3.5" />
-            </Link>
-          </div>
-          <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {basecampModules.map(({ label, icon: Icon }) => (
-              <div className="flex items-center gap-3 rounded-xl bg-black/15 px-3 py-3 text-sm" key={label}>
-                <Icon className="size-4 shrink-0 text-[#f4b860]" />
-                <span className="font-semibold">{label}</span>
-                <span className="ml-auto size-2 rounded-full bg-emerald-400" title="Active" />
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" id="management">
@@ -162,7 +115,7 @@ export function AdminPlatformConsole({
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <StatusCard icon={KeyRound} label="Authentication" value="Clerk connected" />
         <StatusCard icon={Database} label="Content database" value="Sanity connected" />
-        <StatusCard icon={Gauge} label="App operations" value="3 apps registered" />
+        <StatusCard icon={Gauge} label="App operations" value="2 apps visible" />
       </div>
     </section>
   );
