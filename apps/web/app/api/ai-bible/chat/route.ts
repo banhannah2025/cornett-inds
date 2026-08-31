@@ -1,4 +1,5 @@
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
+import { getAdminContext } from "@/lib/admin";
 
 type Mode = "conversation" | "counsel" | "writing" | "testimonial" | "deep";
 type HistoryItem = { role: "user" | "assistant"; content: string };
@@ -42,9 +43,9 @@ export async function POST(request: Request) {
     return Response.json({ answer: "I’m really glad you said something. You deserve immediate human support right now. If you may act on these thoughts or are in immediate danger, call 911 or go to the nearest emergency department. In the United States, call or text 988 to reach the Suicide & Crisis Lifeline. If you can, move away from anything you could use to hurt yourself and contact a trusted person who can stay with you. I can remain part of the conversation, but I cannot provide the urgent, real-world help you deserve.", creditsUsed: 0, monthlyUsed: 0 });
   }
 
-  const user = await currentUser();
+  const [user, admin] = await Promise.all([currentUser(), getAdminContext()]);
   const planKey = typeof user?.publicMetadata.aiBiblePlan === "string" ? user.publicMetadata.aiBiblePlan : "free";
-  const plan = plans[planKey] ?? freePlan;
+  const plan = admin.isAdmin ? { credits: Number.POSITIVE_INFINITY, writing: true, testimonial: true, enhanced: true } : plans[planKey] ?? freePlan;
   if ((mode === "writing" || mode === "deep") && !plan.writing) return Response.json({ error: "This feature requires a Plus or organizational plan." }, { status: 403 });
   if (mode === "testimonial" && !plan.testimonial) return Response.json({ error: "Testimonial drafting is available on eligible clergy, organization, and premium plans." }, { status: 403 });
 
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
   const stored = user?.privateMetadata.aiBibleUsage as { month?: string; used?: number } | undefined;
   const alreadyUsed = stored?.month === month && typeof stored.used === "number" ? stored.used : 0;
   const cost = costs[mode];
-  if (alreadyUsed + cost > plan.credits) return Response.json({ error: "You have used this month’s AI credits. Your credits will reset next month, or you can choose a higher plan." }, { status: 429 });
+  if (!admin.isAdmin && alreadyUsed + cost > plan.credits) return Response.json({ error: "You have used this month’s AI credits. Your credits will reset next month, or you can choose a higher plan." }, { status: 429 });
 
   const apiKey = process.env.OPENAI_API_SECRET_KEY;
   if (!apiKey) return Response.json({ error: "AI service configuration is not complete yet." }, { status: 503 });
@@ -71,7 +72,9 @@ export async function POST(request: Request) {
   if (!answer) return Response.json({ error: "The AI service returned an empty response." }, { status: 502 });
 
   const monthlyUsed = alreadyUsed + cost;
-  const client = await clerkClient();
-  await client.users.updateUserMetadata(userId, { privateMetadata: { ...user?.privateMetadata, aiBibleUsage: { month, used: monthlyUsed } } });
-  return Response.json({ answer, creditsUsed: cost, monthlyUsed, model });
+  if (!admin.isAdmin) {
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, { privateMetadata: { ...user?.privateMetadata, aiBibleUsage: { month, used: monthlyUsed } } });
+  }
+  return Response.json({ answer, creditsUsed: admin.isAdmin ? 0 : cost, monthlyUsed: admin.isAdmin ? alreadyUsed : monthlyUsed, model, administratorAccess: admin.isAdmin });
 }

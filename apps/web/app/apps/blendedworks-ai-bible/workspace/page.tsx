@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AiBibleWorkspace } from "./workspace";
+import { getAdminContext } from "@/lib/admin";
 
 export const metadata: Metadata = {
   title: "My Bible Workspace | BlendedWorks AI Bible",
@@ -18,11 +19,11 @@ export default async function WorkspacePage() {
   const { userId } = await auth();
   if (!userId) redirect("/apps/blendedworks-ai-bible");
 
-  const user = await currentUser();
-  const plan = typeof user?.publicMetadata.aiBiblePlan === "string" ? user.publicMetadata.aiBiblePlan : "free";
+  const [user, admin] = await Promise.all([currentUser(), getAdminContext()]);
+  const plan = admin.isAdmin ? "administrator" : typeof user?.publicMetadata.aiBiblePlan === "string" ? user.publicMetadata.aiBiblePlan : "free";
   const month = new Date().toISOString().slice(0, 7);
   const usage = user?.privateMetadata.aiBibleUsage as { month?: string; used?: number } | undefined;
   const initialUsedCredits = usage?.month === month && typeof usage.used === "number" ? usage.used : 0;
 
-  return <AiBibleWorkspace firstName={user?.firstName ?? "friend"} initialPlan={plan} initialUsedCredits={initialUsedCredits} />;
+  return <AiBibleWorkspace firstName={user?.firstName ?? "friend"} initialPlan={plan} initialUsedCredits={initialUsedCredits} isAdministrator={admin.isAdmin} />;
 }

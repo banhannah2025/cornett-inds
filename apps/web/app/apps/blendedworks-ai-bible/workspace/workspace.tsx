@@ -21,6 +21,7 @@ const planDetails: Record<string, { label: string; credits: number; folders: boo
   businessSolo: { label: "Business Solo", credits: 1500, folders: true, writing: true, testimonial: true },
   businessTeam: { label: "Business Team", credits: 5000, folders: true, writing: true, testimonial: true },
   businessPro: { label: "Business Pro", credits: 15000, folders: true, writing: true, testimonial: true },
+  administrator: { label: "Administrator", credits: Number.POSITIVE_INFINITY, folders: true, writing: true, testimonial: true },
 };
 
 const modes: { id: Mode; label: string; description: string; icon: typeof Bot; paid?: boolean; testimonial?: boolean }[] = [
@@ -31,7 +32,7 @@ const modes: { id: Mode; label: string; description: string; icon: typeof Bot; p
   { id: "deep", label: "Deep study", description: "Use stronger reasoning for complex study", icon: BookHeart, paid: true },
 ];
 
-export function AiBibleWorkspace({ firstName, initialPlan, initialUsedCredits }: { firstName: string; initialPlan: string; initialUsedCredits: number }) {
+export function AiBibleWorkspace({ firstName, initialPlan, initialUsedCredits, isAdministrator }: { firstName: string; initialPlan: string; initialUsedCredits: number; isAdministrator: boolean }) {
   const plan = planDetails[initialPlan] ?? freePlan;
   const [mode, setMode] = useState<Mode>("conversation");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -83,7 +84,7 @@ export function AiBibleWorkspace({ firstName, initialPlan, initialUsedCredits }:
   return (
     <main className="min-h-screen bg-[#f4f0e8] text-[#172536]">
       <header className="border-b border-[#24364b]/15 bg-[#fbf8f1]/95 px-4 py-3 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4"><Link className="flex items-center gap-3" href="/apps/blendedworks-ai-bible"><span className="grid size-10 place-items-center rounded-xl bg-[#24364b] text-[#f4d8b4]"><BookHeart size={21}/></span><span><strong className="font-serif text-lg">BlendedWorks AI Bible</strong><small className="block text-[10px] font-bold uppercase tracking-[.18em] text-[#80623e]">Your private workspace</small></span></Link><div className="flex items-center gap-3"><span className="hidden rounded-full bg-[#e9e1d3] px-3 py-1.5 text-xs font-bold sm:block">{plan.label} • {Math.max(0, plan.credits - usedCredits).toLocaleString()} credits left</span><UserButton /></div></div>
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4"><Link className="flex items-center gap-3" href="/apps/blendedworks-ai-bible"><span className="grid size-10 place-items-center rounded-xl bg-[#24364b] text-[#f4d8b4]"><BookHeart size={21}/></span><span><strong className="font-serif text-lg">BlendedWorks AI Bible</strong><small className="block text-[10px] font-bold uppercase tracking-[.18em] text-[#80623e]">Your private workspace</small></span></Link><div className="flex items-center gap-3"><span className="hidden rounded-full bg-[#e9e1d3] px-3 py-1.5 text-xs font-bold sm:block">{plan.label} • {isAdministrator ? "Unlimited access" : `${Math.max(0, plan.credits - usedCredits).toLocaleString()} credits left`}</span><UserButton /></div></div>
       </header>
       <div className="mx-auto grid max-w-[1500px] md:grid-cols-[260px_1fr]">
         <aside className="border-b border-[#24364b]/15 bg-[#e9e1d3]/75 p-4 md:min-h-[calc(100vh-65px)] md:border-b-0 md:border-r md:p-5"><p className="mb-3 px-2 text-[10px] font-bold uppercase tracking-[.18em] text-[#7e6240]">Choose a space</p><nav className="grid gap-1 sm:grid-cols-2 md:grid-cols-1">{modes.map((item) => { const Icon=item.icon, allowed=modeAllowed(item); return <button className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left transition ${mode===item.id?"bg-[#24364b] text-white":"hover:bg-white/70"} ${allowed?"":"opacity-50"}`} disabled={!allowed} key={item.id} onClick={()=>{setMode(item.id);setShowProjects(false)}}><Icon size={18}/><span><b className="block text-sm">{item.label}</b><small className={`block text-[10px] ${mode===item.id?"text-white/60":"text-[#5a6570]"}`}>{allowed?item.description:"Upgrade required"}</small></span></button>})}<button className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left transition ${showProjects?"bg-[#24364b] text-white":"hover:bg-white/70"} ${plan.folders?"":"opacity-50"}`} disabled={!plan.folders} onClick={()=>setShowProjects(true)}><FolderOpen size={18}/><span><b className="block text-sm">Project folders</b><small className={`block text-[10px] ${showProjects?"text-white/60":"text-[#5a6570]"}`}>{plan.folders?"Organize your work":"Available with Plus"}</small></span></button></nav><Link className="mt-6 flex items-center gap-2 px-3 text-xs font-bold text-[#7c5b34]" href="/apps/blendedworks-ai-bible"><Home size={15}/>Plans and information</Link></aside>
