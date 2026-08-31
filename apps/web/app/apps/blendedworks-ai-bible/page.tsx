@@ -10,13 +10,13 @@ import {
   Feather,
   FolderOpen,
   HeartHandshake,
-  Menu,
   MessageCircleHeart,
   ShieldCheck,
   Sparkles,
   Users,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { AiBibleLandingAction, AiBibleNavbarAuth } from "./auth-controls";
 
 export const metadata: Metadata = {
   title: "BlendedWorks AI Bible | Blended Works",
@@ -154,6 +154,8 @@ function PlanCard({ plan }: { plan: Plan }) {
 }
 
 export default function HomePage() {
+  const authEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
   return (
     <main className="ai-bible-page overflow-hidden">
       <header className="border-b border-[var(--line)] bg-[#f9f6ef]/85 px-4 py-4 backdrop-blur-md sm:px-6 lg:px-10">
@@ -163,8 +165,8 @@ export default function HomePage() {
             <span><strong className="bible-serif block text-xl leading-none">BlendedWorks AI Bible</strong><small className="mt-1 block text-[10px] font-bold uppercase tracking-[.2em] text-[#7d6d54]">Scripture • Guidance • Creation</small></span>
           </a>
           <nav className="hidden items-center gap-7 text-sm font-semibold text-[#2f455d] md:flex"><a href="#features">Features</a><a href="#models">Our AI</a><a href="#pricing">Pricing</a><a href="#safety">Our promise</a></nav>
-          <a href="#pricing" className="hidden rounded-xl bg-[var(--forest)] px-5 py-2.5 text-sm font-bold text-white sm:block">View plans</a>
-          <Menu className="sm:hidden" aria-label="Menu"/>
+          <div className="hidden sm:block"><AiBibleNavbarAuth enabled={authEnabled} /></div>
+          <div className="sm:hidden"><AiBibleNavbarAuth enabled={authEnabled} /></div>
         </div>
       </header>
 
@@ -174,7 +176,7 @@ export default function HomePage() {
             <div className="mb-6 flex w-fit items-center gap-2 rounded-full border border-[#cdb78d] bg-[#fffaf0] px-4 py-2 text-xs font-bold uppercase tracking-[.14em] text-[#805f2d]"><Sparkles size={15}/>Thoughtful technology. Timeless truth.</div>
             <h1 className="bible-serif text-balance text-5xl font-bold leading-[1.02] tracking-[-.035em] sm:text-6xl lg:text-7xl">Bring your questions.<br/><span className="text-[#9b6d2f]">Open the Word.</span></h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-[#465361]">A Scripture-centered AI companion for conversation, faith-based guidance, religious writing, and organized ministry work—made for individuals, families, churches, clergy, and faith-led organizations.</p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row"><a href="#pricing" className="flex items-center justify-center gap-2 rounded-xl bg-[var(--forest)] px-6 py-3.5 font-bold text-white shadow-[0_14px_35px_rgba(33,76,65,.20)]">Explore the plans<ArrowRight size={18}/></a><a href="#features" className="flex items-center justify-center rounded-xl border border-[var(--line)] bg-white/70 px-6 py-3.5 font-bold text-[#2f455d]">See what it can do</a></div>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row"><AiBibleLandingAction enabled={authEnabled}/><a href="#features" className="flex items-center justify-center rounded-xl border border-[var(--line)] bg-white/70 px-6 py-3.5 font-bold text-[#2f455d]">See what it can do</a></div>
             <p className="mt-5 text-xs leading-5 text-[#465361]">Web app launching first • Android app planned next • AI guidance is not professional counseling or emergency care</p>
           </div>
           <div className="relative mx-auto w-full max-w-[600px]">
