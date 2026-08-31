@@ -34,4 +34,4 @@ button {
 .console-workspace>section{padding-top:.5rem;padding-bottom:.5rem}.console-workspace h2,.console-workspace .eyebrow,.console-workspace p{display:none}.console-workspace section>div>div{margin-top:0}.console-module>section{margin-bottom:0}.console-module::-webkit-scrollbar,.console-workspace *::-webkit-scrollbar{width:8px;height:8px}.console-module::-webkit-scrollbar-thumb,.console-workspace *::-webkit-scrollbar-thumb{border-radius:99px;background:#8ba095}
 
 /* BlendedWorks AI Bible web app route */
-.bible-serif{font-family:Georgia,"Times New Roman",serif}.paper-noise{background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgb(33 76 65 / 3%) 32px)}
+.ai-bible-page{--forest:#24364b;--deep-forest:#172536;--line:rgb(36 54 75 / 20%);min-height:100vh;background:radial-gradient(circle at 88% 4%,rgb(184 101 53 / 13%),transparent 28rem),radial-gradient(circle at 0 30%,rgb(53 77 105 / 9%),transparent 25rem),#fbf8f1;color:#172536}.bible-serif{font-family:Georgia,"Times New Roman",serif}.paper-noise{background-image:repeating-linear-gradient(0deg,transparent,transparent 31px,rgb(36 54 75 / 4%) 32px)}
