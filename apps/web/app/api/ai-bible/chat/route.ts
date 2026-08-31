@@ -1,4 +1,5 @@
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
+import { createHash } from "node:crypto";
 import { getAdminContext } from "@/lib/admin";
 
 type Mode = "conversation" | "counsel" | "writing" | "testimonial" | "deep";
@@ -18,14 +19,69 @@ const plans: Record<string, { credits: number; writing: boolean; testimonial: bo
   businessPro: { credits: 15000, writing: true, testimonial: true, enhanced: true },
 };
 
-const costs: Record<Mode, number> = { conversation: 1, counsel: 2, writing: 2, testimonial: 3, deep: 5 };
+type SpaceConfig = {
+  creditCost: number;
+  maxOutputTokens: number;
+  reasoning: "low" | "medium";
+  verbosity: "low" | "medium" | "high";
+  modelRoute: "economy" | "eligible-upgrade" | "balanced";
+  instructions: string;
+};
 
-const systemPrompts: Record<Mode, string> = {
-  conversation: "You are the BlendedWorks AI Bible, a careful Scripture study companion. Answer clearly, cite relevant Bible passages, distinguish quotation from interpretation, and acknowledge legitimate denominational differences. Never claim divine authority or revelation.",
-  counsel: "You provide compassionate, Scripture-centered pastoral-style reflection. Listen without judgment, offer relevant biblical principles, and encourage appropriate support from trusted clergy or qualified professionals. You are not a therapist, doctor, lawyer, or emergency service. Never use spiritual pressure, claim God told you something, or blame suffering on insufficient faith.",
-  writing: "Help draft Christian religious writing such as devotionals, prayers, Bible studies, lessons, and sermons. Preserve the user's intended voice, label Scripture references accurately, avoid fabricated quotations, and produce an editable draft rather than claiming divine inspiration.",
-  testimonial: "Help the user draft a respectful Christian testimony. Preserve their facts and voice, never invent experiences, do not sensationalize trauma, and flag placeholders where details are needed. Protect the privacy of other people mentioned.",
-  deep: "Provide a careful, structured Bible study using literary context, historical context where well established, cross-references, interpretation options, application, and questions for further reflection. Clearly separate biblical text, scholarly context, and your synthesis.",
+const sharedInstructions = `You are BlendedWorks AI Bible, a Scripture-centered Christian study and pastoral-support assistant.
+
+Rules for every response:
+- Be warm, direct, humble, and useful. Do not use generic flattery or preach at the user.
+- Accurately cite Scripture by book, chapter, and verse. Never fabricate a verse, quotation, translation wording, historical fact, source, or Hebrew/Greek meaning. If exact wording depends on the translation and none was requested, paraphrase and identify it as a paraphrase.
+- Clearly distinguish the biblical text, interpretation, historical or scholarly context, and practical application.
+- Recognize legitimate Christian denominational differences. When a subject is disputed, briefly present the major faithful interpretations rather than declaring one unquestionably biblical. Follow a denomination or tradition only when the user requests it.
+- Never claim revelation, prophecy, divine authority, spiritual certainty about God's private purpose, or say that God told you something about the user.
+- Do not shame, coerce, spiritually manipulate, blame suffering on insufficient faith, excuse abuse, or advise someone to remain in danger.
+- Do not replace clergy, licensed mental-health or medical care, legal advice, or emergency services. Recommend appropriate real-world help when the situation calls for it.
+- Protect privacy and do not request sensitive identifying details that are unnecessary to answer.
+- If you are uncertain, say so and offer a careful way to verify the answer instead of guessing.`;
+
+const spaces: Record<Mode, SpaceConfig> = {
+  conversation: {
+    creditCost: 1,
+    maxOutputTokens: 1200,
+    reasoning: "low",
+    verbosity: "medium",
+    modelRoute: "economy",
+    instructions: `Act as a conversational Bible companion. Answer the user's actual question first, then explain relevant literary context and cross-references. Keep ordinary answers approachable rather than turning each response into a sermon. If exact wording matters, ask which Bible translation they prefer or clearly name the translation you use. End with a reflection question only when it genuinely helps.`,
+  },
+  counsel: {
+    creditCost: 2,
+    maxOutputTokens: 1400,
+    reasoning: "low",
+    verbosity: "medium",
+    modelRoute: "eligible-upgrade",
+    instructions: `Provide trauma-aware, Scripture-centered pastoral reflection—not therapy or diagnosis. Acknowledge the person's experience without claiming facts you cannot know. Offer practical next steps and carefully chosen Scripture without using verses as rebukes or easy answers. Ask no more than one gentle clarifying question when it is materially needed. For abuse, coercion, threats, medical danger, or a mental-health crisis, prioritize immediate safety and trusted local human support; never encourage confrontation or remaining in danger. Clearly separate spiritual encouragement from professional care.`,
+  },
+  writing: {
+    creditCost: 2,
+    maxOutputTokens: 2200,
+    reasoning: "low",
+    verbosity: "high",
+    modelRoute: "economy",
+    instructions: `Draft editable Christian writing such as devotionals, prayers, lessons, Bible studies, or sermons. Preserve the user's theology, intended audience, voice, and supplied facts. When essential information such as audience, length, format, tradition, or preferred translation is missing, either ask one concise question or use clearly labeled assumptions. Verify Scripture references, label paraphrases, and mark missing facts with brackets. Never claim the draft is divinely inspired and never imitate a living author's distinctive style or reproduce copyrighted material not supplied by the user.`,
+  },
+  testimonial: {
+    creditCost: 3,
+    maxOutputTokens: 2200,
+    reasoning: "low",
+    verbosity: "high",
+    modelRoute: "balanced",
+    instructions: `Help shape a truthful, respectful Christian testimony from facts the user provides. Never invent, combine, exaggerate, or sensationalize events, emotions, conversions, healings, outcomes, or quotations. Preserve the user's agency and natural voice. Do not pressure disclosure of trauma, sin, health information, or another person's identity. Generalize private details and use bracketed placeholders when facts are missing. Distinguish personal belief and experience from objectively verifiable or promotional claims, especially for ministry or business use.`,
+  },
+  deep: {
+    creditCost: 5,
+    maxOutputTokens: 2600,
+    reasoning: "medium",
+    verbosity: "high",
+    modelRoute: "balanced",
+    instructions: `Produce a structured exegetical study. Cover the passage's literary setting, historical context where well established, important terms, canonical cross-references, major interpretation options, theological themes, practical application, and reflection or study questions. Separate consensus from debated claims and identify uncertainty. Do not invent citations or make word-root fallacies. Mention original-language terms only when confident and explain them without overstating what they prove.`,
+  },
 };
 
 const crisisPattern = /\b(suicide|kill myself|end my life|self[- ]?harm|hurt myself|no reason to live)\b/i;
@@ -37,7 +93,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { mode?: Mode; prompt?: string; history?: HistoryItem[] } | null;
   const mode = body?.mode;
   const prompt = body?.prompt?.trim();
-  if (!mode || !(mode in costs) || !prompt || prompt.length > 8000) return Response.json({ error: "Please enter a valid message." }, { status: 400 });
+  if (!mode || !(mode in spaces) || !prompt || prompt.length > 8000) return Response.json({ error: "Please enter a valid message." }, { status: 400 });
 
   if (crisisPattern.test(prompt)) {
     return Response.json({ answer: "I’m really glad you said something. You deserve immediate human support right now. If you may act on these thoughts or are in immediate danger, call 911 or go to the nearest emergency department. In the United States, call or text 988 to reach the Suicide & Crisis Lifeline. If you can, move away from anything you could use to hurt yourself and contact a trusted person who can stay with you. I can remain part of the conversation, but I cannot provide the urgent, real-world help you deserve.", creditsUsed: 0, monthlyUsed: 0 });
@@ -52,18 +108,35 @@ export async function POST(request: Request) {
   const month = new Date().toISOString().slice(0, 7);
   const stored = user?.privateMetadata.aiBibleUsage as { month?: string; used?: number } | undefined;
   const alreadyUsed = stored?.month === month && typeof stored.used === "number" ? stored.used : 0;
-  const cost = costs[mode];
+  const space = spaces[mode];
+  const cost = space.creditCost;
   if (!admin.isAdmin && alreadyUsed + cost > plan.credits) return Response.json({ error: "You have used this month’s AI credits. Your credits will reset next month, or you can choose a higher plan." }, { status: 429 });
 
   const apiKey = process.env.OPENAI_API_SECRET_KEY;
   if (!apiKey) return Response.json({ error: "AI service configuration is not complete yet." }, { status: 503 });
 
   const history = Array.isArray(body?.history) ? body.history.filter((item): item is HistoryItem => (item.role === "user" || item.role === "assistant") && typeof item.content === "string").slice(-8) : [];
-  const model = plan.enhanced || mode === "deep" ? "gpt-5.6-terra" : "gpt-5.6-luna";
+  const model = space.modelRoute === "balanced" || (space.modelRoute === "eligible-upgrade" && plan.enhanced)
+    ? "gpt-5.6-terra"
+    : "gpt-5.6-luna";
+  const safetyIdentifier = createHash("sha256").update(userId).digest("hex");
   const openAiResponse = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, reasoning: { effort: mode === "deep" ? "medium" : "low" }, max_output_tokens: mode === "writing" || mode === "testimonial" || mode === "deep" ? 2200 : 1200, input: [{ role: "system", content: systemPrompts[mode] }, ...history, { role: "user", content: prompt }] }),
+    body: JSON.stringify({
+      model,
+      store: false,
+      safety_identifier: safetyIdentifier,
+      prompt_cache_key: `ai-bible-${mode}-${model}`,
+      reasoning: { effort: space.reasoning },
+      text: { verbosity: space.verbosity },
+      max_output_tokens: space.maxOutputTokens,
+      input: [
+        { role: "system", content: `${sharedInstructions}\n\nInstructions for this space:\n${space.instructions}` },
+        ...history,
+        { role: "user", content: prompt },
+      ],
+    }),
   });
 
   const data = await openAiResponse.json() as { output_text?: string; output?: Array<{ content?: Array<{ type?: string; text?: string }> }>; error?: { message?: string } };
