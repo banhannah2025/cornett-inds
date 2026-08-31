@@ -16,6 +16,13 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "BlendedWorks AI Bible | Blended Works",
+  description:
+    "A thoughtful AI companion for Scripture conversations, faith-based guidance, religious writing, and organized ministry projects.",
+};
 
 type Plan = {
   name: string;
