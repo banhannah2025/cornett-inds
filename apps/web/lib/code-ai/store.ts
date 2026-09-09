@@ -26,20 +26,24 @@ export type CodeAiConversation = {
   createdAt: string;
   updatedAt: string;
 };
+export type CodeAiAttachment = { _id: string; projectId: string; name: string; mimeType: string; size: number; url: string; createdAt: string };
 
 const cleanId = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, "-");
 
 export async function listCodeAiWorkspace() {
   const client = getSanityWriteClient();
-  const [projects, conversations] = await Promise.all([
+  const [projects, conversations, files] = await Promise.all([
     client.fetch<CodeAiProject[]>(
       `*[_type == "codeAiProject"] | order(updatedAt desc){_id,name,repository,createdAt,updatedAt}`,
     ),
     client.fetch<CodeAiConversation[]>(
       `*[_type == "codeAiConversation"] | order(updatedAt desc){_id,projectId,title,messages,createdAt,updatedAt}`,
     ),
+    client.fetch<CodeAiAttachment[]>(
+      `*[_type == "codeAiFile"] | order(createdAt desc){_id,projectId,name,mimeType,size,"url":asset->url,createdAt}`,
+    ),
   ]);
-  return { projects, conversations };
+  return { projects, conversations, files };
 }
 
 export async function createCodeAiProject(name: string, repository: string) {
@@ -82,6 +86,23 @@ export async function appendCodeAiMessages(id: string, messages: CodeAiMessage[]
     .append("messages", messages)
     .set({ updatedAt: new Date().toISOString() })
     .commit();
+}
+
+export async function updateCodeAiDocument(
+  id: string,
+  changes: { name?: string; title?: string; archived?: boolean },
+) {
+  const allowed = Object.fromEntries(
+    Object.entries(changes).filter(([, value]) => value !== undefined),
+  );
+  return getSanityWriteClient()
+    .patch(id)
+    .set({ ...allowed, updatedAt: new Date().toISOString() })
+    .commit();
+}
+
+export async function deleteCodeAiDocument(id: string) {
+  return getSanityWriteClient().delete(id);
 }
 
 export function makeCodeAiMessage(
