@@ -17,7 +17,7 @@ type OpenAiResponse = { id: string; output?: OutputItem[]; output_text?: string;
 
 const instructions = `You are Code AI, Robin's private software-development agent for Blended Works.
 Work carefully inside the selected GitHub repository. Inspect the relevant files before proposing or making changes. Preserve existing architecture and user work. Explain intended changes briefly, use repository tools when needed, and report files changed and validation still needed.
-Never reveal secrets, environment values, tokens, or credentials. Never weaken authentication. Only write a file when the user has explicitly enabled repository changes for this message. Do not claim a file changed unless the write tool confirms it.`;
+Never reveal secrets, environment values, tokens, or credentials. Never weaken authentication. Use the write tool to propose complete file changes; the server will either hold them for review or commit them depending on the user's approval setting. Do not claim a file was committed unless the tool confirms it.`;
 
 const toolDefinitions = [
   {
@@ -40,7 +40,7 @@ const toolDefinitions = [
   {
     type: "function",
     name: "write_repository_file",
-    description: "Create or replace a UTF-8 file and commit it to the selected branch. Available only when repository changes were approved for this message.",
+    description: "Propose a complete UTF-8 file replacement. If the user enabled changes, it is committed; otherwise it is returned for visual review.",
     parameters: {
       type: "object",
       properties: {
@@ -90,6 +90,7 @@ export async function POST(request: Request) {
       { role: "user", content: `Repository: ${repository}\nBranch: ${branch}\nFile changes approved for this message: ${body.approveChanges === true ? "yes" : "no"}\n\n${message}` },
     ];
     let response: OpenAiResponse | null = null;
+    const proposedChanges: Array<{ path: string; previousContent: string; content: string; message: string }> = [];
 
     for (let turn = 0; turn < 8; turn += 1) {
       const apiResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -121,9 +122,13 @@ export async function POST(request: Request) {
             output = await readRepositoryFile(repository, args.path, args.branch || branch);
           }
           else if (call.name === "write_repository_file") {
-            if (body.approveChanges !== true) throw new Error("File changes were not approved for this message.");
             if (!args.path || typeof args.content !== "string" || !args.message) throw new Error("Path, content, and commit message are required.");
-            output = await writeRepositoryFile({ repository, path: args.path, content: args.content, branch: args.branch || branch, message: args.message });
+            if (body.approveChanges === true) output = await writeRepositoryFile({ repository, path: args.path, content: args.content, branch: args.branch || branch, message: args.message });
+            else {
+              const previous = await readRepositoryFile(repository, args.path, args.branch || branch).catch(() => ({ content: "" }));
+              proposedChanges.push({ path: args.path, previousContent: previous.content, content: args.content, message: args.message });
+              output = { proposed: true, path: args.path, message: "Change saved for user review; it was not committed." };
+            }
           } else throw new Error("Unknown repository tool.");
         } catch (error) {
           output = { error: error instanceof Error ? error.message : "Tool failed." };
@@ -136,7 +141,7 @@ export async function POST(request: Request) {
     if (!answer) throw new Error("Code AI returned no final response.");
     const assistantMessage = makeCodeAiMessage("assistant", answer);
     await appendCodeAiMessages(conversationId, [assistantMessage]);
-    return Response.json({ message: assistantMessage });
+    return Response.json({ message: assistantMessage, proposedChanges });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Code AI could not complete the request." }, { status: 500 });
   }

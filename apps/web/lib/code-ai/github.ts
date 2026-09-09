@@ -10,7 +10,7 @@ function allowedRepository(repository: string) {
   return allowed.includes(repository.toLowerCase());
 }
 
-async function githubRequest<T>(path: string, init?: RequestInit): Promise<T> {
+export async function githubRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const token = process.env.GITHUB_ACCESS_TOKEN;
   if (!token) throw new Error("GitHub access is not configured for Code AI.");
   const response = await fetch(`${API_ROOT}${path}`, {
@@ -28,8 +28,56 @@ async function githubRequest<T>(path: string, init?: RequestInit): Promise<T> {
   return data;
 }
 
-function assertRepository(repository: string) {
+export function assertRepository(repository: string) {
   if (!allowedRepository(repository)) throw new Error("That repository is not allowed.");
+}
+
+export async function listRepositoryBranches(repository: string) {
+  assertRepository(repository);
+  return githubRequest<Array<{ name: string; commit: { sha: string } }>>(
+    `/repos/${repository}/branches?per_page=100`,
+  );
+}
+
+export async function listRepositoryActivity(repository: string) {
+  assertRepository(repository);
+  const [commits, pulls] = await Promise.all([
+    githubRequest<Array<{ sha: string; html_url: string; commit: { message: string; author: { name: string; date: string } } }>>(
+      `/repos/${repository}/commits?per_page=20`,
+    ),
+    githubRequest<Array<{ number: number; title: string; state: string; html_url: string; created_at: string; head: { ref: string }; base: { ref: string } }>>(
+      `/repos/${repository}/pulls?state=all&per_page=15`,
+    ),
+  ]);
+  return {
+    commits: commits.map((item) => ({ sha: item.sha, url: item.html_url, message: item.commit.message, author: item.commit.author.name, createdAt: item.commit.author.date })),
+    pullRequests: pulls.map((item) => ({ number: item.number, title: item.title, state: item.state, url: item.html_url, createdAt: item.created_at, head: item.head.ref, base: item.base.ref })),
+  };
+}
+
+export async function getCommitStatus(repository: string, sha: string) {
+  assertRepository(repository);
+  return githubRequest<{ state: string; statuses: Array<{ context: string; state: string; target_url?: string; description?: string }> }>(
+    `/repos/${repository}/commits/${encodeURIComponent(sha)}/status`,
+  );
+}
+
+export async function dispatchValidation(repository: string, ref: string, scope: "web" | "all") {
+  assertRepository(repository);
+  await githubRequest(
+    `/repos/${repository}/actions/workflows/code-ai-runner.yml/dispatches`,
+    { method: "POST", body: JSON.stringify({ ref, inputs: { scope } }) },
+  );
+  return { queued: true, ref, scope };
+}
+
+export async function listValidationRuns(repository: string, branch?: string) {
+  assertRepository(repository);
+  const query = branch ? `?branch=${encodeURIComponent(branch)}&per_page=10` : "?per_page=10";
+  const data = await githubRequest<{ workflow_runs: Array<{ id: number; name: string; status: string; conclusion: string | null; html_url: string; created_at: string; head_branch: string; head_sha: string }> }>(
+    `/repos/${repository}/actions/workflows/code-ai-runner.yml/runs${query}`,
+  );
+  return data.workflow_runs.map((run) => ({ id: run.id, name: run.name, status: run.status, conclusion: run.conclusion, url: run.html_url, createdAt: run.created_at, branch: run.head_branch, sha: run.head_sha }));
 }
 
 export async function listRepositoryFiles(repository: string, branch = "main") {
