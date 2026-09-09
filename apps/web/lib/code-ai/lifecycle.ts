@@ -70,20 +70,29 @@ export async function discardCodeAiChangeSet(changeSetId: string) {
 export async function rewindCodeAiConversation(conversationId: string, messageKey: string) {
   if (!CONVERSATION_ID.test(conversationId) || !/^[a-zA-Z0-9-]+$/.test(messageKey)) throw new Error("Invalid conversation rewind reference.");
   const client = getSanityWriteClient();
-  const conversation = await client.fetch<{ _id: string; messages: Array<{ _key: string; role: string }> } | null>(
-    `*[_type == "codeAiConversation" && _id == $id][0]{_id,messages[]{_key,role}}`,
+  const conversation = await client.fetch<{ _id: string; messages: Array<{ _key: string; role: string; createdAt: string }> } | null>(
+    `*[_type == "codeAiConversation" && _id == $id][0]{_id,messages[]{_key,role,createdAt}}`,
     { id: conversationId },
   );
   if (!conversation) throw new Error("Conversation not found.");
   const index = conversation.messages.findIndex((message) => message._key === messageKey && message.role === "user");
   if (index < 0) throw new Error("The selected user message was not found.");
+  const target = conversation.messages[index];
   const retained = conversation.messages.slice(0, index + 1);
   await client.patch(conversationId).set({ messages: retained, updatedAt: new Date().toISOString() }).commit();
+
+  // Change sets are timestamped when they are created, while each user message
+  // carries its own creation time. Anything created after the rewind target is
+  // downstream of that target and must not remain as stale review state.
   const changes = await client.fetch<string[]>(
-    `*[_type == "codeAiChangeSet" && conversationId == $conversationId && createdAt >= $cutoff]._id`,
-    { conversationId, cutoff: new Date().toISOString() },
+    `*[_type == "codeAiChangeSet" && conversationId == $conversationId && createdAt > $cutoff]._id`,
+    { conversationId, cutoff: target.createdAt },
   );
-  if (changes.length) await client.delete(changes);
-  await logCodeAiAudit("conversationRewind", `Rewound conversation ${conversationId} to user message ${messageKey}.`);
-  return { rewound: true, retainedMessages: retained.length };
+  if (changes.length) {
+    const tx = client.transaction();
+    for (const id of changes) tx.delete(id);
+    await tx.commit();
+  }
+  await logCodeAiAudit("conversationRewind", `Rewound conversation ${conversationId} to user message ${messageKey}; removed ${changes.length} downstream saved change set${changes.length === 1 ? "" : "s"}.`);
+  return { rewound: true, retainedMessages: retained.length, changeSetsDeleted: changes.length };
 }
