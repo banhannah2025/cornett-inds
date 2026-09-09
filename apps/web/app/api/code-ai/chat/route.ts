@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { getCodeAiOwner } from "@/lib/code-ai/auth";
 import {
   appendCodeAiMessages,
+  getCodeAiFiles,
   getCodeAiConversation,
   makeCodeAiMessage,
 } from "@/lib/code-ai/store";
@@ -13,7 +14,7 @@ import {
 
 type FunctionCall = { type: "function_call"; name: string; arguments: string; call_id: string };
 type OutputItem = FunctionCall | { type: string; content?: Array<{ type: string; text?: string }> };
-type OpenAiResponse = { id: string; output?: OutputItem[]; output_text?: string; error?: { message?: string } };
+type OpenAiResponse = { id: string; output?: OutputItem[]; output_text?: string; usage?: { input_tokens?: number; output_tokens?: number }; error?: { message?: string } };
 
 const instructions = `You are Code AI, Robin's private software-development agent for Blended Works.
 Work carefully inside the selected GitHub repository. Inspect the relevant files before proposing or making changes. Preserve existing architecture and user work. Explain intended changes briefly, use repository tools when needed, and report files changed and validation still needed.
@@ -66,12 +67,14 @@ export async function POST(request: Request) {
   const owner = await getCodeAiOwner();
   if (!owner) return Response.json({ error: "Forbidden" }, { status: 403 });
   const body = (await request.json().catch(() => null)) as
-    | { conversationId?: string; message?: string; repository?: string; branch?: string; approveChanges?: boolean }
+    | { conversationId?: string; projectId?: string; message?: string; repository?: string; branch?: string; model?: string; attachmentIds?: string[]; approveChanges?: boolean }
     | null;
   const message = body?.message?.trim();
   const repository = body?.repository?.trim();
   const conversationId = body?.conversationId;
   const branch = body?.branch?.trim() || "main";
+  const allowedModels = ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"];
+  const model = body?.model && allowedModels.includes(body.model) ? body.model : process.env.CODE_AI_MODEL ?? "gpt-5.6-terra";
   if (!message || message.length > 20000 || !repository || !conversationId) {
     return Response.json({ error: "A conversation, repository, and message are required." }, { status: 400 });
   }
@@ -84,10 +87,20 @@ export async function POST(request: Request) {
     const userMessage = makeCodeAiMessage("user", message);
     await appendCodeAiMessages(conversationId, [userMessage]);
 
+    const attachments = body.projectId && Array.isArray(body.attachmentIds) ? await getCodeAiFiles(body.attachmentIds.slice(0, 5), body.projectId) : [];
+    const attachmentContent: unknown[] = [];
+    for (const file of attachments) {
+      if (file.mimeType.startsWith("image/")) attachmentContent.push({ type: "input_image", image_url: file.url });
+      else if (file.mimeType === "application/pdf") attachmentContent.push({ type: "input_file", file_url: file.url, filename: file.name });
+      else if (file.size <= 250_000 && (/^(text\/|application\/(json|javascript|xml))/.test(file.mimeType) || /\.(ts|tsx|js|jsx|css|md|json|ya?ml|txt|sh|kt|java|xml)$/i.test(file.name))) {
+        const text = await fetch(file.url).then((result) => result.ok ? result.text() : "").catch(() => "");
+        attachmentContent.push({ type: "input_text", text: `Attached file: ${file.name}\n\n${text.slice(0, 250_000)}` });
+      } else attachmentContent.push({ type: "input_text", text: `Attached file available for reference: ${file.name} (${file.mimeType}, ${file.size} bytes).` });
+    }
     const input: unknown[] = [
       { role: "system", content: instructions },
       ...conversation.messages.slice(-20).map(({ role, content }) => ({ role, content })),
-      { role: "user", content: `Repository: ${repository}\nBranch: ${branch}\nFile changes approved for this message: ${body.approveChanges === true ? "yes" : "no"}\n\n${message}` },
+      { role: "user", content: [{ type: "input_text", text: `Repository: ${repository}\nBranch: ${branch}\nFile changes approved for this message: ${body.approveChanges === true ? "yes" : "no"}\n\n${message}` }, ...attachmentContent] },
     ];
     let response: OpenAiResponse | null = null;
     const proposedChanges: Array<{ path: string; previousContent: string; content: string; message: string }> = [];
@@ -97,7 +110,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: process.env.CODE_AI_MODEL ?? "gpt-5.6-terra",
+          model,
           store: false,
           safety_identifier: createHash("sha256").update(owner.userId).digest("hex"),
           reasoning: { effort: "medium" },
@@ -139,7 +152,7 @@ export async function POST(request: Request) {
 
     const answer = response ? answerFrom(response) : null;
     if (!answer) throw new Error("Code AI returned no final response.");
-    const assistantMessage = makeCodeAiMessage("assistant", answer);
+    const assistantMessage = { ...makeCodeAiMessage("assistant", answer), model, inputTokens: response?.usage?.input_tokens, outputTokens: response?.usage?.output_tokens };
     await appendCodeAiMessages(conversationId, [assistantMessage]);
     return Response.json({ message: assistantMessage, proposedChanges });
   } catch (error) {
