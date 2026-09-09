@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { getCodeAiOwner } from "@/lib/code-ai/auth";
+import { logCodeAiAudit } from "@/lib/code-ai/store";
 import { getSanityWriteClient } from "@/sanity/lib/writeClient";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
       asset: { _type: "reference", _ref: asset._id },
       createdAt,
     });
+    await logCodeAiAudit("fileUpload", `Uploaded ${file.name} (${file.size} bytes)`);
     return Response.json({ _id: document._id, projectId, name: file.name, mimeType: file.type || "application/octet-stream", size: file.size, url: asset.url, createdAt });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Unable to upload file." }, { status: 500 });
