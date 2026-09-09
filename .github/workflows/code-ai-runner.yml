@@ -1,0 +1,38 @@
+name: Code AI validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Validation scope
+        required: true
+        type: choice
+        options:
+          - web
+          - all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: code-ai-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:styles --workspace=@repo/ui
+      - name: Validate web application
+        if: inputs.scope == 'web'
+        run: npm run check-types --workspace=web && npm run build --workspace=web
+      - name: Validate all workspaces
+        if: inputs.scope == 'all'
+        run: npm run check-types && npm run build
