@@ -82,6 +82,24 @@ export async function listValidationRuns(repository: string, branch?: string) {
   return data.workflow_runs.map((run) => ({ id: run.id, name: run.name, status: run.status, conclusion: run.conclusion, url: run.html_url, createdAt: run.created_at, branch: run.head_branch, sha: run.head_sha }));
 }
 
+export async function getValidationRunDetails(repository: string, runId: number) {
+  assertRepository(repository);
+  const [jobs, artifacts] = await Promise.all([
+    githubRequest<{ jobs: Array<{ id: number; name: string; status: string; conclusion: string | null; html_url: string; steps?: Array<{ name: string; status: string; conclusion: string | null; number: number }> }> }>(`/repos/${repository}/actions/runs/${runId}/jobs?per_page=100`),
+    githubRequest<{ artifacts: Array<{ id: number; name: string; size_in_bytes: number; expired: boolean; archive_download_url: string }> }>(`/repos/${repository}/actions/runs/${runId}/artifacts?per_page=100`),
+  ]);
+  return {
+    jobs: jobs.jobs.map((job) => ({ id: job.id, name: job.name, status: job.status, conclusion: job.conclusion, url: job.html_url, steps: job.steps ?? [] })),
+    artifacts: artifacts.artifacts.map((artifact) => ({ id: artifact.id, name: artifact.name, size: artifact.size_in_bytes, expired: artifact.expired, url: artifact.archive_download_url })),
+  };
+}
+
+export async function getGitHubRateLimit(repository: string) {
+  assertRepository(repository);
+  const data = await githubRequest<{ resources: { core: { limit: number; remaining: number; reset: number } } }>("/rate_limit");
+  return data.resources.core;
+}
+
 export async function controlValidationRun(repository: string, runId: number, action: "cancel" | "rerun") {
   assertRepository(repository);
   await githubRequest(`/repos/${repository}/actions/runs/${runId}/${action === "cancel" ? "cancel" : "rerun"}`, { method: "POST" });

@@ -45,6 +45,8 @@ type RepoActivity = {
 };
 type ProposedChange = CodeAiChangeSet["changes"][number];
 type ValidationRun = { id: number; name: string; status: string; conclusion: string | null; url: string; createdAt: string; branch: string; sha: string };
+type ValidationDetails = { jobs: Array<{ id: number; name: string; status: string; conclusion: string | null; url: string; steps: Array<{ name: string; status: string; conclusion: string | null; number: number }> }>; artifacts: Array<{ id: number; name: string; size: number; expired: boolean; url: string }> };
+type GitHubRateLimit = { limit: number; remaining: number; reset: number };
 type Connection = { id: string; name: string; description: string; connected: boolean; note?: string };
 
 type DiffLine = { kind: "same" | "add" | "remove"; text: string; oldLine?: number; newLine?: number };
@@ -93,6 +95,9 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   const [proposedChanges, setProposedChanges] = useState<ProposedChange[]>([]);
   const [currentChangeSetId, setCurrentChangeSetId] = useState("");
   const [validationRuns, setValidationRuns] = useState<ValidationRun[]>([]);
+  const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
+  const [validationDetails, setValidationDetails] = useState<ValidationDetails | null>(null);
+  const [githubRateLimit, setGitHubRateLimit] = useState<GitHubRateLimit | null>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
@@ -142,6 +147,16 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     return api<T>(`/api/code-ai/repository?repository=${encodeURIComponent(project.repository)}&branch=${encodeURIComponent(branch)}&action=${action}${extra}`);
   }, [project?.repository, branch]);
 
+  const refreshActivity = useCallback(async () => {
+    if (!project?.repository) return;
+    const [repoActivity, runs, rateLimit] = await Promise.all([
+      repositoryApi<RepoActivity>("activity"),
+      api<ValidationRun[]>(`/api/code-ai/runner?repository=${encodeURIComponent(project.repository)}&branch=${encodeURIComponent(branch)}`).catch(() => []),
+      api<GitHubRateLimit>(`/api/code-ai/runner?repository=${encodeURIComponent(project.repository)}&action=rateLimit`).catch(() => null),
+    ]);
+    setActivity(repoActivity); setValidationRuns(runs); setGitHubRateLimit(rateLimit);
+  }, [project?.repository, branch, repositoryApi]);
+
   useEffect(() => {
     if (!project?.repository) return;
     void repositoryApi<RepoBranch[]>("branches").then(setBranches).catch(() => undefined);
@@ -154,19 +169,27 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     setError("");
     try {
       if (panel === "files" && !files.length) setFiles(await repositoryApi<RepoFile[]>("tree"));
-      if (panel === "activity") {
-        const [repoActivity, runs] = await Promise.all([
-          repositoryApi<RepoActivity>("activity"),
-          api<ValidationRun[]>(`/api/code-ai/runner?repository=${encodeURIComponent(project.repository)}&branch=${encodeURIComponent(branch)}`).catch(() => []),
-        ]);
-        setActivity(repoActivity); setValidationRuns(runs);
-      }
+      if (panel === "activity") await refreshActivity();
       if (panel === "connections") setConnections(await api<Connection[]>("/api/code-ai/connections"));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to load repository data.");
     } finally {
       setRepoLoading(false);
     }
+  }
+
+  useEffect(() => {
+    if (repoPanel !== "activity" || !validationRuns.some((run) => run.status !== "completed")) return;
+    const timer = window.setInterval(() => void refreshActivity(), 5000);
+    return () => window.clearInterval(timer);
+  }, [repoPanel, validationRuns, refreshActivity]);
+
+  async function toggleRunDetails(run: ValidationRun) {
+    if (selectedRunId === run.id) { setSelectedRunId(null); setValidationDetails(null); return; }
+    setSelectedRunId(run.id); setValidationDetails(null); setRepoLoading(true); setError("");
+    try { setValidationDetails(await api<ValidationDetails>(`/api/code-ai/runner?repository=${encodeURIComponent(project?.repository ?? "")}&action=details&runId=${run.id}`)); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to load validation details."); }
+    finally { setRepoLoading(false); }
   }
 
   async function runValidation(scope: "web" | "visual" = "web") {
@@ -480,7 +503,8 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
             {activity.deployment?.statuses?.length ? activity.deployment.statuses.map((status) => status.target_url ? <a key={status.context} href={status.target_url} target="_blank" rel="noreferrer"><span><strong>{status.context} · {status.state}</strong><small>{status.description ?? "Open deployment details and logs"}</small></span><ExternalLink size={13}/></a> : <div className="code-ai-audit" key={status.context}><strong>{status.context}</strong><span>{status.state}</span></div>) : <p>No deployment status is attached to the latest commit.</p>}
             <h3><RefreshCw size={15}/>Validation runs</h3>
             <div className="code-ai-validation-actions"><button onClick={() => runValidation("visual")}><Play size={13}/>Run browser checks</button></div>
-            {validationRuns.length ? validationRuns.map((run) => <div className="code-ai-run-row" key={run.id}><a href={run.url} target="_blank" rel="noreferrer"><span><strong>{run.status === "completed" ? run.conclusion ?? "completed" : run.status} · {run.branch}</strong><small>{run.sha.slice(0, 7)} · {new Date(run.createdAt).toLocaleString()}</small></span><ExternalLink size={13}/></a><button onClick={() => controlRun(run, run.status === "completed" ? "rerun" : "cancel")}>{run.status === "completed" ? "Retry" : "Cancel"}</button></div>) : <p>No Code AI validation runs yet.</p>}
+            {githubRateLimit && <p className="code-ai-rate-limit">GitHub API: {githubRateLimit.remaining.toLocaleString()} of {githubRateLimit.limit.toLocaleString()} requests remaining</p>}
+            {validationRuns.length ? validationRuns.map((run) => <div className="code-ai-run-wrap" key={run.id}><div className="code-ai-run-row"><button className="code-ai-run-summary" onClick={() => toggleRunDetails(run)}><ChevronRight className={selectedRunId === run.id ? "open" : ""} size={13}/><span><strong>{run.status === "completed" ? run.conclusion ?? "completed" : run.status} · {run.branch}</strong><small>{run.sha.slice(0, 7)} · {new Date(run.createdAt).toLocaleString()}</small></span></button><a aria-label="Open run on GitHub" href={run.url} target="_blank" rel="noreferrer"><ExternalLink size={13}/></a><button onClick={() => controlRun(run, run.status === "completed" ? "rerun" : "cancel")}>{run.status === "completed" ? "Retry" : "Cancel"}</button></div>{selectedRunId === run.id && validationDetails && <div className="code-ai-run-details">{validationDetails.jobs.map((job) => <section key={job.id}><a href={job.url} target="_blank" rel="noreferrer"><strong>{job.name} · {job.conclusion ?? job.status}</strong><ExternalLink size={11}/></a>{job.steps.map((step) => <div key={step.number}><span>{step.number}. {step.name}</span><b className={step.conclusion ?? step.status}>{step.conclusion ?? step.status}</b></div>)}</section>)}{validationDetails.artifacts.map((artifact) => <a key={artifact.id} href={run.url} target="_blank" rel="noreferrer"><Download size={12}/>{artifact.name} · {Math.ceil(artifact.size / 1024)} KB{artifact.expired ? " · expired" : ""}</a>)}</div>}</div>) : <p>No Code AI validation runs yet.</p>}
             <h3><ShieldCheck size={15}/>Audit history</h3>
             {data.audit.slice(0, 15).map((item) => <div className="code-ai-audit" key={item._id}><strong>{item.action}</strong><span>{item.summary}</span><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}
             <h3><GitCommitHorizontal size={15}/>Recent commits</h3>

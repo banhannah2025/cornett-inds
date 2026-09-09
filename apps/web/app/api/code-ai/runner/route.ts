@@ -1,13 +1,22 @@
 import { getCodeAiOwner } from "@/lib/code-ai/auth";
 import { logCodeAiAudit } from "@/lib/code-ai/store";
-import { controlValidationRun, dispatchValidation, listValidationRuns } from "@/lib/code-ai/github";
+import { controlValidationRun, dispatchValidation, getGitHubRateLimit, getValidationRunDetails, listValidationRuns } from "@/lib/code-ai/github";
 
 export async function GET(request: Request) {
   if (!(await getCodeAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
   const url = new URL(request.url);
   const repository = url.searchParams.get("repository");
   if (!repository) return Response.json({ error: "Repository is required." }, { status: 400 });
-  try { return Response.json(await listValidationRuns(repository, url.searchParams.get("branch") || undefined)); }
+  try {
+    const action = url.searchParams.get("action");
+    if (action === "details") {
+      const runId = Number(url.searchParams.get("runId"));
+      if (!Number.isSafeInteger(runId) || runId <= 0) return Response.json({ error: "A valid run ID is required." }, { status: 400 });
+      return Response.json(await getValidationRunDetails(repository, runId));
+    }
+    if (action === "rateLimit") return Response.json(await getGitHubRateLimit(repository));
+    return Response.json(await listValidationRuns(repository, url.searchParams.get("branch") || undefined));
+  }
   catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Unable to load validation runs." }, { status: 502 }); }
 }
 
