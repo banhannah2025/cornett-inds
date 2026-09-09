@@ -6,6 +6,11 @@ import {
   listCodeAiWorkspace,
   updateCodeAiDocument,
 } from "@/lib/code-ai/store";
+import {
+  deleteCodeAiConversationCascade,
+  deleteCodeAiProjectCascade,
+  discardCodeAiChangeSet,
+} from "@/lib/code-ai/lifecycle";
 
 export async function GET() {
   if (!(await getCodeAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -34,7 +39,10 @@ export async function DELETE(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   if (!id?.startsWith("codeAi")) return Response.json({ error: "Invalid document ID." }, { status: 400 });
   try {
-    await deleteCodeAiDocument(id);
+    if (id.startsWith("codeAiProject-")) await deleteCodeAiProjectCascade(id);
+    else if (id.startsWith("codeAiConversation-")) await deleteCodeAiConversationCascade(id);
+    else if (id.startsWith("codeAiChangeSet-")) await discardCodeAiChangeSet(id);
+    else await deleteCodeAiDocument(id);
     return Response.json({ deleted: true });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Unable to delete item." }, { status: 500 });
