@@ -32,3 +32,18 @@ export async function POST(request: Request) {
     return Response.json({ error: error instanceof Error ? error.message : "Unable to upload file." }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  if (!(await getCodeAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id?.startsWith("codeAiFile-")) return Response.json({ error: "Invalid file ID." }, { status: 400 });
+  try {
+    const client = getSanityWriteClient();
+    const file = await client.fetch<{ name: string; assetId?: string } | null>(`*[_type == "codeAiFile" && _id == $id][0]{name,"assetId":asset._ref}`, { id });
+    if (!file) return Response.json({ error: "File not found." }, { status: 404 });
+    await client.delete(id);
+    if (file.assetId) await client.delete(file.assetId).catch(() => undefined);
+    await logCodeAiAudit("fileDelete", `Deleted ${file.name}`);
+    return Response.json({ deleted: true });
+  } catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Unable to delete file." }, { status: 500 }); }
+}
