@@ -39,19 +39,21 @@ export async function listRepositoryBranches(repository: string) {
   );
 }
 
-export async function listRepositoryActivity(repository: string) {
+export async function listRepositoryActivity(repository: string, branch = "main") {
   assertRepository(repository);
   const [commits, pulls] = await Promise.all([
     githubRequest<Array<{ sha: string; html_url: string; commit: { message: string; author: { name: string; date: string } } }>>(
-      `/repos/${repository}/commits?per_page=20`,
+      `/repos/${repository}/commits?sha=${encodeURIComponent(branch)}&per_page=20`,
     ),
     githubRequest<Array<{ number: number; title: string; state: string; html_url: string; created_at: string; head: { ref: string }; base: { ref: string } }>>(
       `/repos/${repository}/pulls?state=all&per_page=15`,
     ),
   ]);
+  const deployment = commits[0] ? await getCommitStatus(repository, commits[0].sha).catch(() => null) : null;
   return {
     commits: commits.map((item) => ({ sha: item.sha, url: item.html_url, message: item.commit.message, author: item.commit.author.name, createdAt: item.commit.author.date })),
     pullRequests: pulls.map((item) => ({ number: item.number, title: item.title, state: item.state, url: item.html_url, createdAt: item.created_at, head: item.head.ref, base: item.base.ref })),
+    deployment,
   };
 }
 
@@ -78,6 +80,12 @@ export async function listValidationRuns(repository: string, branch?: string) {
     `/repos/${repository}/actions/workflows/code-ai-runner.yml/runs${query}`,
   );
   return data.workflow_runs.map((run) => ({ id: run.id, name: run.name, status: run.status, conclusion: run.conclusion, url: run.html_url, createdAt: run.created_at, branch: run.head_branch, sha: run.head_sha }));
+}
+
+export async function controlValidationRun(repository: string, runId: number, action: "cancel" | "rerun") {
+  assertRepository(repository);
+  await githubRequest(`/repos/${repository}/actions/runs/${runId}/${action === "cancel" ? "cancel" : "rerun"}`, { method: "POST" });
+  return { accepted: true, runId, action };
 }
 
 export async function listRepositoryFiles(repository: string, branch = "main") {
@@ -122,4 +130,66 @@ export async function writeRepositoryFile(args: {
       }),
     },
   );
+}
+
+export type AtomicFileChange = { path: string; content: string };
+
+export async function commitRepositoryFiles(args: {
+  repository: string;
+  branch: string;
+  message: string;
+  changes: AtomicFileChange[];
+}) {
+  assertRepository(args.repository);
+  if (!args.changes.length || args.changes.length > 40) throw new Error("An atomic commit must contain 1–40 files.");
+  const ref = await githubRequest<{ object: { sha: string } }>(`/repos/${args.repository}/git/ref/heads/${args.branch.split("/").map(encodeURIComponent).join("/")}`);
+  const baseCommit = await githubRequest<{ tree: { sha: string } }>(`/repos/${args.repository}/git/commits/${ref.object.sha}`);
+  const tree = await githubRequest<{ sha: string }>(`/repos/${args.repository}/git/trees`, {
+    method: "POST",
+    body: JSON.stringify({
+      base_tree: baseCommit.tree.sha,
+      tree: args.changes.map((change) => ({ path: change.path, mode: "100644", type: "blob", content: change.content })),
+    }),
+  });
+  const commit = await githubRequest<{ sha: string; html_url: string }>(`/repos/${args.repository}/git/commits`, {
+    method: "POST",
+    body: JSON.stringify({ message: args.message, tree: tree.sha, parents: [ref.object.sha] }),
+  });
+  await githubRequest(`/repos/${args.repository}/git/refs/heads/${args.branch.split("/").map(encodeURIComponent).join("/")}`, {
+    method: "PATCH",
+    body: JSON.stringify({ sha: commit.sha, force: false }),
+  });
+  return { sha: commit.sha, url: commit.html_url, filesChanged: args.changes.length };
+}
+
+export async function createRepositoryBranch(repository: string, name: string, from = "main") {
+  assertRepository(repository);
+  if (!/^[a-zA-Z0-9._/-]{1,100}$/.test(name) || name.startsWith("/") || name.endsWith("/")) throw new Error("Enter a valid branch name.");
+  const base = await githubRequest<{ commit: { sha: string } }>(`/repos/${repository}/branches/${from.split("/").map(encodeURIComponent).join("/")}`);
+  await githubRequest(`/repos/${repository}/git/refs`, { method: "POST", body: JSON.stringify({ ref: `refs/heads/${name}`, sha: base.commit.sha }) });
+  return { name, sha: base.commit.sha };
+}
+
+export async function createRepositoryPullRequest(args: { repository: string; title: string; body?: string; head: string; base: string }) {
+  assertRepository(args.repository);
+  return githubRequest<{ number: number; html_url: string; state: string }>(`/repos/${args.repository}/pulls`, {
+    method: "POST",
+    body: JSON.stringify({ title: args.title, body: args.body ?? "", head: args.head, base: args.base }),
+  });
+}
+
+export async function revertLatestCommit(repository: string, branch: string, expectedSha: string) {
+  assertRepository(repository);
+  const current = await githubRequest<{ commit: { sha: string } }>(`/repos/${repository}/branches/${branch.split("/").map(encodeURIComponent).join("/")}`);
+  if (current.commit.sha !== expectedSha) throw new Error("The branch has moved. Refresh before attempting an undo.");
+  const commit = await githubRequest<{ message: string; tree: { sha: string }; parents: Array<{ sha: string }> }>(`/repos/${repository}/git/commits/${expectedSha}`);
+  const parent = commit.parents[0];
+  if (!parent) throw new Error("The initial repository commit cannot be undone.");
+  const parentCommit = await githubRequest<{ tree: { sha: string } }>(`/repos/${repository}/git/commits/${parent.sha}`);
+  const revert = await githubRequest<{ sha: string }>(`/repos/${repository}/git/commits`, {
+    method: "POST",
+    body: JSON.stringify({ message: `Revert: ${commit.message.split("\n")[0]}`, tree: parentCommit.tree.sha, parents: [expectedSha] }),
+  });
+  await githubRequest(`/repos/${repository}/git/refs/heads/${branch.split("/").map(encodeURIComponent).join("/")}`, { method: "PATCH", body: JSON.stringify({ sha: revert.sha, force: false }) });
+  return { sha: revert.sha, reverted: expectedSha };
 }
