@@ -2,11 +2,32 @@
 
 import { useEffect } from "react";
 
+type CompletionNotification = {
+  title: string;
+  options?: NotificationOptions;
+};
+
 /**
- * Code AI's shared workspace currently creates completion notifications with
- * `new Notification(...)`. In a service-worker execution context that
- * constructor is unavailable; route those requests through the active service
- * worker instead while preserving the existing permission controls.
+ * Shows a browser notification through the active Service Worker registration.
+ * Service workers do not support constructing notifications with
+ * `new Notification(...)`; they must use registration.showNotification(...).
+ */
+export async function showServiceWorkerNotification({ title, options }: CompletionNotification): Promise<void> {
+  if (!("serviceWorker" in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.showNotification(title, options);
+  } catch {
+    // Notifications are optional UI feedback. Do not interrupt the workspace
+    // when a service worker is unavailable or its registration fails.
+  }
+}
+
+/**
+ * Compatibility bridge for the existing shared workspace notification call.
+ * It preserves Notification.permission and requestPermission(), but routes
+ * completed-task notifications through ServiceWorkerRegistration.showNotification().
  */
 export function ServiceWorkerNotifications() {
   useEffect(() => {
@@ -24,9 +45,7 @@ export function ServiceWorkerNotifications() {
       }
 
       constructor(title: string, options?: NotificationOptions) {
-        void navigator.serviceWorker.ready
-          .then((registration) => registration.showNotification(title, options))
-          .catch(() => undefined);
+        void showServiceWorkerNotification({ title, options });
       }
     }
 
