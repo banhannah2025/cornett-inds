@@ -19,6 +19,9 @@ export type CodeAiProject = {
   repository: string;
   createdAt: string;
   updatedAt: string;
+  archived?: boolean;
+  monthlyBudgetUsd?: number;
+  defaultModel?: string;
 };
 
 export type CodeAiConversation = {
@@ -40,7 +43,7 @@ export async function listCodeAiWorkspace() {
   const client = getSanityWriteClient();
   const [projects, conversations, files, audit, changeSets] = await Promise.all([
     client.fetch<CodeAiProject[]>(
-      `*[_type == "codeAiProject"] | order(updatedAt desc){_id,name,repository,createdAt,updatedAt}`,
+      `*[_type == "codeAiProject"] | order(updatedAt desc){_id,name,repository,createdAt,updatedAt,archived,monthlyBudgetUsd,defaultModel}`,
     ),
     client.fetch<CodeAiConversation[]>(
       `*[_type == "codeAiConversation"] | order(updatedAt desc){_id,projectId,title,messages,createdAt,updatedAt,archived}`,
@@ -89,6 +92,8 @@ export async function createCodeAiProject(name: string, repository: string) {
     _type: "codeAiProject",
     name,
     repository,
+    monthlyBudgetUsd: 5,
+    defaultModel: "gpt-5.6-luna",
     createdAt: now,
     updatedAt: now,
   }) as Promise<CodeAiProject>;
@@ -114,6 +119,31 @@ export async function getCodeAiConversation(id: string) {
   );
 }
 
+const MODEL_PRICES: Record<string, { input: number; output: number }> = {
+  "gpt-5.6-luna": { input: 0.2, output: 1.2 },
+  "gpt-5.6-terra": { input: 2, output: 12 },
+  "gpt-5.6-sol": { input: 4, output: 20 },
+};
+
+export function estimateCodeAiCost(messages: CodeAiMessage[]) {
+  return messages.reduce((total, message) => {
+    if (message.role !== "assistant" || !message.model) return total;
+    const price = MODEL_PRICES[message.model];
+    return price ? total + ((message.inputTokens ?? 0) * price.input + (message.outputTokens ?? 0) * price.output) / 1_000_000 : total;
+  }, 0);
+}
+
+export async function getCodeAiProjectUsage(projectId: string) {
+  const client = getSanityWriteClient();
+  const [project, conversations] = await Promise.all([
+    client.fetch<CodeAiProject | null>(`*[_type == "codeAiProject" && _id == $projectId][0]{_id,name,repository,monthlyBudgetUsd,defaultModel}`, { projectId }),
+    client.fetch<Array<{ messages: CodeAiMessage[] }>>(`*[_type == "codeAiConversation" && projectId == $projectId]{messages}`, { projectId }),
+  ]);
+  const start = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
+  const messages = conversations.flatMap((item) => item.messages ?? []).filter((message) => message.createdAt >= start);
+  return { project, estimatedCostUsd: estimateCodeAiCost(messages), inputTokens: messages.reduce((sum, item) => sum + (item.inputTokens ?? 0), 0), outputTokens: messages.reduce((sum, item) => sum + (item.outputTokens ?? 0), 0) };
+}
+
 export async function appendCodeAiMessages(id: string, messages: CodeAiMessage[]) {
   const client = getSanityWriteClient();
   await client
@@ -126,7 +156,7 @@ export async function appendCodeAiMessages(id: string, messages: CodeAiMessage[]
 
 export async function updateCodeAiDocument(
   id: string,
-  changes: { name?: string; title?: string; archived?: boolean },
+  changes: { name?: string; title?: string; archived?: boolean; projectId?: string; monthlyBudgetUsd?: number; defaultModel?: string },
 ) {
   const allowed = Object.fromEntries(
     Object.entries(changes).filter(([, value]) => value !== undefined),
