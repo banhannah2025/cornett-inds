@@ -5,6 +5,7 @@ import {
   createCodeAiChangeSet,
   getCodeAiFiles,
   getCodeAiConversation,
+  getCodeAiProjectUsage,
   makeCodeAiMessage,
 } from "@/lib/code-ai/store";
 import {
@@ -64,6 +65,35 @@ function answerFrom(response: OpenAiResponse) {
     .trim();
 }
 
+async function readOpenAiStream(response: Response, onDelta: (delta: string) => void) {
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({})) as { error?: { message?: string } };
+    throw new Error(error.error?.message ?? "OpenAI request failed.");
+  }
+  if (!response.body) throw new Error("OpenAI returned no response stream.");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let completed: OpenAiResponse | null = null;
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const events = buffer.split("\n\n");
+    buffer = events.pop() ?? "";
+    for (const event of events) {
+      const line = event.split("\n").find((item) => item.startsWith("data: "));
+      if (!line || line === "data: [DONE]") continue;
+      const payload = JSON.parse(line.slice(6)) as { type?: string; delta?: string; response?: OpenAiResponse; error?: { message?: string } };
+      if (payload.type === "response.output_text.delta" && payload.delta) onDelta(payload.delta);
+      if (payload.type === "response.completed" && payload.response) completed = payload.response;
+      if (payload.type === "response.failed") throw new Error(payload.error?.message ?? "OpenAI response failed.");
+    }
+    if (done) break;
+  }
+  if (!completed) throw new Error("OpenAI stream ended before completion.");
+  return completed;
+}
+
 export async function POST(request: Request) {
   const owner = await getCodeAiOwner();
   if (!owner) return Response.json({ error: "Forbidden" }, { status: 403 });
@@ -82,9 +112,19 @@ export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_SECRET_KEY;
   if (!apiKey) return Response.json({ error: "OpenAI is not configured." }, { status: 503 });
 
-  try {
+  if (body.projectId) {
+    const usage = await getCodeAiProjectUsage(body.projectId);
+    const budget = usage.project?.monthlyBudgetUsd ?? 5;
+    if (budget > 0 && usage.estimatedCostUsd >= budget) return Response.json({ error: `This project's $${budget.toFixed(2)} monthly budget has been reached. Increase it in project settings to continue.` }, { status: 429 });
+  }
+
+  const encoder = new TextEncoder();
+  return new Response(new ReadableStream({
+    async start(controller) {
+      const send = (payload: unknown) => controller.enqueue(encoder.encode(`${JSON.stringify(payload)}\n`));
+      try {
     const conversation = await getCodeAiConversation(conversationId);
-    if (!conversation) return Response.json({ error: "Conversation not found." }, { status: 404 });
+    if (!conversation) throw new Error("Conversation not found.");
     const userMessage = makeCodeAiMessage("user", message);
     await appendCodeAiMessages(conversationId, [userMessage]);
 
@@ -109,6 +149,7 @@ export async function POST(request: Request) {
     for (let turn = 0; turn < 8; turn += 1) {
       const apiResponse = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
+        signal: request.signal,
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model,
@@ -116,12 +157,12 @@ export async function POST(request: Request) {
           safety_identifier: createHash("sha256").update(owner.userId).digest("hex"),
           reasoning: { effort: "medium" },
           max_output_tokens: 4000,
+          stream: true,
           tools: toolDefinitions,
           input,
         }),
       });
-      response = (await apiResponse.json()) as OpenAiResponse;
-      if (!apiResponse.ok) throw new Error(response.error?.message ?? "OpenAI request failed.");
+      response = await readOpenAiStream(apiResponse, (delta) => send({ type: "delta", delta }));
       input.push(...(response.output ?? []));
       const calls = (response.output ?? []).filter((item): item is FunctionCall => item.type === "function_call");
       if (!calls.length) break;
@@ -156,8 +197,11 @@ export async function POST(request: Request) {
     const assistantMessage = { ...makeCodeAiMessage("assistant", answer), model, inputTokens: response?.usage?.input_tokens, outputTokens: response?.usage?.output_tokens };
     await appendCodeAiMessages(conversationId, [assistantMessage]);
     const changeSet = proposedChanges.length && body.projectId ? await createCodeAiChangeSet({ projectId: body.projectId, conversationId, repository, branch, changes: proposedChanges }) : null;
-    return Response.json({ message: assistantMessage, proposedChanges, changeSet });
-  } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : "Code AI could not complete the request." }, { status: 500 });
-  }
+    send({ type: "done", message: assistantMessage, proposedChanges, changeSet });
+      } catch (error) {
+        send({ type: "error", error: error instanceof Error ? error.message : "Code AI could not complete the request." });
+      } finally { controller.close(); }
+    },
+    cancel() { /* The request signal aborts upstream fetches when the client disconnects. */ },
+  }), { headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Content-Type-Options": "nosniff" } });
 }
