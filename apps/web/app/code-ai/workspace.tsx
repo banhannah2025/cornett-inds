@@ -3,7 +3,6 @@
 import {
   Bot,
   CheckCircle2,
-  ChevronDown,
   Code2,
   FileCode2,
   FolderGit2,
@@ -32,7 +31,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   const [projectId, setProjectId] = useState("");
   const [conversationId, setConversationId] = useState("");
   const [prompt, setPrompt] = useState("");
-  const [branch, setBranch] = useState("main");
+  const branch = "main";
   const [approveChanges, setApproveChanges] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -155,8 +154,10 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
         <header className="code-ai-header">
           <button className="code-ai-menu" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Menu size={21}/></button>
           <div><strong>{project?.name ?? "Code AI"}</strong><span>{project?.repository ?? "Private development workspace"}</span></div>
-          <label>Branch <input value={branch} onChange={(event) => setBranch(event.target.value)} /></label>
-          <ChevronDown size={16}/>
+          <div className="code-ai-branch" aria-label="Working branch: main">
+            <span>Working branch</span>
+            <strong>main</strong>
+          </div>
         </header>
 
         <div className="code-ai-thread">
