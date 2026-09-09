@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Code2,
+  Copy,
   ExternalLink,
   FileCode2,
   FileSearch,
@@ -26,13 +27,17 @@ import {
   Plus,
   Plug,
   RefreshCw,
+  RotateCcw,
   Send,
+  Settings,
   ShieldCheck,
+  Square,
   Trash2,
   UserRound,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import type { CodeAiAttachment, CodeAiAudit, CodeAiChangeSet, CodeAiConversation, CodeAiMessage, CodeAiProject } from "@/lib/code-ai/store";
 
 type WorkspaceData = { projects: CodeAiProject[]; conversations: CodeAiConversation[]; files: CodeAiAttachment[]; audit: CodeAiAudit[]; changeSets: CodeAiChangeSet[] };
@@ -48,6 +53,7 @@ type ValidationRun = { id: number; name: string; status: string; conclusion: str
 type ValidationDetails = { jobs: Array<{ id: number; name: string; status: string; conclusion: string | null; url: string; steps: Array<{ name: string; status: string; conclusion: string | null; number: number }> }>; artifacts: Array<{ id: number; name: string; size: number; expired: boolean; url: string }> };
 type GitHubRateLimit = { limit: number; remaining: number; reset: number };
 type Connection = { id: string; name: string; description: string; connected: boolean; note?: string };
+const MODEL_PRICES: Record<string, { input: number; output: number }> = { "gpt-5.6-luna": { input: .2, output: 1.2 }, "gpt-5.6-terra": { input: 2, output: 12 }, "gpt-5.6-sol": { input: 4, output: 20 } };
 
 type DiffLine = { kind: "same" | "add" | "remove"; text: string; oldLine?: number; newLine?: number };
 
@@ -85,7 +91,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   const [conversationId, setConversationId] = useState("");
   const [prompt, setPrompt] = useState("");
   const [branch, setBranch] = useState("main");
-  const [repoPanel, setRepoPanel] = useState<"files" | "activity" | "changes" | "connections" | null>(null);
+  const [repoPanel, setRepoPanel] = useState<"files" | "activity" | "changes" | "connections" | "settings" | null>(null);
   const [files, setFiles] = useState<RepoFile[]>([]);
   const [branches, setBranches] = useState<RepoBranch[]>([]);
   const [activity, setActivity] = useState<RepoActivity>({ commits: [], pullRequests: [], deployment: null });
@@ -99,6 +105,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   const [validationDetails, setValidationDetails] = useState<ValidationDetails | null>(null);
   const [githubRateLimit, setGitHubRateLimit] = useState<GitHubRateLimit | null>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
+  const requestController = useRef<AbortController | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
   const [approveChanges, setApproveChanges] = useState(false);
@@ -108,6 +115,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [error, setError] = useState("");
   const [chatSearch, setChatSearch] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const reload = useCallback(async () => {
@@ -127,13 +135,21 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
 
   const project = data.projects.find((item) => item._id === projectId);
   const projectConversations = useMemo(
-    () => data.conversations.filter((item) => item.projectId === projectId && !item.archived && item.title.toLowerCase().includes(chatSearch.toLowerCase())),
-    [data.conversations, projectId, chatSearch],
+    () => data.conversations.filter((item) => item.projectId === projectId && (showArchived ? item.archived : !item.archived) && item.title.toLowerCase().includes(chatSearch.toLowerCase())),
+    [data.conversations, projectId, chatSearch, showArchived],
   );
   const conversation = data.conversations.find((item) => item._id === conversationId);
   const messages = conversation?.messages ?? [];
   const projectFiles = data.files.filter((file) => file.projectId === projectId);
   const visibleFiles = files.filter((file) => file.path.toLowerCase().includes(repoSearch.trim().toLowerCase())).slice(0, 300);
+  const projectUsage = useMemo(() => data.conversations.filter((item) => item.projectId === projectId).flatMap((item) => item.messages ?? []).filter((message) => message.createdAt >= new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()).reduce((usage, message) => {
+    const price = message.model ? MODEL_PRICES[message.model] : undefined;
+    usage.input += message.inputTokens ?? 0; usage.output += message.outputTokens ?? 0;
+    if (price) usage.cost += ((message.inputTokens ?? 0) * price.input + (message.outputTokens ?? 0) * price.output) / 1_000_000;
+    return usage;
+  }, { input: 0, output: 0, cost: 0 }), [data.conversations, projectId]);
+
+  useEffect(() => { if (project?.defaultModel) setModel(project.defaultModel); }, [project?.defaultModel]);
 
   useEffect(() => {
     const candidates = data.changeSets.filter((item) => item.projectId === projectId && item.branch === branch);
@@ -162,7 +178,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     void repositoryApi<RepoBranch[]>("branches").then(setBranches).catch(() => undefined);
   }, [project?.repository, repositoryApi]);
 
-  async function openRepoPanel(panel: "files" | "activity" | "changes" | "connections") {
+  async function openRepoPanel(panel: "files" | "activity" | "changes" | "connections" | "settings") {
     setRepoPanel((current) => current === panel ? null : panel);
     if (repoPanel === panel || !project?.repository) return;
     setRepoLoading(true);
@@ -292,6 +308,64 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to archive conversation."); }
   }
 
+  async function restoreConversation(item: CodeAiConversation) {
+    try {
+      await api("/api/code-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: item._id, archived: false }) });
+      setData((current) => ({ ...current, conversations: current.conversations.map((chat) => chat._id === item._id ? { ...chat, archived: false } : chat) }));
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to restore conversation."); }
+  }
+
+  async function moveConversation(item: CodeAiConversation) {
+    const targets = data.projects.filter((candidate) => candidate._id !== item.projectId && !candidate.archived);
+    if (!targets.length) { setError("Create another project before moving a chat."); return; }
+    const name = window.prompt(`Move to project: ${targets.map((candidate) => candidate.name).join(", ")}`, targets[0]?.name);
+    const target = targets.find((candidate) => candidate.name.toLowerCase() === name?.trim().toLowerCase());
+    if (!target) return;
+    try {
+      await api("/api/code-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: item._id, projectId: target._id }) });
+      setData((current) => ({ ...current, conversations: current.conversations.map((chat) => chat._id === item._id ? { ...chat, projectId: target._id } : chat) }));
+      if (conversationId === item._id) setConversationId("");
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to move conversation."); }
+  }
+
+  async function renameProject() {
+    if (!project) return;
+    const name = window.prompt("Rename project", project.name);
+    if (!name?.trim() || name.trim() === project.name) return;
+    try { await api("/api/code-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: project._id, name: name.trim() }) }); setData((current) => ({ ...current, projects: current.projects.map((item) => item._id === project._id ? { ...item, name: name.trim() } : item) })); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to rename project."); }
+  }
+
+  async function archiveProject() {
+    if (!project || !window.confirm(`Archive ${project.name}? Its chats and files will remain saved.`)) return;
+    try { await api("/api/code-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: project._id, archived: true }) }); setData((current) => ({ ...current, projects: current.projects.map((item) => item._id === project._id ? { ...item, archived: true } : item) })); setProjectId(data.projects.find((item) => item._id !== project._id && !item.archived)?._id ?? ""); setConversationId(""); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to archive project."); }
+  }
+
+  async function restoreProject() {
+    if (!project) return;
+    try {
+      await api("/api/code-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: project._id, archived: false }) });
+      setData((current) => ({ ...current, projects: current.projects.map((item) => item._id === project._id ? { ...item, archived: false } : item) }));
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to restore project."); }
+  }
+
+  async function saveProjectSettings() {
+    if (!project) return;
+    const raw = window.prompt("Monthly OpenAI budget in dollars (0 disables the limit)", String(project.monthlyBudgetUsd ?? 5));
+    if (raw === null) return;
+    const monthlyBudgetUsd = Number(raw);
+    if (!Number.isFinite(monthlyBudgetUsd) || monthlyBudgetUsd < 0) { setError("Enter a valid budget."); return; }
+    try { await api("/api/code-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: project._id, monthlyBudgetUsd, defaultModel: model }) }); setData((current) => ({ ...current, projects: current.projects.map((item) => item._id === project._id ? { ...item, monthlyBudgetUsd, defaultModel: model } : item) })); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to save project settings."); }
+  }
+
+  async function deleteAttachment(file: CodeAiAttachment) {
+    if (!window.confirm(`Delete ${file.name}?`)) return;
+    try { await api(`/api/code-ai/files?id=${encodeURIComponent(file._id)}`, { method: "DELETE" }); setData((current) => ({ ...current, files: current.files.filter((item) => item._id !== file._id) })); setAttachmentIds((current) => current.filter((id) => id !== file._id)); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to delete file."); }
+  }
+
   function exportWorkspace() {
     const payload = JSON.stringify({ exportedAt: new Date().toISOString(), project, conversations: data.conversations.filter((item) => item.projectId === projectId), files: projectFiles }, null, 2);
     const url = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
@@ -312,8 +386,8 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     finally { setRepoLoading(false); if (uploadRef.current) uploadRef.current.value = ""; }
   }
 
-  async function sendMessage() {
-    const text = prompt.trim();
+  async function sendMessage(retryText?: string) {
+    const text = (retryText ?? prompt).trim();
     if (!text || sending) return;
     setError("");
     setSending(true);
@@ -335,14 +409,33 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
         ...current,
         conversations: current.conversations.map((item) => item._id === selectedConversationId ? { ...item, messages: [...(item.messages ?? []), optimistic] } : item),
       }));
-      const result = await api<{ message: CodeAiMessage; proposedChanges?: ProposedChange[]; changeSet?: CodeAiChangeSet | null }>("/api/code-ai/chat", {
+      const streamingKey = crypto.randomUUID();
+      const streamingMessage: CodeAiMessage = { _key: streamingKey, role: "assistant", content: "", createdAt: new Date().toISOString(), model };
+      setData((current) => ({ ...current, conversations: current.conversations.map((item) => item._id === selectedConversationId ? { ...item, messages: [...(item.messages ?? []), streamingMessage] } : item) }));
+      const controller = new AbortController(); requestController.current = controller;
+      const response = await fetch("/api/code-ai/chat", {
         method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId: selectedConversationId, projectId: selectedProject._id, message: text, repository: selectedProject.repository, branch, model, attachmentIds, approveChanges }),
       });
-      setData((current) => ({
-        ...current,
-        conversations: current.conversations.map((item) => item._id === selectedConversationId ? { ...item, messages: [...(item.messages ?? []), result.message] } : item),
-      }));
+      if (!response.ok || !response.body) { const failure = await response.json().catch(() => ({})) as { error?: string }; throw new Error(failure.error ?? "Code AI could not start."); }
+      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = "";
+      let result: { message: CodeAiMessage; proposedChanges?: ProposedChange[]; changeSet?: CodeAiChangeSet | null } | null = null;
+      while (true) {
+        const { value, done } = await reader.read(); buffer += decoder.decode(value, { stream: !done });
+        const lines = buffer.split("\n"); buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line) continue;
+          const event = JSON.parse(line) as { type: "delta" | "done" | "error"; delta?: string; error?: string; message?: CodeAiMessage; proposedChanges?: ProposedChange[]; changeSet?: CodeAiChangeSet | null };
+          if (event.type === "error") throw new Error(event.error ?? "Code AI failed.");
+          if (event.type === "delta" && event.delta) setData((current) => ({ ...current, conversations: current.conversations.map((item) => item._id === selectedConversationId ? { ...item, messages: (item.messages ?? []).map((entry) => entry._key === streamingKey ? { ...entry, content: entry.content + event.delta } : entry) } : item) }));
+          if (event.type === "done" && event.message) result = { message: event.message, proposedChanges: event.proposedChanges, changeSet: event.changeSet };
+        }
+        if (done) break;
+      }
+      if (!result) throw new Error("Code AI stream ended unexpectedly.");
+      setData((current) => ({ ...current, conversations: current.conversations.map((item) => item._id === selectedConversationId ? { ...item, messages: (item.messages ?? []).map((entry) => entry._key === streamingKey ? result!.message : entry) } : item) }));
       if (result.changeSet) {
         setData((current) => ({ ...current, changeSets: [result.changeSet!, ...current.changeSets.filter((item) => item._id !== result.changeSet!._id)] }));
         setCurrentChangeSetId(result.changeSet._id); setProposedChanges(result.changeSet.changes); setRepoPanel("changes");
@@ -351,9 +444,9 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
       setApproveChanges(false);
       setAttachmentIds([]);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Code AI could not complete the task.");
+      if (!(caught instanceof DOMException && caught.name === "AbortError")) setError(caught instanceof Error ? caught.message : "Code AI could not complete the task.");
     } finally {
-      setSending(false);
+      requestController.current = null; setSending(false);
     }
   }
 
@@ -434,23 +527,24 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
       <aside className={`code-ai-sidebar ${sidebarOpen ? "is-open" : ""}`}>
         <div className="code-ai-brand"><span><Code2 size={21} /></span><div><strong>Code AI</strong><small>Blended Works</small></div><button aria-label="Close sidebar" onClick={() => setSidebarOpen(false)}><X size={19}/></button></div>
         <button className="code-ai-new" onClick={newConversation}><MessageSquarePlus size={17}/>New coding task</button>
-        <div className="code-ai-project-label"><span><FolderGit2 size={14}/>Project</span><button aria-label="Create project" onClick={newProject}><Plus size={15}/></button></div>
+        <div className="code-ai-project-label"><span><FolderGit2 size={14}/>Project</span><div><button aria-label="Project settings" onClick={() => setRepoPanel("settings")}><Settings size={14}/></button><button aria-label="Rename project" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore project" : "Archive project"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create project" onClick={newProject}><Plus size={15}/></button></div></div>
         {data.projects.length ? (
           <select value={projectId} onChange={(event) => { setProjectId(event.target.value); setConversationId(""); }}>
-            {data.projects.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}
+            {data.projects.map((item) => <option key={item._id} value={item._id}>{item.archived ? "Archived · " : ""}{item.name}</option>)}
           </select>
         ) : <button className="code-ai-create-project" onClick={newConversation}>Create Blended Works project</button>}
         <div className="code-ai-project-label"><span><Paperclip size={14}/>Project files</span><button aria-label="Upload file" onClick={() => uploadRef.current?.click()}><Plus size={15}/></button></div>
         <input ref={uploadRef} hidden type="file" onChange={(event) => uploadFile(event.target.files?.[0])}/>
-        <div className="code-ai-attachments">{projectFiles.slice(0, 6).map((file) => <button className={attachmentIds.includes(file._id) ? "selected" : ""} key={file._id} onClick={() => setAttachmentIds((current) => current.includes(file._id) ? current.filter((id) => id !== file._id) : [...current, file._id].slice(-5))}><Paperclip size={12}/><span>{file.name}</span></button>)}{!projectFiles.length && <small>No uploaded files</small>}</div>
+        <div className="code-ai-attachments">{projectFiles.slice(0, 12).map((file) => <div key={file._id}><button className={attachmentIds.includes(file._id) ? "selected" : ""} onClick={() => setAttachmentIds((current) => current.includes(file._id) ? current.filter((id) => id !== file._id) : [...current, file._id].slice(-5))}><Paperclip size={12}/><span>{file.name}</span></button><button aria-label={`Delete ${file.name}`} onClick={() => deleteAttachment(file)}><Trash2 size={11}/></button></div>)}{!projectFiles.length && <small>No uploaded files</small>}</div>
         <div className="code-ai-history">
-          <div className="code-ai-history-head"><p>Recent chats</p><button aria-label="Export project" onClick={exportWorkspace}><Download size={13}/></button></div>
+          <div className="code-ai-history-head"><p>{showArchived ? "Archived chats" : "Recent chats"}</p><div><button aria-label={showArchived ? "Show recent chats" : "Show archived chats"} onClick={() => setShowArchived((current) => !current)}><Archive size={13}/></button><button aria-label="Export project" onClick={exportWorkspace}><Download size={13}/></button></div></div>
           <div className="code-ai-chat-search"><FileSearch size={13}/><input value={chatSearch} onChange={(event) => setChatSearch(event.target.value)} placeholder="Search chats"/></div>
           {projectConversations.map((item) => (
             <div className={`code-ai-chat-row ${item._id === conversationId ? "active" : ""}`} key={item._id}>
               <button onClick={() => { setConversationId(item._id); setSidebarOpen(false); }}><FileCode2 size={15}/><span>{item.title}</span></button>
               <button aria-label={`Rename ${item.title}`} onClick={() => renameConversation(item)}><Pencil size={13}/></button>
-              <button aria-label={`Archive ${item.title}`} onClick={() => archiveConversation(item)}><Archive size={13}/></button>
+              <button aria-label={`Move ${item.title}`} onClick={() => moveConversation(item)}><FolderGit2 size={13}/></button>
+              <button aria-label={`${item.archived ? "Restore" : "Archive"} ${item.title}`} onClick={() => item.archived ? restoreConversation(item) : archiveConversation(item)}>{item.archived ? <RotateCcw size={13}/> : <Archive size={13}/>}</button>
               <button aria-label={`Delete ${item.title}`} onClick={() => deleteConversation(item)}><Trash2 size={13}/></button>
             </div>
           ))}
@@ -477,7 +571,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
         <div className="code-ai-work-area">
         <div className="code-ai-thread">
           {loading ? <div className="code-ai-loading"><LoaderCircle className="animate-spin"/>Loading workspace…</div> : messages.length ? (
-            messages.map((message) => <Message key={message._key} message={message}/>)
+            messages.map((message, index) => <Message key={message._key} message={message} onEdit={(content) => setPrompt(content)} onRetry={() => { const previous = messages.slice(0, index).reverse().find((item) => item.role === "user"); if (previous) void sendMessage(previous.content); }}/>)
           ) : (
             <div className="code-ai-empty">
               <span><Bot size={34}/></span>
@@ -493,7 +587,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
           {sending && <div className="code-ai-thinking"><span><Bot size={18}/></span><LoaderCircle className="animate-spin" size={16}/>Working in {project?.repository ?? "the repository"}…</div>}
         </div>
         {repoPanel ? <aside className="code-ai-repo-panel">
-          <div className="code-ai-repo-title"><div>{repoPanel === "files" ? <FileSearch size={17}/> : repoPanel === "activity" ? <History size={17}/> : repoPanel === "changes" ? <GitCompareArrows size={17}/> : <Plug size={17}/>}<strong>{repoPanel === "files" ? "Repository files" : repoPanel === "activity" ? "Repository activity" : repoPanel === "changes" ? "Proposed changes" : "Tools and connections"}</strong></div><button aria-label="Close repository panel" onClick={() => setRepoPanel(null)}><X size={18}/></button></div>
+          <div className="code-ai-repo-title"><div>{repoPanel === "files" ? <FileSearch size={17}/> : repoPanel === "activity" ? <History size={17}/> : repoPanel === "changes" ? <GitCompareArrows size={17}/> : repoPanel === "settings" ? <Settings size={17}/> : <Plug size={17}/>}<strong>{repoPanel === "files" ? "Repository files" : repoPanel === "activity" ? "Repository activity" : repoPanel === "changes" ? "Proposed changes" : repoPanel === "settings" ? "Project settings" : "Tools and connections"}</strong></div><button aria-label="Close repository panel" onClick={() => setRepoPanel(null)}><X size={18}/></button></div>
           {repoLoading && <div className="code-ai-repo-loading"><LoaderCircle className="animate-spin" size={17}/>Loading from GitHub…</div>}
           {repoPanel === "files" ? <>
             <div className="code-ai-file-search"><FileSearch size={15}/><input value={repoSearch} onChange={(event) => setRepoSearch(event.target.value)} placeholder="Filter files by path"/></div>
@@ -511,7 +605,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
             {activity.commits.map((item, index) => <div className="code-ai-activity-row" key={item.sha}><a href={item.url} target="_blank" rel="noreferrer"><span><strong>{item.message.split("\n")[0]}</strong><small>{item.sha.slice(0, 7)} · {item.author}</small></span><ExternalLink size={13}/></a>{index === 0 && <button onClick={() => undoLatestCommit(item)}>Undo</button>}</div>)}
             <h3><GitPullRequest size={15}/>Pull requests</h3>
             {activity.pullRequests.map((item) => <a key={item.number} href={item.url} target="_blank" rel="noreferrer"><span><strong>#{item.number} {item.title}</strong><small>{item.state} · {item.head} → {item.base}</small></span><ExternalLink size={13}/></a>)}
-          </div> : repoPanel === "changes" ? <div className="code-ai-changes">{proposedChanges.length ? <><div className="code-ai-change-actions"><small>Saved for review</small><button onClick={commitAllChanges}><CheckCircle2 size={14}/>Commit all atomically</button></div>{proposedChanges.map((change) => <article key={change._key}><header><div><strong>{change.path}</strong><small>{change.message}</small></div><button disabled={repoLoading} onClick={() => applyProposedChange(change)}><CheckCircle2 size={14}/>Commit</button></header><ChangePreview change={change}/></article>)}</> : <p>No changes are waiting for review. Enable “File changes approved” when you want Code AI to prepare edits.</p>}</div> : <div className="code-ai-connections">{connections.map((connection) => <article key={connection.id}><span className={connection.connected ? "connected" : ""}/><div><strong>{connection.name}</strong><p>{connection.description}</p>{connection.note && <small>{connection.note}</small>}</div><b>{connection.connected ? "Connected" : "Needs setup"}</b></article>)}</div>}
+          </div> : repoPanel === "changes" ? <div className="code-ai-changes">{data.changeSets.filter((item) => item.projectId === projectId && item.branch === branch).length > 1 && <select className="code-ai-change-set-select" value={currentChangeSetId} onChange={(event) => { const selected = data.changeSets.find((item) => item._id === event.target.value); if (selected) { setCurrentChangeSetId(selected._id); setProposedChanges(selected.changes); } }}>{data.changeSets.filter((item) => item.projectId === projectId && item.branch === branch).map((item) => <option value={item._id} key={item._id}>{new Date(item.createdAt).toLocaleString()} · {item.changes.length} files</option>)}</select>}{proposedChanges.length ? <><div className="code-ai-change-actions"><small>Saved for review</small><button onClick={commitAllChanges}><CheckCircle2 size={14}/>Commit all atomically</button></div>{proposedChanges.map((change) => <article key={change._key}><header><div><strong>{change.path}</strong><small>{change.message}</small></div><button disabled={repoLoading} onClick={() => applyProposedChange(change)}><CheckCircle2 size={14}/>Commit</button></header><ChangePreview change={change}/></article>)}</> : <p>No changes are waiting for review. Enable “File changes approved” when you want Code AI to prepare edits.</p>}</div> : repoPanel === "settings" ? <div className="code-ai-settings"><h3>{project?.name}</h3><dl><div><dt>Estimated this month</dt><dd>${projectUsage.cost.toFixed(4)}</dd></div><div><dt>Monthly budget</dt><dd>${(project?.monthlyBudgetUsd ?? 5).toFixed(2)}</dd></div><div><dt>Tokens</dt><dd>{(projectUsage.input + projectUsage.output).toLocaleString()}</dd></div></dl><label>Default model<select value={model} onChange={(event) => setModel(event.target.value)}><option value="gpt-5.6-luna">Luna · lowest cost</option><option value="gpt-5.6-terra">Terra · balanced</option><option value="gpt-5.6-sol">Sol · strongest</option></select></label><button onClick={saveProjectSettings}>Save model and budget</button><small>Estimates use published standard short-context API rates. OpenAI billing remains the final source of truth.</small></div> : <div className="code-ai-connections">{connections.map((connection) => <article key={connection.id}><span className={connection.connected ? "connected" : ""}/><div><strong>{connection.name}</strong><p>{connection.description}</p>{connection.note && <small>{connection.note}</small>}</div><b>{connection.connected ? "Connected" : "Needs setup"}</b></article>)}</div>}
         </aside> : null}
         </div>
 
@@ -521,7 +615,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
             <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} placeholder="Message Code AI about your project…" rows={3}/>
             <div>
               <div className="code-ai-composer-options"><select aria-label="AI model" value={model} onChange={(event) => setModel(event.target.value)}><option value="gpt-5.6-luna">Luna · lowest cost</option><option value="gpt-5.6-terra">Terra · balanced</option><option value="gpt-5.6-sol">Sol · strongest</option></select>{attachmentIds.length > 0 && <span className="code-ai-attached-count"><Paperclip size={12}/>{attachmentIds.length}</span>}<label className={approveChanges ? "approved" : ""}><input type="checkbox" checked={approveChanges} onChange={(event) => setApproveChanges(event.target.checked)}/><CheckCircle2 size={15}/>{approveChanges ? "File changes approved" : "Review only"}</label></div>
-              <button aria-label="Send message" disabled={!prompt.trim() || sending} onClick={sendMessage}>{sending ? <LoaderCircle className="animate-spin" size={19}/> : <Send size={19}/>}</button>
+              {sending ? <button className="code-ai-stop" aria-label="Stop generating" onClick={() => requestController.current?.abort()}><Square size={16}/></button> : <button aria-label="Send message" disabled={!prompt.trim()} onClick={() => sendMessage()}><Send size={19}/></button>}
             </div>
           </div>
           <small>Code AI can make mistakes. Review committed changes before deployment.</small>
@@ -531,6 +625,6 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   );
 }
 
-function Message({ message }: { message: CodeAiMessage }) {
-  return <article className={`code-ai-message ${message.role}`}><span>{message.role === "assistant" ? <Bot size={18}/> : <UserRound size={18}/>}</span><div><strong>{message.role === "assistant" ? "Code AI" : "You"}</strong><p>{message.content}</p>{message.role === "assistant" && message.model && <small>{message.model} · {(message.inputTokens ?? 0).toLocaleString()} input · {(message.outputTokens ?? 0).toLocaleString()} output tokens</small>}</div></article>;
+function Message({ message, onEdit, onRetry }: { message: CodeAiMessage; onEdit: (content: string) => void; onRetry: () => void }) {
+  return <article className={`code-ai-message ${message.role}`}><span>{message.role === "assistant" ? <Bot size={18}/> : <UserRound size={18}/>}</span><div><header><strong>{message.role === "assistant" ? "Code AI" : "You"}</strong><div><button aria-label="Copy message" onClick={() => navigator.clipboard.writeText(message.content)}><Copy size={12}/></button>{message.role === "user" ? <button aria-label="Edit message" onClick={() => onEdit(message.content)}><Pencil size={12}/></button> : <button aria-label="Retry response" onClick={onRetry}><RotateCcw size={12}/></button>}</div></header><div className="code-ai-markdown"><ReactMarkdown components={{ pre: ({ children }) => <div className="code-ai-code-block"><button onClick={(event) => navigator.clipboard.writeText(event.currentTarget.nextElementSibling?.textContent ?? "")}><Copy size={11}/>Copy</button><pre>{children}</pre></div> }}>{message.content}</ReactMarkdown></div>{message.role === "assistant" && message.model && <small>{message.model} · {(message.inputTokens ?? 0).toLocaleString()} input · {(message.outputTokens ?? 0).toLocaleString()} output tokens</small>}</div></article>;
 }
