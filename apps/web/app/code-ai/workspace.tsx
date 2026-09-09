@@ -33,9 +33,9 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CodeAiAttachment, CodeAiAudit, CodeAiConversation, CodeAiMessage, CodeAiProject } from "@/lib/code-ai/store";
+import type { CodeAiAttachment, CodeAiAudit, CodeAiChangeSet, CodeAiConversation, CodeAiMessage, CodeAiProject } from "@/lib/code-ai/store";
 
-type WorkspaceData = { projects: CodeAiProject[]; conversations: CodeAiConversation[]; files: CodeAiAttachment[]; audit: CodeAiAudit[] };
+type WorkspaceData = { projects: CodeAiProject[]; conversations: CodeAiConversation[]; files: CodeAiAttachment[]; audit: CodeAiAudit[]; changeSets: CodeAiChangeSet[] };
 type RepoFile = { path: string; size?: number };
 type RepoBranch = { name: string; commit: { sha: string } };
 type RepoActivity = {
@@ -43,9 +43,32 @@ type RepoActivity = {
   pullRequests: Array<{ number: number; title: string; state: string; url: string; createdAt: string; head: string; base: string }>;
   deployment?: { state: string; statuses: Array<{ context: string; state: string; target_url?: string; description?: string }> } | null;
 };
-type ProposedChange = { path: string; previousContent: string; content: string; message: string };
+type ProposedChange = CodeAiChangeSet["changes"][number];
 type ValidationRun = { id: number; name: string; status: string; conclusion: string | null; url: string; createdAt: string; branch: string; sha: string };
 type Connection = { id: string; name: string; description: string; connected: boolean; note?: string };
+
+type DiffLine = { kind: "same" | "add" | "remove"; text: string; oldLine?: number; newLine?: number };
+
+function buildLineDiff(before: string, after: string): DiffLine[] {
+  const left = before.split("\n");
+  const right = after.split("\n");
+  if (left.length * right.length > 250_000) return [];
+  const table = Array.from({ length: left.length + 1 }, () => new Uint16Array(right.length + 1));
+  for (let i = left.length - 1; i >= 0; i--) for (let j = right.length - 1; j >= 0; j--) table[i]![j] = left[i] === right[j] ? table[i + 1]![j + 1]! + 1 : Math.max(table[i + 1]![j]!, table[i]![j + 1]!);
+  const rows: DiffLine[] = []; let i = 0; let j = 0;
+  while (i < left.length || j < right.length) {
+    if (i < left.length && j < right.length && left[i] === right[j]) { rows.push({ kind: "same", text: left[i]!, oldLine: ++i, newLine: ++j }); }
+    else if (j < right.length && (i === left.length || table[i]![j + 1]! >= table[i + 1]![j]!)) { rows.push({ kind: "add", text: right[j]!, newLine: ++j }); }
+    else { rows.push({ kind: "remove", text: left[i]!, oldLine: ++i }); }
+  }
+  return rows;
+}
+
+function ChangePreview({ change }: { change: ProposedChange }) {
+  const rows = useMemo(() => buildLineDiff(change.previousContent, change.content), [change.previousContent, change.content]);
+  if (!rows.length) return <div className="code-ai-split-diff"><section><b>Before</b><pre>{change.previousContent || "New file"}</pre></section><section><b>After</b><pre>{change.content}</pre></section></div>;
+  return <pre className="code-ai-line-diff">{rows.map((row, index) => <span className={row.kind} key={`${index}-${row.kind}`}><i>{row.oldLine ?? ""}</i><i>{row.newLine ?? ""}</i><b>{row.kind === "add" ? "+" : row.kind === "remove" ? "−" : " "}</b><code>{row.text || " "}</code></span>)}</pre>;
+}
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...init?.headers } });
@@ -55,7 +78,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
-  const [data, setData] = useState<WorkspaceData>({ projects: [], conversations: [], files: [], audit: [] });
+  const [data, setData] = useState<WorkspaceData>({ projects: [], conversations: [], files: [], audit: [], changeSets: [] });
   const [projectId, setProjectId] = useState("");
   const [conversationId, setConversationId] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -68,6 +91,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   const [selectedFile, setSelectedFile] = useState<{ path: string; content: string } | null>(null);
   const [repoLoading, setRepoLoading] = useState(false);
   const [proposedChanges, setProposedChanges] = useState<ProposedChange[]>([]);
+  const [currentChangeSetId, setCurrentChangeSetId] = useState("");
   const [validationRuns, setValidationRuns] = useState<ValidationRun[]>([]);
   const uploadRef = useRef<HTMLInputElement>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -106,6 +130,13 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   const projectFiles = data.files.filter((file) => file.projectId === projectId);
   const visibleFiles = files.filter((file) => file.path.toLowerCase().includes(repoSearch.trim().toLowerCase())).slice(0, 300);
 
+  useEffect(() => {
+    const candidates = data.changeSets.filter((item) => item.projectId === projectId && item.branch === branch);
+    const selected = candidates.find((item) => item.conversationId === conversationId) ?? candidates[0];
+    setCurrentChangeSetId(selected?._id ?? "");
+    setProposedChanges(selected?.changes ?? []);
+  }, [data.changeSets, projectId, conversationId, branch]);
+
   const repositoryApi = useCallback(async <T,>(action: string, extra = "") => {
     if (!project?.repository) throw new Error("Choose a project first.");
     return api<T>(`/api/code-ai/repository?repository=${encodeURIComponent(project.repository)}&branch=${encodeURIComponent(branch)}&action=${action}${extra}`);
@@ -138,11 +169,11 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     }
   }
 
-  async function runValidation() {
-    if (!project || !window.confirm(`Run web type checks and a production build for ${branch}?`)) return;
+  async function runValidation(scope: "web" | "visual" = "web") {
+    if (!project || !window.confirm(scope === "visual" ? `Run desktop and mobile browser checks for ${branch}?` : `Run web type checks and a production build for ${branch}?`)) return;
     setRepoLoading(true); setError("");
     try {
-      await api("/api/code-ai/runner", { method: "POST", body: JSON.stringify({ repository: project.repository, branch, scope: "web", approved: true }) });
+      await api("/api/code-ai/runner", { method: "POST", body: JSON.stringify({ repository: project.repository, branch, scope, approved: true }) });
       setRepoPanel("activity");
       window.setTimeout(() => void openRepoPanel("activity"), 1800);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to start validation."); }
@@ -281,7 +312,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
         ...current,
         conversations: current.conversations.map((item) => item._id === selectedConversationId ? { ...item, messages: [...(item.messages ?? []), optimistic] } : item),
       }));
-      const result = await api<{ message: CodeAiMessage; proposedChanges?: ProposedChange[] }>("/api/code-ai/chat", {
+      const result = await api<{ message: CodeAiMessage; proposedChanges?: ProposedChange[]; changeSet?: CodeAiChangeSet | null }>("/api/code-ai/chat", {
         method: "POST",
         body: JSON.stringify({ conversationId: selectedConversationId, projectId: selectedProject._id, message: text, repository: selectedProject.repository, branch, model, attachmentIds, approveChanges }),
       });
@@ -289,7 +320,10 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
         ...current,
         conversations: current.conversations.map((item) => item._id === selectedConversationId ? { ...item, messages: [...(item.messages ?? []), result.message] } : item),
       }));
-      if (result.proposedChanges?.length) { setProposedChanges(result.proposedChanges); setRepoPanel("changes"); }
+      if (result.changeSet) {
+        setData((current) => ({ ...current, changeSets: [result.changeSet!, ...current.changeSets.filter((item) => item._id !== result.changeSet!._id)] }));
+        setCurrentChangeSetId(result.changeSet._id); setProposedChanges(result.changeSet.changes); setRepoPanel("changes");
+      }
       if (notificationsEnabled && document.visibilityState !== "visible") new Notification("Code AI finished", { body: result.proposedChanges?.length ? `${result.proposedChanges.length} changes are ready for review.` : "Your coding response is ready." });
       setApproveChanges(false);
       setAttachmentIds([]);
@@ -310,8 +344,13 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     if (!project || !window.confirm(`Commit the proposed change to ${change.path} on ${branch}?`)) return;
     setRepoLoading(true);
     try {
-      await api("/api/code-ai/repository", { method: "POST", body: JSON.stringify({ repository: project.repository, branch, path: change.path, content: change.content, message: change.message, approved: true }) });
+      await api("/api/code-ai/repository", { method: "POST", body: JSON.stringify({ repository: project.repository, branch, path: change.path, content: change.content, message: change.message, changeSetId: currentChangeSetId, changeKey: change._key, approved: true }) });
       setProposedChanges((current) => current.filter((item) => item !== change));
+      setData((current) => ({ ...current, changeSets: current.changeSets.flatMap((item) => {
+        if (item._id !== currentChangeSetId) return [item];
+        const changes = item.changes.filter((candidate) => candidate._key !== change._key);
+        return changes.length ? [{ ...item, changes }] : [];
+      }) }));
       setFiles([]);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to commit change."); }
     finally { setRepoLoading(false); }
@@ -323,8 +362,9 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     if (!message?.trim() || !window.confirm(`Commit ${proposedChanges.length} files to ${branch} as one atomic commit?`)) return;
     setRepoLoading(true); setError("");
     try {
-      await api("/api/code-ai/repository", { method: "POST", body: JSON.stringify({ action: "commit", repository: project.repository, branch, message, changes: proposedChanges.map(({ path, content }) => ({ path, content })), approved: true }) });
-      setProposedChanges([]); setFiles([]); setRepoPanel("activity");
+      await api("/api/code-ai/repository", { method: "POST", body: JSON.stringify({ action: "commit", repository: project.repository, branch, message, changeSetId: currentChangeSetId, changes: proposedChanges.map(({ path, content }) => ({ path, content })), approved: true }) });
+      setData((current) => ({ ...current, changeSets: current.changeSets.filter((item) => item._id !== currentChangeSetId) }));
+      setCurrentChangeSetId(""); setProposedChanges([]); setFiles([]); setRepoPanel("activity");
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to commit change set."); }
     finally { setRepoLoading(false); }
   }
@@ -406,7 +446,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
           <button className={repoPanel === "files" ? "active" : ""} onClick={() => openRepoPanel("files")}><FileSearch size={17}/><span>Files</span></button>
           <button className={repoPanel === "activity" ? "active" : ""} onClick={() => openRepoPanel("activity")}><History size={17}/><span>Activity</span></button>
           <button className={repoPanel === "changes" ? "active" : ""} onClick={() => openRepoPanel("changes")}><GitCompareArrows size={17}/><span>Changes{proposedChanges.length ? ` (${proposedChanges.length})` : ""}</span></button>
-          <button onClick={runValidation}><Play size={16}/><span>Run checks</span></button>
+          <button onClick={() => runValidation()}><Play size={16}/><span>Run checks</span></button>
           <button className={repoPanel === "connections" ? "active" : ""} onClick={() => openRepoPanel("connections")}><Plug size={16}/><span>Connections</span></button>
           <button className={notificationsEnabled ? "active" : ""} onClick={toggleNotifications} title="Browser notifications"><Bell size={16}/><span>Alerts</span></button>
         </header>
@@ -439,6 +479,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
             <h3><ExternalLink size={15}/>Latest deployment</h3>
             {activity.deployment?.statuses?.length ? activity.deployment.statuses.map((status) => status.target_url ? <a key={status.context} href={status.target_url} target="_blank" rel="noreferrer"><span><strong>{status.context} · {status.state}</strong><small>{status.description ?? "Open deployment details and logs"}</small></span><ExternalLink size={13}/></a> : <div className="code-ai-audit" key={status.context}><strong>{status.context}</strong><span>{status.state}</span></div>) : <p>No deployment status is attached to the latest commit.</p>}
             <h3><RefreshCw size={15}/>Validation runs</h3>
+            <div className="code-ai-validation-actions"><button onClick={() => runValidation("visual")}><Play size={13}/>Run browser checks</button></div>
             {validationRuns.length ? validationRuns.map((run) => <div className="code-ai-run-row" key={run.id}><a href={run.url} target="_blank" rel="noreferrer"><span><strong>{run.status === "completed" ? run.conclusion ?? "completed" : run.status} · {run.branch}</strong><small>{run.sha.slice(0, 7)} · {new Date(run.createdAt).toLocaleString()}</small></span><ExternalLink size={13}/></a><button onClick={() => controlRun(run, run.status === "completed" ? "rerun" : "cancel")}>{run.status === "completed" ? "Retry" : "Cancel"}</button></div>) : <p>No Code AI validation runs yet.</p>}
             <h3><ShieldCheck size={15}/>Audit history</h3>
             {data.audit.slice(0, 15).map((item) => <div className="code-ai-audit" key={item._id}><strong>{item.action}</strong><span>{item.summary}</span><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}
@@ -446,7 +487,7 @@ export function CodeAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
             {activity.commits.map((item, index) => <div className="code-ai-activity-row" key={item.sha}><a href={item.url} target="_blank" rel="noreferrer"><span><strong>{item.message.split("\n")[0]}</strong><small>{item.sha.slice(0, 7)} · {item.author}</small></span><ExternalLink size={13}/></a>{index === 0 && <button onClick={() => undoLatestCommit(item)}>Undo</button>}</div>)}
             <h3><GitPullRequest size={15}/>Pull requests</h3>
             {activity.pullRequests.map((item) => <a key={item.number} href={item.url} target="_blank" rel="noreferrer"><span><strong>#{item.number} {item.title}</strong><small>{item.state} · {item.head} → {item.base}</small></span><ExternalLink size={13}/></a>)}
-          </div> : repoPanel === "changes" ? <div className="code-ai-changes">{proposedChanges.length ? <><div className="code-ai-change-actions"><button onClick={commitAllChanges}><CheckCircle2 size={14}/>Commit all atomically</button></div>{proposedChanges.map((change) => <article key={change.path}><header><div><strong>{change.path}</strong><small>{change.message}</small></div><button disabled={repoLoading} onClick={() => applyProposedChange(change)}><CheckCircle2 size={14}/>Commit</button></header><div><section><b>Before</b><pre>{change.previousContent || "New file"}</pre></section><section><b>After</b><pre>{change.content}</pre></section></div></article>)}</> : <p>No changes are waiting for review. Keep “Review only” selected when asking Code AI to edit files.</p>}</div> : <div className="code-ai-connections">{connections.map((connection) => <article key={connection.id}><span className={connection.connected ? "connected" : ""}/><div><strong>{connection.name}</strong><p>{connection.description}</p>{connection.note && <small>{connection.note}</small>}</div><b>{connection.connected ? "Connected" : "Needs setup"}</b></article>)}</div>}
+          </div> : repoPanel === "changes" ? <div className="code-ai-changes">{proposedChanges.length ? <><div className="code-ai-change-actions"><small>Saved for review</small><button onClick={commitAllChanges}><CheckCircle2 size={14}/>Commit all atomically</button></div>{proposedChanges.map((change) => <article key={change._key}><header><div><strong>{change.path}</strong><small>{change.message}</small></div><button disabled={repoLoading} onClick={() => applyProposedChange(change)}><CheckCircle2 size={14}/>Commit</button></header><ChangePreview change={change}/></article>)}</> : <p>No changes are waiting for review. Enable “File changes approved” when you want Code AI to prepare edits.</p>}</div> : <div className="code-ai-connections">{connections.map((connection) => <article key={connection.id}><span className={connection.connected ? "connected" : ""}/><div><strong>{connection.name}</strong><p>{connection.description}</p>{connection.note && <small>{connection.note}</small>}</div><b>{connection.connected ? "Connected" : "Needs setup"}</b></article>)}</div>}
         </aside> : null}
         </div>
 
