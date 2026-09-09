@@ -78,6 +78,7 @@ export async function rewindCodeAiConversation(conversationId: string, messageKe
   const index = conversation.messages.findIndex((message) => message._key === messageKey && message.role === "user");
   if (index < 0) throw new Error("The selected user message was not found.");
   const target = conversation.messages[index];
+  if (!target) throw new Error("The selected user message was not found.");
   const retained = conversation.messages.slice(0, index + 1);
   await client.patch(conversationId).set({ messages: retained, updatedAt: new Date().toISOString() }).commit();
 
