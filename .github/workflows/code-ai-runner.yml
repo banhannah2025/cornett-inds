@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - web
+          - visual
           - all
 
 permissions:
@@ -36,3 +37,26 @@ jobs:
       - name: Validate all workspaces
         if: inputs.scope == 'all'
         run: npm run check-types && npm run build
+      - name: Build for browser validation
+        if: inputs.scope == 'visual'
+        run: npm run build:styles --workspace=@repo/ui && npm run build --workspace=web
+      - name: Start web application
+        if: inputs.scope == 'visual'
+        run: npx next start apps/web --port 3000 > /tmp/code-ai-web.log 2>&1 &
+      - name: Install browser
+        if: inputs.scope == 'visual'
+        run: npx --yes playwright@1.55.0 install --with-deps chromium
+      - name: Capture desktop and mobile checks
+        if: inputs.scope == 'visual'
+        run: |
+          for attempt in {1..30}; do curl --fail --silent http://127.0.0.1:3000 >/dev/null && break; sleep 2; done
+          npx --yes playwright@1.55.0 screenshot --device="Desktop Chrome" --wait-for-timeout=1500 http://127.0.0.1:3000 browser-desktop.png
+          npx --yes playwright@1.55.0 screenshot --device="Pixel 7" --wait-for-timeout=1500 http://127.0.0.1:3000 browser-mobile.png
+          npx --yes playwright@1.55.0 screenshot --device="Desktop Chrome" --wait-for-timeout=1500 http://127.0.0.1:3000/code-ai browser-code-ai-auth.png
+      - name: Upload browser evidence
+        if: inputs.scope == 'visual'
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-ai-browser-checks
+          path: browser-*.png
+          retention-days: 14

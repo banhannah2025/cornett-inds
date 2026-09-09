@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { getCodeAiOwner } from "@/lib/code-ai/auth";
 import {
   appendCodeAiMessages,
+  createCodeAiChangeSet,
   getCodeAiFiles,
   getCodeAiConversation,
   makeCodeAiMessage,
@@ -154,7 +155,8 @@ export async function POST(request: Request) {
     if (!answer) throw new Error("Code AI returned no final response.");
     const assistantMessage = { ...makeCodeAiMessage("assistant", answer), model, inputTokens: response?.usage?.input_tokens, outputTokens: response?.usage?.output_tokens };
     await appendCodeAiMessages(conversationId, [assistantMessage]);
-    return Response.json({ message: assistantMessage, proposedChanges });
+    const changeSet = proposedChanges.length && body.projectId ? await createCodeAiChangeSet({ projectId: body.projectId, conversationId, repository, branch, changes: proposedChanges }) : null;
+    return Response.json({ message: assistantMessage, proposedChanges, changeSet });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Code AI could not complete the request." }, { status: 500 });
   }

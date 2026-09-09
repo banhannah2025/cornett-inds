@@ -64,7 +64,7 @@ export async function getCommitStatus(repository: string, sha: string) {
   );
 }
 
-export async function dispatchValidation(repository: string, ref: string, scope: "web" | "all") {
+export async function dispatchValidation(repository: string, ref: string, scope: "web" | "visual" | "all") {
   assertRepository(repository);
   await githubRequest(
     `/repos/${repository}/actions/workflows/code-ai-runner.yml/dispatches`,
