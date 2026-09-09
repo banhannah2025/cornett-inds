@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { BookHeart, CalendarDays, ChevronDown, FilePenLine } from "lucide-react";
+import { BookHeart, CalendarDays, ChevronDown, Code2, FilePenLine } from "lucide-react";
+import { getCodeAiOwner } from "@/lib/code-ai/auth";
 
-export function AppsMenu({ dark = false }: { dark?: boolean }) {
+export async function AppsMenu({ dark = false }: { dark?: boolean }) {
+  const codeAiOwner = await getCodeAiOwner();
   const plannerUrl =
     process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
     "https://blended-planner.specopsrecon82.chatgpt.site";
@@ -50,6 +52,20 @@ export function AppsMenu({ dark = false }: { dark?: boolean }) {
               <span className="block text-sm font-bold">Business Composer</span>
               <span className="mt-1 block text-xs leading-5 text-[#657169]">
                 Build and organize practical business documents
+              </span>
+            </span>
+          </Link>
+        ) : null}
+        {codeAiOwner ? (
+          <Link
+            className="flex gap-3 rounded-xl border-t border-[#1e2a24]/10 px-4 py-3 transition hover:bg-[#ebe7dc]"
+            href="/code-ai"
+          >
+            <Code2 className="mt-0.5 size-5 shrink-0 text-[#5d55b4]" />
+            <span>
+              <span className="block text-sm font-bold">Code AI</span>
+              <span className="mt-1 block text-xs leading-5 text-[#657169]">
+                Private website development workspace
               </span>
             </span>
           </Link>
