@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookHeart, CalendarDays, ChevronDown, Code2, FilePenLine } from "lucide-react";
+import { BookHeart, CalendarDays, ChevronDown, Code2, FilePenLine, Scale } from "lucide-react";
 import { getCodeAiOwner } from "@/lib/code-ai/auth";
 
 export async function AppsMenu({ dark = false }: { dark?: boolean }) {
@@ -8,6 +8,7 @@ export async function AppsMenu({ dark = false }: { dark?: boolean }) {
     process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
     "https://blended-planner.specopsrecon82.chatgpt.site";
   const businessComposerUrl = process.env.NEXT_PUBLIC_BUSINESS_COMPOSER_URL;
+  const legalAiUrl = process.env.NEXT_PUBLIC_LEGAL_AI_URL ?? "https://legal-ai.vercel.app";
 
   return (
     <details className="group relative">
@@ -56,6 +57,18 @@ export async function AppsMenu({ dark = false }: { dark?: boolean }) {
             </span>
           </Link>
         ) : null}
+        <Link
+          className="flex gap-3 rounded-xl px-4 py-3 transition hover:bg-[#ebe7dc]"
+          href={legalAiUrl}
+        >
+          <Scale className="mt-0.5 size-5 shrink-0 text-[#a45d2d]" />
+          <span>
+            <span className="block text-sm font-bold">Legal AI</span>
+            <span className="mt-1 block text-xs leading-5 text-[#657169]">
+              AI-powered legal research, document support, and case workspace
+            </span>
+          </span>
+        </Link>
         {codeAiOwner ? (
           <Link
             className="flex gap-3 rounded-xl border-t border-[#1e2a24]/10 px-4 py-3 transition hover:bg-[#ebe7dc]"
