@@ -1,4 +1,4 @@
-import { getLegalAiOwner } from "@/lib/legal-ai/auth";
+import { getLegalAiUser } from "@/lib/legal-ai/auth";
 import {
   createLegalAiConversation,
   createLegalAiProject,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/legal-ai/lifecycle";
 
 export async function GET() {
-  if (!(await getLegalAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await getLegalAiUser())) return Response.json({ error: "Forbidden" }, { status: 403 });
   try {
     return Response.json(await listLegalAiWorkspace());
   } catch (error) {
@@ -22,7 +22,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  if (!(await getLegalAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await getLegalAiUser())) return Response.json({ error: "Forbidden" }, { status: 403 });
   const body = (await request.json().catch(() => null)) as { id?: string; name?: string; title?: string; archived?: boolean; projectId?: string; monthlyBudgetUsd?: number; defaultModel?: string } | null;
   if (!body?.id) return Response.json({ error: "Document ID is required." }, { status: 400 });
   if (body.monthlyBudgetUsd !== undefined && (!Number.isFinite(body.monthlyBudgetUsd) || body.monthlyBudgetUsd < 0 || body.monthlyBudgetUsd > 1000)) return Response.json({ error: "Budget must be between $0 and $1,000." }, { status: 400 });
@@ -35,7 +35,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (!(await getLegalAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await getLegalAiUser())) return Response.json({ error: "Forbidden" }, { status: 403 });
   const id = new URL(request.url).searchParams.get("id");
   if (!id?.startsWith("legalAi")) return Response.json({ error: "Invalid document ID." }, { status: 400 });
   try {
@@ -50,7 +50,7 @@ export async function DELETE(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!(await getLegalAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await getLegalAiUser())) return Response.json({ error: "Forbidden" }, { status: 403 });
   const body = (await request.json().catch(() => null)) as
     | { type?: "project" | "conversation"; name?: string; repository?: string; projectId?: string; title?: string }
     | null;
