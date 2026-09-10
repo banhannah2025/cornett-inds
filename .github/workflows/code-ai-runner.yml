@@ -1,6 +1,12 @@
 name: Code AI validation
 
 on:
+  pull_request:
+    paths:
+      - "apps/legal-ai/**"
+      - "package-lock.json"
+      - "turbo.json"
+      - ".github/workflows/code-ai-runner.yml"
   workflow_dispatch:
     inputs:
       scope:
@@ -31,14 +37,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build:styles --workspace=@repo/ui
+      - name: Validate Legal AI application
+        if: github.event_name == 'pull_request'
+        run: npm run check-types --workspace=legal-ai && npm run build --workspace=legal-ai
       - name: Validate web application
-        if: inputs.scope == 'web'
+        if: github.event_name == 'workflow_dispatch' && inputs.scope == 'web'
         run: npm run check-types --workspace=web && npm run build --workspace=web
       - name: Validate all workspaces
-        if: inputs.scope == 'all'
+        if: github.event_name == 'workflow_dispatch' && inputs.scope == 'all'
         run: npm run check-types && npm run build
       - name: Build for browser validation
-        if: inputs.scope == 'visual'
+        if: github.event_name == 'workflow_dispatch' && inputs.scope == 'visual'
         run: npm run build:styles --workspace=@repo/ui && npm run build --workspace=web
       - name: Start web application
         if: inputs.scope == 'visual'
