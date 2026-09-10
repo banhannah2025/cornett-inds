@@ -557,14 +557,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
         <header className="code-ai-header">
           <button className="code-ai-menu" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Menu size={21}/></button>
           <div><strong>{project?.name ?? "Legal AI"}</strong><span>{project?.repository ?? "Private development workspace"}</span></div>
-          <label className="code-ai-branch"><GitBranch size={14}/><span>Branch</span><select value={branch} onChange={(event) => { setBranch(event.target.value); setFiles([]); setSelectedFile(null); }}>{branches.length ? branches.map((item) => <option key={item.name} value={item.name}>{item.name}</option>) : <option value="main">main</option>}</select></label>
-          <button onClick={createBranch} title="Create branch"><Plus size={16}/><span>Branch</span></button>
-          <button onClick={createPullRequest} title="Open pull request"><GitPullRequest size={16}/><span>PR</span></button>
-          <button className={repoPanel === "files" ? "active" : ""} onClick={() => openRepoPanel("files")}><FileSearch size={17}/><span>Files</span></button>
-          <button className={repoPanel === "activity" ? "active" : ""} onClick={() => openRepoPanel("activity")}><History size={17}/><span>Activity</span></button>
-          <button className={repoPanel === "changes" ? "active" : ""} onClick={() => openRepoPanel("changes")}><GitCompareArrows size={17}/><span>Changes{proposedChanges.length ? ` (${proposedChanges.length})` : ""}</span></button>
-          <button onClick={() => runValidation()}><Play size={16}/><span>Run checks</span></button>
-          <button className={repoPanel === "connections" ? "active" : ""} onClick={() => openRepoPanel("connections")}><Plug size={16}/><span>Connections</span></button>
+
           <button className={notificationsEnabled ? "active" : ""} onClick={toggleNotifications} title="Browser notifications"><Bell size={16}/><span>Alerts</span></button>
         </header>
 
