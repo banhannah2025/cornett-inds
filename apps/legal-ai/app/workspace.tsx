@@ -6,7 +6,7 @@ import {
   Bot,
   CheckCircle2,
   ChevronRight,
-  Code2,
+  Scale,
   Copy,
   ExternalLink,
   FileCode2,
@@ -525,8 +525,8 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     <main className="code-ai-shell">
       {sidebarOpen && <button aria-label="Close navigation" className="code-ai-scrim" onClick={() => setSidebarOpen(false)} />}
       <aside className={`code-ai-sidebar ${sidebarOpen ? "is-open" : ""}`}>
-        <div className="code-ai-brand"><span><Code2 size={21} /></span><div><strong>Legal AI</strong><small>Blended Works</small></div><button aria-label="Close sidebar" onClick={() => setSidebarOpen(false)}><X size={19}/></button></div>
-        <button className="code-ai-new" onClick={newConversation}><MessageSquarePlus size={17}/>New coding task</button>
+        <div className="code-ai-brand"><span><Scale size={21} /></span><div><strong>Legal AI</strong><small>Blended Works</small></div><button aria-label="Close sidebar" onClick={() => setSidebarOpen(false)}><X size={19}/></button></div>
+        <button className="code-ai-new" onClick={newConversation}><MessageSquarePlus size={17}/>New legal matter</button>
         <div className="code-ai-project-label"><span><FolderGit2 size={14}/>Project</span><div><button aria-label="Project settings" onClick={() => setRepoPanel("settings")}><Settings size={14}/></button><button aria-label="Rename project" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore project" : "Archive project"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create project" onClick={newProject}><Plus size={15}/></button></div></div>
         {data.projects.length ? (
           <select value={projectId} onChange={(event) => { setProjectId(event.target.value); setConversationId(""); }}>
@@ -575,10 +575,10 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
           ) : (
             <div className="code-ai-empty">
               <span><Bot size={34}/></span>
-              <h1>What should we build?</h1>
-              <p>Ask Legal AI to inspect, explain, debug, or update the Blended Works repository. Enable file changes only when you want it to commit.</p>
+              <h1>How can Legal AI help?</h1>
+              <p>Ask a legal question, review a document, organize a matter, research an issue, or prepare legal writing.</p>
               <div>
-                <button onClick={() => setPrompt("Review the repository structure and tell me what needs attention.")}>Review the project</button>
+                <button onClick={() => setPrompt("Review my legal matter and identify the key issues, missing facts, and next steps.")}>Review a matter</button>
                 <button onClick={() => setPrompt("Find the cause of the latest build failure and propose a fix.")}>Diagnose a build</button>
                 <button onClick={() => setPrompt("Inspect the current app architecture before we add a new feature.")}>Inspect architecture</button>
               </div>
