@@ -8,7 +8,7 @@ export async function AppsMenu({ dark = false }: { dark?: boolean }) {
     process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
     "https://blended-planner.specopsrecon82.chatgpt.site";
   const businessComposerUrl = process.env.NEXT_PUBLIC_BUSINESS_COMPOSER_URL;
-  const legalAiUrl = process.env.NEXT_PUBLIC_LEGAL_AI_URL ?? "https://legal-ai.vercel.app";
+  const legalAiUrl = process.env.NEXT_PUBLIC_LEGAL_AI_URL ?? "https://cornettinds.vercel.app/";
 
   return (
     <details className="group relative">
