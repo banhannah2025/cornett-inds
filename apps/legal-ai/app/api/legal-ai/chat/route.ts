@@ -16,7 +16,7 @@ Help users understand legal issues, organize facts and evidence, analyze uploade
 
 Legal AI is not a law firm and does not replace a licensed attorney. Do not imply an attorney-client relationship. For consequential legal decisions, encourage verification of current law, court rules, filing requirements, and deadlines. Be especially careful with criminal, family, housing, employment, immigration, and other high-impact matters.
 
-Focus on the user's legal question and the materials attached to the matter. Repository-development tooling is not part of the Legal AI user experience.
+Focus on the user's legal question and the materials attached to the matter. Developer and repository tooling are not part of the Legal AI user experience.
 
 The signed-in owner account is the Legal AI administrator and may have unrestricted administrative capabilities. Future customer accounts may have plan-based feature and usage limits.`;
 
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   if (!apiKey) return Response.json({ error: "OpenAI is not configured." }, { status: 503 });
 
   if (body.projectId) {
-    const usage = await getLegalAiProjectUsage(body.projectId);
+    const usage = await getLegalAiProjectUsage(body.projectId, user.userId);
     const budget = usage.project?.monthlyBudgetUsd ?? 5;
     if (budget > 0 && usage.estimatedCostUsd >= budget) return Response.json({ error: `This matter's $${budget.toFixed(2)} monthly budget has been reached. Increase it in matter settings to continue.` }, { status: 429 });
   }
@@ -87,12 +87,12 @@ export async function POST(request: Request) {
     async start(controller) {
       const send = (payload: unknown) => controller.enqueue(encoder.encode(`${JSON.stringify(payload)}\n`));
       try {
-    const conversation = await getLegalAiConversation(conversationId);
+    const conversation = await getLegalAiConversation(conversationId, user.userId);
     if (!conversation) throw new Error("Conversation not found.");
     const userMessage = makeLegalAiMessage("user", message);
-    await appendLegalAiMessages(conversationId, [userMessage]);
+    await appendLegalAiMessages(conversationId, user.userId, [userMessage]);
 
-    const attachments = body.projectId && Array.isArray(body.attachmentIds) ? await getLegalAiFiles(body.attachmentIds.slice(0, 5), body.projectId) : [];
+    const attachments = body.projectId && Array.isArray(body.attachmentIds) ? await getLegalAiFiles(body.attachmentIds.slice(0, 5), body.projectId, user.userId) : [];
     const attachmentContent: unknown[] = [];
     for (const file of attachments) {
       if (file.mimeType.startsWith("image/")) attachmentContent.push({ type: "input_image", image_url: file.url });
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     const answer = response ? answerFrom(response) : null;
     if (!answer) throw new Error("Legal AI returned no final response.");
     const assistantMessage = { ...makeLegalAiMessage("assistant", answer), model, inputTokens: response?.usage?.input_tokens, outputTokens: response?.usage?.output_tokens };
-    await appendLegalAiMessages(conversationId, [assistantMessage]);
+    await appendLegalAiMessages(conversationId, user.userId, [assistantMessage]);
     send({ type: "done", message: assistantMessage });
       } catch (error) {
         send({ type: "error", error: error instanceof Error ? error.message : "Legal AI could not complete the request." });
