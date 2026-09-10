@@ -105,7 +105,7 @@ export async function POST(request: Request) {
   const conversationId = body?.conversationId;
   const branch = body?.branch?.trim() || "main";
   const allowedModels = ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"];
-  const model = body?.model && allowedModels.includes(body.model) ? body.model : process.env.LEGAL_AI_MODEL ?? "gpt-5.6-terra";
+  const model = body?.model && allowedModels.includes(body.model) ? body.model : process.env.LEGAL_AI_MODEL ?? process.env.CODE_AI_MODEL ?? "gpt-5.6-terra";
   if (!message || message.length > 20000 || !repository || !conversationId) {
     return Response.json({ error: "A conversation, repository, and message are required." }, { status: 400 });
   }
