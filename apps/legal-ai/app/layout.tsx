@@ -1,6 +1,6 @@
 import "@repo/ui/styles.css";
 import "./globals.css";
-import "./code-ai.css";
+import "./legal-ai.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ServiceWorkerNotifications } from "./service-worker-notifications";
 
