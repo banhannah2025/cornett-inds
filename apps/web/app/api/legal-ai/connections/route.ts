@@ -1,7 +1,7 @@
-import { getLegalAiOwner } from "@/lib/legal-ai/auth";
+import { getLegalAiUser } from "@/lib/legal-ai/auth";
 
 export async function GET() {
-  if (!(await getLegalAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await getLegalAiUser())) return Response.json({ error: "Forbidden" }, { status: 403 });
   return Response.json([
     { id: "openai", name: "OpenAI", description: "Conversations, reasoning, and coding tools", connected: Boolean(process.env.OPENAI_API_SECRET_KEY) },
     { id: "github", name: "GitHub", description: "Repositories, branches, files, commits, and pull requests", connected: Boolean(process.env.GITHUB_ACCESS_TOKEN) },
