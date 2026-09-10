@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_SECRET_KEY;
   if (!apiKey) return Response.json({ error: "OpenAI is not configured." }, { status: 503 });
 
-  if (body.projectId) {
+  if (body.projectId && !user.isAdmin) {
     const usage = await getLegalAiProjectUsage(body.projectId, user.userId);
     const budget = usage.project?.monthlyBudgetUsd ?? 5;
     if (budget > 0 && usage.estimatedCostUsd >= budget) return Response.json({ error: `This matter's $${budget.toFixed(2)} monthly budget has been reached. Increase it in matter settings to continue.` }, { status: 429 });
