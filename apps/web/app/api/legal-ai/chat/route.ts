@@ -24,42 +24,11 @@ Help users understand legal issues, organize facts and evidence, analyze uploade
 
 Legal AI is not a law firm and does not replace a licensed attorney. Do not imply an attorney-client relationship. For consequential legal decisions, encourage verification of current law, court rules, filing requirements, and deadlines. Be especially careful with criminal, family, housing, employment, immigration, and other high-impact matters.
 
-The current application still contains repository-based tools inherited from its Code AI template. Treat those tools as administrative/development capabilities, not as the user's legal matter itself. Use them only when the user's request actually concerns application or repository administration. For ordinary legal work, focus on the user's question and uploaded matter materials.
+Focus on the user's legal question and the materials attached to the matter. Repository-development tooling is not part of the Legal AI user experience.
 
 The signed-in owner account is the Legal AI administrator and may have unrestricted administrative capabilities. Future customer accounts may have plan-based feature and usage limits.`;
 
-const toolDefinitions = [
-  {
-    type: "function",
-    name: "list_repository_files",
-    description: "List files in the selected GitHub repository.",
-    parameters: { type: "object", properties: { branch: { type: "string" } }, additionalProperties: false },
-  },
-  {
-    type: "function",
-    name: "read_repository_file",
-    description: "Read a UTF-8 text file from the selected GitHub repository.",
-    parameters: {
-      type: "object",
-      properties: { path: { type: "string" }, branch: { type: "string" } },
-      required: ["path"],
-      additionalProperties: false,
-    },
-  },
-  {
-    type: "function",
-    name: "write_repository_file",
-    description: "Propose a complete UTF-8 file replacement. If the user enabled changes, it is committed; otherwise it is returned for visual review.",
-    parameters: {
-      type: "object",
-      properties: {
-        path: { type: "string" }, content: { type: "string" }, branch: { type: "string" }, message: { type: "string" },
-      },
-      required: ["path", "content", "message"],
-      additionalProperties: false,
-    },
-  },
-];
+const toolDefinitions: Array<Record<string, unknown>> = [];
 
 function answerFrom(response: OpenAiResponse) {
   if (response.output_text) return response.output_text;
