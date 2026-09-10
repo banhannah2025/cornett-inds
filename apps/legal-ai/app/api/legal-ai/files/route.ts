@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { getLegalAiOwner } from "@/lib/legal-ai/auth";
+import { getLegalAiUser } from "@/lib/legal-ai/auth";
 import { logLegalAiAudit } from "@/lib/legal-ai/store";
 import { getSanityWriteClient } from "@/sanity/lib/writeClient";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  if (!(await getLegalAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await getLegalAiUser())) return Response.json({ error: "Forbidden" }, { status: 403 });
   try {
     const form = await request.formData();
     const file = form.get("file");
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (!(await getLegalAiOwner())) return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await getLegalAiUser())) return Response.json({ error: "Forbidden" }, { status: 403 });
   const id = new URL(request.url).searchParams.get("id");
   if (!id?.startsWith("legalAiFile-")) return Response.json({ error: "Invalid file ID." }, { status: 400 });
   try {
