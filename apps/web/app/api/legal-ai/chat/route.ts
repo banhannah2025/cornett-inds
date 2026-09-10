@@ -2,20 +2,12 @@ import { createHash } from "node:crypto";
 import { getLegalAiUser } from "@/lib/legal-ai/auth";
 import {
   appendLegalAiMessages,
-  createLegalAiChangeSet,
   getLegalAiFiles,
   getLegalAiConversation,
   getLegalAiProjectUsage,
   makeLegalAiMessage,
 } from "@/lib/legal-ai/store";
-import {
-  listRepositoryFiles,
-  readRepositoryFile,
-  writeRepositoryFile,
-} from "@/lib/legal-ai/github";
-
-type FunctionCall = { type: "function_call"; name: string; arguments: string; call_id: string };
-type OutputItem = FunctionCall | { type: string; content?: Array<{ type: string; text?: string }> };
+type OutputItem = { type: string; content?: Array<{ type: string; text?: string }> };
 type OpenAiResponse = { id: string; output?: OutputItem[]; output_text?: string; usage?: { input_tokens?: number; output_tokens?: number }; error?: { message?: string } };
 
 const instructions = `You are Legal AI, an AI-assisted legal research, document-analysis, and matter-management workspace from Blended Works.
@@ -28,7 +20,6 @@ Focus on the user's legal question and the materials attached to the matter. Rep
 
 The signed-in owner account is the Legal AI administrator and may have unrestricted administrative capabilities. Future customer accounts may have plan-based feature and usage limits.`;
 
-const toolDefinitions: Array<Record<string, unknown>> = [];
 
 function answerFrom(response: OpenAiResponse) {
   if (response.output_text) return response.output_text;
@@ -73,16 +64,14 @@ export async function POST(request: Request) {
   const user = await getLegalAiUser();
   if (!user) return Response.json({ error: "Forbidden" }, { status: 403 });
   const body = (await request.json().catch(() => null)) as
-    | { conversationId?: string; projectId?: string; message?: string; repository?: string; branch?: string; model?: string; attachmentIds?: string[]; approveChanges?: boolean }
+    | { conversationId?: string; projectId?: string; message?: string; model?: string; attachmentIds?: string[] }
     | null;
   const message = body?.message?.trim();
-  const repository = body?.repository?.trim();
   const conversationId = body?.conversationId;
-  const branch = body?.branch?.trim() || "main";
   const allowedModels = ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"];
   const model = body?.model && allowedModels.includes(body.model) ? body.model : process.env.LEGAL_AI_MODEL ?? process.env.CODE_AI_MODEL ?? "gpt-5.6-terra";
-  if (!message || message.length > 20000 || !repository || !conversationId) {
-    return Response.json({ error: "A conversation, repository, and message are required." }, { status: 400 });
+  if (!message || message.length > 20000 || !conversationId) {
+    return Response.json({ error: "A conversation and message are required." }, { status: 400 });
   }
   const apiKey = process.env.OPENAI_API_SECRET_KEY;
   if (!apiKey) return Response.json({ error: "OpenAI is not configured." }, { status: 503 });
@@ -90,7 +79,7 @@ export async function POST(request: Request) {
   if (body.projectId) {
     const usage = await getLegalAiProjectUsage(body.projectId);
     const budget = usage.project?.monthlyBudgetUsd ?? 5;
-    if (budget > 0 && usage.estimatedCostUsd >= budget) return Response.json({ error: `This project's $${budget.toFixed(2)} monthly budget has been reached. Increase it in project settings to continue.` }, { status: 429 });
+    if (budget > 0 && usage.estimatedCostUsd >= budget) return Response.json({ error: `This matter's $${budget.toFixed(2)} monthly budget has been reached. Increase it in matter settings to continue.` }, { status: 429 });
   }
 
   const encoder = new TextEncoder();
@@ -116,63 +105,29 @@ export async function POST(request: Request) {
     const input: unknown[] = [
       { role: "system", content: instructions },
       ...conversation.messages.slice(-20).map(({ role, content }) => ({ role, content })),
-      { role: "user", content: [{ type: "input_text", text: `Repository: ${repository}\nBranch: ${branch}\nFile changes approved for this message: ${body.approveChanges === true ? "yes" : "no"}\n\n${message}` }, ...attachmentContent] },
+      { role: "user", content: [{ type: "input_text", text: message }, ...attachmentContent] },
     ];
-    let response: OpenAiResponse | null = null;
-    const proposedChanges: Array<{ path: string; previousContent: string; content: string; message: string }> = [];
-
-    for (let turn = 0; turn < 8; turn += 1) {
-      const apiResponse = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        signal: request.signal,
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          store: false,
-          safety_identifier: createHash("sha256").update(owner.userId).digest("hex"),
-          reasoning: { effort: "medium" },
-          max_output_tokens: 4000,
-          stream: true,
-          tools: toolDefinitions,
-          input,
-        }),
-      });
-      response = await readOpenAiStream(apiResponse, (delta) => send({ type: "delta", delta }));
-      input.push(...(response.output ?? []));
-      const calls = (response.output ?? []).filter((item): item is FunctionCall => item.type === "function_call");
-      if (!calls.length) break;
-
-      for (const call of calls) {
-        let output: unknown;
-        try {
-          const args = JSON.parse(call.arguments || "{}") as Record<string, string>;
-          if (call.name === "list_repository_files") output = await listRepositoryFiles(repository, args.branch || branch);
-          else if (call.name === "read_repository_file") {
-            if (!args.path) throw new Error("A file path is required.");
-            output = await readRepositoryFile(repository, args.path, args.branch || branch);
-          }
-          else if (call.name === "write_repository_file") {
-            if (!args.path || typeof args.content !== "string" || !args.message) throw new Error("Path, content, and commit message are required.");
-            if (body.approveChanges === true) output = await writeRepositoryFile({ repository, path: args.path, content: args.content, branch: args.branch || branch, message: args.message });
-            else {
-              const previous = await readRepositoryFile(repository, args.path, args.branch || branch).catch(() => ({ content: "" }));
-              proposedChanges.push({ path: args.path, previousContent: previous.content, content: args.content, message: args.message });
-              output = { proposed: true, path: args.path, message: "Change saved for user review; it was not committed." };
-            }
-          } else throw new Error("Unknown repository tool.");
-        } catch (error) {
-          output = { error: error instanceof Error ? error.message : "Tool failed." };
-        }
-        input.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(output) });
-      }
-    }
+    const apiResponse = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      signal: request.signal,
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        store: false,
+        safety_identifier: createHash("sha256").update(user.userId).digest("hex"),
+        reasoning: { effort: "medium" },
+        max_output_tokens: 4000,
+        stream: true,
+        input,
+      }),
+    });
+    const response = await readOpenAiStream(apiResponse, (delta) => send({ type: "delta", delta }));
 
     const answer = response ? answerFrom(response) : null;
     if (!answer) throw new Error("Legal AI returned no final response.");
     const assistantMessage = { ...makeLegalAiMessage("assistant", answer), model, inputTokens: response?.usage?.input_tokens, outputTokens: response?.usage?.output_tokens };
     await appendLegalAiMessages(conversationId, [assistantMessage]);
-    const changeSet = proposedChanges.length && body.projectId ? await createLegalAiChangeSet({ projectId: body.projectId, conversationId, repository, branch, changes: proposedChanges }) : null;
-    send({ type: "done", message: assistantMessage, proposedChanges, changeSet });
+    send({ type: "done", message: assistantMessage });
       } catch (error) {
         send({ type: "error", error: error instanceof Error ? error.message : "Legal AI could not complete the request." });
       } finally { controller.close(); }
