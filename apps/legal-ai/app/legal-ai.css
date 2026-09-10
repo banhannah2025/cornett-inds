@@ -1,25 +1,25 @@
 /*
- * Legal AI workspace viewport and mobile composer safeguards.
+ * Code AI workspace viewport and mobile composer safeguards.
  * Kept route-local so the public site and other embedded apps retain their layouts.
  */
-.legal-ai-shell {
+.code-ai-shell {
   block-size: 100dvh;
   min-block-size: 0;
   max-inline-size: 100%;
 }
 
-.legal-ai-main,
-.legal-ai-work-area,
-.legal-ai-work-area > .legal-ai-thread {
+.code-ai-main,
+.code-ai-work-area,
+.code-ai-work-area > .code-ai-thread {
   min-block-size: 0;
 }
 
-.legal-ai-work-area {
+.code-ai-work-area {
   overflow: hidden;
 }
 
 /* Keep the conversation independently readable and scrollable beneath the fixed composer. */
-.legal-ai-thread {
+.code-ai-thread {
   block-size: 100%;
   overscroll-behavior: contain;
   overflow-x: hidden;
@@ -27,50 +27,50 @@
   scrollbar-gutter: stable;
 }
 
-.legal-ai-thread::-webkit-scrollbar {
+.code-ai-thread::-webkit-scrollbar {
   inline-size: 10px;
 }
 
-.legal-ai-thread::-webkit-scrollbar-track {
+.code-ai-thread::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.legal-ai-thread::-webkit-scrollbar-thumb {
+.code-ai-thread::-webkit-scrollbar-thumb {
   border: 3px solid #0b0e13;
   border-radius: 999px;
   background: #59677d;
 }
 
 /* Long prose, links, paths, and generated errors must not widen a message card. */
-.legal-ai-message,
-.legal-ai-message > div,
-.legal-ai-markdown,
-.legal-ai-markdown > *,
-.legal-ai-error,
-.legal-ai-thinking,
-.legal-ai-loading {
+.code-ai-message,
+.code-ai-message > div,
+.code-ai-markdown,
+.code-ai-markdown > *,
+.code-ai-error,
+.code-ai-thinking,
+.code-ai-loading {
   min-inline-size: 0;
   max-inline-size: 100%;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
-.legal-ai-markdown pre,
-.legal-ai-markdown code {
+.code-ai-markdown pre,
+.code-ai-markdown code {
   overflow-wrap: normal;
   word-break: normal;
 }
 
 /* The composer must remain within the viewport at every size. */
-.legal-ai-composer-wrap,
-.legal-ai-composer,
-.legal-ai-composer > div,
-.legal-ai-composer-options {
+.code-ai-composer-wrap,
+.code-ai-composer,
+.code-ai-composer > div,
+.code-ai-composer-options {
   min-inline-size: 0;
   max-inline-size: 100%;
 }
 
-.legal-ai-composer textarea {
+.code-ai-composer textarea {
   min-inline-size: 0;
   max-inline-size: 100%;
   overflow-x: hidden;
@@ -80,76 +80,76 @@
   white-space: pre-wrap;
 }
 
-.legal-ai-composer-options > * {
+.code-ai-composer-options > * {
   min-inline-size: 0;
   max-inline-size: 100%;
 }
 
 @media (max-width: 760px) {
-  .legal-ai-shell {
+  .code-ai-shell {
     min-block-size: 100svh;
   }
 
-  .legal-ai-thread {
+  .code-ai-thread {
     padding-block-end: 20px;
     scrollbar-gutter: auto;
   }
 
-  .legal-ai-composer-wrap {
+  .code-ai-composer-wrap {
     padding: 0 8px max(8px, env(safe-area-inset-bottom));
   }
 
-  .legal-ai-composer > div {
+  .code-ai-composer > div {
     align-items: stretch;
   }
 
-  .legal-ai-composer-options {
+  .code-ai-composer-options {
     align-items: stretch;
   }
 
-  .legal-ai-composer-options select,
-  .legal-ai-composer-options label {
+  .code-ai-composer-options select,
+  .code-ai-composer-options label {
     min-block-size: 36px;
   }
 }
 
 /* Stack composer controls before they can push the send action off a narrow phone. */
 @media (max-width: 480px) {
-  .legal-ai-composer {
+  .code-ai-composer {
     padding: 10px;
   }
 
-  .legal-ai-composer > div {
+  .code-ai-composer > div {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 36px;
     align-items: end;
     gap: 8px;
   }
 
-  .legal-ai-composer-options {
+  .code-ai-composer-options {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
 
-  .legal-ai-composer-options select,
-  .legal-ai-composer-options label {
+  .code-ai-composer-options select,
+  .code-ai-composer-options label {
     inline-size: 100%;
     max-inline-size: 100%;
   }
 
-  .legal-ai-composer-options label {
+  .code-ai-composer-options label {
     justify-content: flex-start;
     border-radius: 10px;
     line-height: 1.25;
     white-space: normal;
   }
 
-  .legal-ai-attached-count {
+  .code-ai-attached-count {
     justify-self: start;
   }
 
-  .legal-ai-composer > div > button {
+  .code-ai-composer > div > button {
     align-self: end;
   }
 }
