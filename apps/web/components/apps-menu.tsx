@@ -8,7 +8,6 @@ export async function AppsMenu({ dark = false }: { dark?: boolean }) {
     process.env.NEXT_PUBLIC_BLENDED_PLANNER_URL ??
     "https://blended-planner.specopsrecon82.chatgpt.site";
   const businessComposerUrl = process.env.NEXT_PUBLIC_BUSINESS_COMPOSER_URL;
-  const legalAiUrl = process.env.NEXT_PUBLIC_LEGAL_AI_URL ?? "https://legal-ai.vercel.app";
 
   return (
     <details className="group relative">
@@ -59,7 +58,7 @@ export async function AppsMenu({ dark = false }: { dark?: boolean }) {
         ) : null}
         <Link
           className="flex gap-3 rounded-xl px-4 py-3 transition hover:bg-[#ebe7dc]"
-          href={legalAiUrl}
+          href="/apps/legal-ai"
         >
           <Scale className="mt-0.5 size-5 shrink-0 text-[#a45d2d]" />
           <span>
