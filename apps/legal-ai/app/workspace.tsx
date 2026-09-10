@@ -46,6 +46,8 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
   const [chatSearch, setChatSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const requestController = useRef<AbortController | null>(null);
 
   const reload = useCallback(async () => {
     try {
