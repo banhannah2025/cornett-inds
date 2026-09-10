@@ -14,7 +14,7 @@ import {
   FolderGit2,
   Download,
   GitBranch,
-  GitCommitHorizontal,
+  GitApplyHorizontal,
   GitCompareArrows,
   GitPullRequest,
   History,
@@ -159,7 +159,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   }, [data.changeSets, projectId, conversationId, branch]);
 
   const repositoryApi = useCallback(async <T,>(action: string, extra = "") => {
-    if (!project?.repository) throw new Error("Choose a project first.");
+    if (!project?.repository) throw new Error("Choose a legal matter first.");
     return api<T>(`/api/legal-ai/repository?repository=${encodeURIComponent(project.repository)}&branch=${encodeURIComponent(branch)}&action=${action}${extra}`);
   }, [project?.repository, branch]);
 
@@ -259,7 +259,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
       const selectedProject = await ensureProject();
       const created = await api<LegalAiConversation>("/api/legal-ai/workspace", {
         method: "POST",
-        body: JSON.stringify({ type: "conversation", projectId: selectedProject._id, title: "New coding task" }),
+        body: JSON.stringify({ type: "conversation", projectId: selectedProject._id, title: "New legal matter" }),
       });
       setData((current) => ({ ...current, conversations: [created, ...current.conversations] }));
       setConversationId(created._id);
@@ -270,9 +270,9 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   }
 
   async function newProject() {
-    const name = window.prompt("Project name", "Blended Works");
+    const name = window.prompt("Matter name", "Blended Works");
     if (!name?.trim()) return;
-    const repository = window.prompt("GitHub repository (owner/name)", "banhannah2025/cornett-inds");
+    const repository = window.prompt("Matter reference or workspace name", "banhannah2025/cornett-inds");
     if (!repository?.trim()) return;
     try {
       const created = await api<LegalAiProject>("/api/legal-ai/workspace", { method: "POST", body: JSON.stringify({ type: "project", name, repository }) });
@@ -330,7 +330,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
 
   async function renameProject() {
     if (!project) return;
-    const name = window.prompt("Rename project", project.name);
+    const name = window.prompt("Rename matter", project.name);
     if (!name?.trim() || name.trim() === project.name) return;
     try { await api("/api/legal-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: project._id, name: name.trim() }) }); setData((current) => ({ ...current, projects: current.projects.map((item) => item._id === project._id ? { ...item, name: name.trim() } : item) })); }
     catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to rename project."); }
@@ -369,7 +369,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   function exportWorkspace() {
     const payload = JSON.stringify({ exportedAt: new Date().toISOString(), project, conversations: data.conversations.filter((item) => item.projectId === projectId), files: projectFiles }, null, 2);
     const url = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
-    const link = document.createElement("a"); link.href = url; link.download = `${project?.name ?? "code-ai"}-export.json`; link.click(); URL.revokeObjectURL(url);
+    const link = document.createElement("a"); link.href = url; link.download = `${project?.name ?? "legal-ai"}-export.json`; link.click(); URL.revokeObjectURL(url);
   }
 
   async function uploadFile(file?: File) {
@@ -440,7 +440,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
         setData((current) => ({ ...current, changeSets: [result.changeSet!, ...current.changeSets.filter((item) => item._id !== result.changeSet!._id)] }));
         setCurrentChangeSetId(result.changeSet._id); setProposedChanges(result.changeSet.changes); setRepoPanel("changes");
       }
-      if (notificationsEnabled && document.visibilityState !== "visible") new Notification("Legal AI finished", { body: result.proposedChanges?.length ? `${result.proposedChanges.length} changes are ready for review.` : "Your coding response is ready." });
+      if (notificationsEnabled && document.visibilityState !== "visible") new Notification("Legal AI finished", { body: result.proposedChanges?.length ? `${result.proposedChanges.length} changes are ready for review.` : "Your Legal AI response is ready." });
       setApproveChanges(false);
       setAttachmentIds([]);
     } catch (caught) {
@@ -457,7 +457,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   }
 
   async function applyProposedChange(change: ProposedChange) {
-    if (!project || !window.confirm(`Commit the proposed change to ${change.path} on ${branch}?`)) return;
+    if (!project || !window.confirm(`Apply the proposed change to ${change.path} on ${branch}?`)) return;
     setRepoLoading(true);
     try {
       await api("/api/legal-ai/repository", { method: "POST", body: JSON.stringify({ repository: project.repository, branch, path: change.path, content: change.content, message: change.message, changeSetId: currentChangeSetId, changeKey: change._key, approved: true }) });
@@ -474,8 +474,8 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
 
   async function commitAllChanges() {
     if (!project || !proposedChanges.length) return;
-    const message = window.prompt("Commit message", `Apply ${proposedChanges.length} Legal AI changes`);
-    if (!message?.trim() || !window.confirm(`Commit ${proposedChanges.length} files to ${branch} as one atomic commit?`)) return;
+    const message = window.prompt("Save note", `Apply ${proposedChanges.length} Legal AI items`);
+    if (!message?.trim() || !window.confirm(`Apply ${proposedChanges.length} files to ${branch} as one atomic commit?`)) return;
     setRepoLoading(true); setError("");
     try {
       await api("/api/legal-ai/repository", { method: "POST", body: JSON.stringify({ action: "commit", repository: project.repository, branch, message, changeSetId: currentChangeSetId, changes: proposedChanges.map(({ path, content }) => ({ path, content })), approved: true }) });
@@ -501,7 +501,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     if (!project || branch === "main") { setError("Choose or create a feature branch before opening a pull request."); return; }
     const title = window.prompt("Pull request title");
     if (!title?.trim()) return;
-    const description = window.prompt("Pull request description", "Created from Legal AI.") ?? "";
+    const description = window.prompt("Pull request description", "Prepared with Legal AI.") ?? "";
     if (!window.confirm(`Open a pull request from ${branch} into main?`)) return;
     setRepoLoading(true); setError("");
     try {
@@ -511,7 +511,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     finally { setRepoLoading(false); }
   }
 
-  async function undoLatestCommit(item: RepoActivity["commits"][number]) {
+  async function undoLatestApply(item: RepoActivity["commits"][number]) {
     if (!project || !window.confirm(`Create a revert commit for “${item.message.split("\n")[0]}” on ${branch}?`)) return;
     setRepoLoading(true); setError("");
     try {
@@ -526,18 +526,18 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
       {sidebarOpen && <button aria-label="Close navigation" className="code-ai-scrim" onClick={() => setSidebarOpen(false)} />}
       <aside className={`code-ai-sidebar ${sidebarOpen ? "is-open" : ""}`}>
         <div className="code-ai-brand"><span><Code2 size={21} /></span><div><strong>Legal AI</strong><small>Blended Works</small></div><button aria-label="Close sidebar" onClick={() => setSidebarOpen(false)}><X size={19}/></button></div>
-        <button className="code-ai-new" onClick={newConversation}><MessageSquarePlus size={17}/>New coding task</button>
-        <div className="code-ai-project-label"><span><FolderGit2 size={14}/>Project</span><div><button aria-label="Project settings" onClick={() => setRepoPanel("settings")}><Settings size={14}/></button><button aria-label="Rename project" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore project" : "Archive project"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create project" onClick={newProject}><Plus size={15}/></button></div></div>
+        <button className="code-ai-new" onClick={newConversation}><MessageSquarePlus size={17}/>New legal matter</button>
+        <div className="code-ai-project-label"><span><FolderGit2 size={14}/>Project</span><div><button aria-label="Matter settings" onClick={() => setRepoPanel("settings")}><Settings size={14}/></button><button aria-label="Rename matter" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore matter" : "Archive matter"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create matter" onClick={newProject}><Plus size={15}/></button></div></div>
         {data.projects.length ? (
           <select value={projectId} onChange={(event) => { setProjectId(event.target.value); setConversationId(""); }}>
             {data.projects.map((item) => <option key={item._id} value={item._id}>{item.archived ? "Archived · " : ""}{item.name}</option>)}
           </select>
-        ) : <button className="code-ai-create-project" onClick={newConversation}>Create Blended Works project</button>}
-        <div className="code-ai-project-label"><span><Paperclip size={14}/>Project files</span><button aria-label="Upload file" onClick={() => uploadRef.current?.click()}><Plus size={15}/></button></div>
+        ) : <button className="code-ai-create-project" onClick={newConversation}>Create legal matter</button>}
+        <div className="code-ai-project-label"><span><Paperclip size={14}/>Matter files</span><button aria-label="Upload file" onClick={() => uploadRef.current?.click()}><Plus size={15}/></button></div>
         <input ref={uploadRef} hidden type="file" onChange={(event) => uploadFile(event.target.files?.[0])}/>
         <div className="code-ai-attachments">{projectFiles.slice(0, 12).map((file) => <div key={file._id}><button className={attachmentIds.includes(file._id) ? "selected" : ""} onClick={() => setAttachmentIds((current) => current.includes(file._id) ? current.filter((id) => id !== file._id) : [...current, file._id].slice(-5))}><Paperclip size={12}/><span>{file.name}</span></button><button aria-label={`Delete ${file.name}`} onClick={() => deleteAttachment(file)}><Trash2 size={11}/></button></div>)}{!projectFiles.length && <small>No uploaded files</small>}</div>
         <div className="code-ai-history">
-          <div className="code-ai-history-head"><p>{showArchived ? "Archived chats" : "Recent chats"}</p><div><button aria-label={showArchived ? "Show recent chats" : "Show archived chats"} onClick={() => setShowArchived((current) => !current)}><Archive size={13}/></button><button aria-label="Export project" onClick={exportWorkspace}><Download size={13}/></button></div></div>
+          <div className="code-ai-history-head"><p>{showArchived ? "Archived chats" : "Recent chats"}</p><div><button aria-label={showArchived ? "Show recent chats" : "Show archived chats"} onClick={() => setShowArchived((current) => !current)}><Archive size={13}/></button><button aria-label="Export matter" onClick={exportWorkspace}><Download size={13}/></button></div></div>
           <div className="code-ai-chat-search"><FileSearch size={13}/><input value={chatSearch} onChange={(event) => setChatSearch(event.target.value)} placeholder="Search chats"/></div>
           {projectConversations.map((item) => (
             <div className={`code-ai-chat-row ${item._id === conversationId ? "active" : ""}`} key={item._id}>
@@ -550,13 +550,13 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
           ))}
           {!loading && !projectConversations.length && <small>Your coding conversations will appear here.</small>}
         </div>
-        <div className="code-ai-owner"><ShieldCheck size={17}/><div><strong>Private workspace</strong><small>{ownerEmail}</small></div></div>
+        <div className="code-ai-owner"><ShieldCheck size={17}/><div><strong>Legal AI administrator</strong><small>{ownerEmail}</small></div></div>
       </aside>
 
       <section className="code-ai-main">
         <header className="code-ai-header">
           <button className="code-ai-menu" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Menu size={21}/></button>
-          <div><strong>{project?.name ?? "Legal AI"}</strong><span>{project?.repository ?? "Private development workspace"}</span></div>
+          <div><strong>{project?.name ?? "Legal AI"}</strong><span>{project?.repository ?? "Legal research and case workspace"}</span></div>
           <label className="code-ai-branch"><GitBranch size={14}/><span>Branch</span><select value={branch} onChange={(event) => { setBranch(event.target.value); setFiles([]); setSelectedFile(null); }}>{branches.length ? branches.map((item) => <option key={item.name} value={item.name}>{item.name}</option>) : <option value="main">main</option>}</select></label>
           <button onClick={createBranch} title="Create branch"><Plus size={16}/><span>Branch</span></button>
           <button onClick={createPullRequest} title="Open pull request"><GitPullRequest size={16}/><span>PR</span></button>
@@ -576,49 +576,49 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
             <div className="code-ai-empty">
               <span><Bot size={34}/></span>
               <h1>What should we build?</h1>
-              <p>Ask Legal AI to inspect, explain, debug, or update the Blended Works repository. Enable file changes only when you want it to commit.</p>
+              <p>Ask Legal AI about a legal question, case, document, deadline, evidence, or research issue. Upload relevant matter files for context.</p>
               <div>
-                <button onClick={() => setPrompt("Review the repository structure and tell me what needs attention.")}>Review the project</button>
+                <button onClick={() => setPrompt("Review this matter and identify the key legal issues, missing facts, and next research steps.")}>Review the matter</button>
                 <button onClick={() => setPrompt("Find the cause of the latest build failure and propose a fix.")}>Diagnose a build</button>
                 <button onClick={() => setPrompt("Inspect the current app architecture before we add a new feature.")}>Inspect architecture</button>
               </div>
             </div>
           )}
-          {sending && <div className="code-ai-thinking"><span><Bot size={18}/></span><LoaderCircle className="animate-spin" size={16}/>Working in {project?.repository ?? "the repository"}…</div>}
+          {sending && <div className="code-ai-thinking"><span><Bot size={18}/></span><LoaderCircle className="animate-spin" size={16}/>Working on {project?.name ?? "this matter"}…</div>}
         </div>
         {repoPanel ? <aside className="code-ai-repo-panel">
-          <div className="code-ai-repo-title"><div>{repoPanel === "files" ? <FileSearch size={17}/> : repoPanel === "activity" ? <History size={17}/> : repoPanel === "changes" ? <GitCompareArrows size={17}/> : repoPanel === "settings" ? <Settings size={17}/> : <Plug size={17}/>}<strong>{repoPanel === "files" ? "Repository files" : repoPanel === "activity" ? "Repository activity" : repoPanel === "changes" ? "Proposed changes" : repoPanel === "settings" ? "Project settings" : "Tools and connections"}</strong></div><button aria-label="Close repository panel" onClick={() => setRepoPanel(null)}><X size={18}/></button></div>
-          {repoLoading && <div className="code-ai-repo-loading"><LoaderCircle className="animate-spin" size={17}/>Loading from GitHub…</div>}
+          <div className="code-ai-repo-title"><div>{repoPanel === "files" ? <FileSearch size={17}/> : repoPanel === "activity" ? <History size={17}/> : repoPanel === "changes" ? <GitCompareArrows size={17}/> : repoPanel === "settings" ? <Settings size={17}/> : <Plug size={17}/>}<strong>{repoPanel === "files" ? "Source files" : repoPanel === "activity" ? "Matter activity" : repoPanel === "changes" ? "Draft work" : repoPanel === "settings" ? "Matter settings" : "Research tools"}</strong></div><button aria-label="Close repository panel" onClick={() => setRepoPanel(null)}><X size={18}/></button></div>
+          {repoLoading && <div className="code-ai-repo-loading"><LoaderCircle className="animate-spin" size={17}/>Loading workspace data…</div>}
           {repoPanel === "files" ? <>
-            <div className="code-ai-file-search"><FileSearch size={15}/><input value={repoSearch} onChange={(event) => setRepoSearch(event.target.value)} placeholder="Filter files by path"/></div>
+            <div className="code-ai-file-search"><FileSearch size={15}/><input value={repoSearch} onChange={(event) => setRepoSearch(event.target.value)} placeholder="Filter source files"/></div>
             {selectedFile ? <div className="code-ai-file-view"><button onClick={() => setSelectedFile(null)}><ChevronRight size={15}/>All files</button><strong>{selectedFile.path}</strong><pre>{selectedFile.content}</pre></div> : <div className="code-ai-file-list">{visibleFiles.map((file) => <button key={file.path} onClick={() => openFile(file.path)}><FileCode2 size={14}/><span>{file.path}</span><small>{file.size ? `${Math.ceil(file.size / 1024)} KB` : ""}</small></button>)}</div>}
           </> : repoPanel === "activity" ? <div className="code-ai-activity">
             <h3><ExternalLink size={15}/>Latest deployment</h3>
-            {activity.deployment?.statuses?.length ? activity.deployment.statuses.map((status) => status.target_url ? <a key={status.context} href={status.target_url} target="_blank" rel="noreferrer"><span><strong>{status.context} · {status.state}</strong><small>{status.description ?? "Open deployment details and logs"}</small></span><ExternalLink size={13}/></a> : <div className="code-ai-audit" key={status.context}><strong>{status.context}</strong><span>{status.state}</span></div>) : <p>No deployment status is attached to the latest commit.</p>}
+            {activity.deployment?.statuses?.length ? activity.deployment.statuses.map((status) => status.target_url ? <a key={status.context} href={status.target_url} target="_blank" rel="noreferrer"><span><strong>{status.context} · {status.state}</strong><small>{status.description ?? "Open deployment details and logs"}</small></span><ExternalLink size={13}/></a> : <div className="code-ai-audit" key={status.context}><strong>{status.context}</strong><span>{status.state}</span></div>) : <p>No external activity is available for this matter.</p>}
             <h3><RefreshCw size={15}/>Validation runs</h3>
-            <div className="code-ai-validation-actions"><button onClick={() => runValidation("visual")}><Play size={13}/>Run browser checks</button></div>
+            <div className="code-ai-validation-actions"><button onClick={() => runValidation("visual")}><Play size={13}/>Run validation</button></div>
             {githubRateLimit && <p className="code-ai-rate-limit">GitHub API: {githubRateLimit.remaining.toLocaleString()} of {githubRateLimit.limit.toLocaleString()} requests remaining</p>}
-            {validationRuns.length ? validationRuns.map((run) => <div className="code-ai-run-wrap" key={run.id}><div className="code-ai-run-row"><button className="code-ai-run-summary" onClick={() => toggleRunDetails(run)}><ChevronRight className={selectedRunId === run.id ? "open" : ""} size={13}/><span><strong>{run.status === "completed" ? run.conclusion ?? "completed" : run.status} · {run.branch}</strong><small>{run.sha.slice(0, 7)} · {new Date(run.createdAt).toLocaleString()}</small></span></button><a aria-label="Open run on GitHub" href={run.url} target="_blank" rel="noreferrer"><ExternalLink size={13}/></a><button onClick={() => controlRun(run, run.status === "completed" ? "rerun" : "cancel")}>{run.status === "completed" ? "Retry" : "Cancel"}</button></div>{selectedRunId === run.id && validationDetails && <div className="code-ai-run-details">{validationDetails.jobs.map((job) => <section key={job.id}><a href={job.url} target="_blank" rel="noreferrer"><strong>{job.name} · {job.conclusion ?? job.status}</strong><ExternalLink size={11}/></a>{job.steps.map((step) => <div key={step.number}><span>{step.number}. {step.name}</span><b className={step.conclusion ?? step.status}>{step.conclusion ?? step.status}</b></div>)}</section>)}{validationDetails.artifacts.map((artifact) => <a key={artifact.id} href={run.url} target="_blank" rel="noreferrer"><Download size={12}/>{artifact.name} · {Math.ceil(artifact.size / 1024)} KB{artifact.expired ? " · expired" : ""}</a>)}</div>}</div>) : <p>No Legal AI validation runs yet.</p>}
+            {validationRuns.length ? validationRuns.map((run) => <div className="code-ai-run-wrap" key={run.id}><div className="code-ai-run-row"><button className="code-ai-run-summary" onClick={() => toggleRunDetails(run)}><ChevronRight className={selectedRunId === run.id ? "open" : ""} size={13}/><span><strong>{run.status === "completed" ? run.conclusion ?? "completed" : run.status} · {run.branch}</strong><small>{run.sha.slice(0, 7)} · {new Date(run.createdAt).toLocaleString()}</small></span></button><a aria-label="Open run on GitHub" href={run.url} target="_blank" rel="noreferrer"><ExternalLink size={13}/></a><button onClick={() => controlRun(run, run.status === "completed" ? "rerun" : "cancel")}>{run.status === "completed" ? "Retry" : "Cancel"}</button></div>{selectedRunId === run.id && validationDetails && <div className="code-ai-run-details">{validationDetails.jobs.map((job) => <section key={job.id}><a href={job.url} target="_blank" rel="noreferrer"><strong>{job.name} · {job.conclusion ?? job.status}</strong><ExternalLink size={11}/></a>{job.steps.map((step) => <div key={step.number}><span>{step.number}. {step.name}</span><b className={step.conclusion ?? step.status}>{step.conclusion ?? step.status}</b></div>)}</section>)}{validationDetails.artifacts.map((artifact) => <a key={artifact.id} href={run.url} target="_blank" rel="noreferrer"><Download size={12}/>{artifact.name} · {Math.ceil(artifact.size / 1024)} KB{artifact.expired ? " · expired" : ""}</a>)}</div>}</div>) : <p>No Legal AI validation activity yet.</p>}
             <h3><ShieldCheck size={15}/>Audit history</h3>
             {data.audit.slice(0, 15).map((item) => <div className="code-ai-audit" key={item._id}><strong>{item.action}</strong><span>{item.summary}</span><small>{new Date(item.createdAt).toLocaleString()}</small></div>)}
-            <h3><GitCommitHorizontal size={15}/>Recent commits</h3>
-            {activity.commits.map((item, index) => <div className="code-ai-activity-row" key={item.sha}><a href={item.url} target="_blank" rel="noreferrer"><span><strong>{item.message.split("\n")[0]}</strong><small>{item.sha.slice(0, 7)} · {item.author}</small></span><ExternalLink size={13}/></a>{index === 0 && <button onClick={() => undoLatestCommit(item)}>Undo</button>}</div>)}
+            <h3><GitApplyHorizontal size={15}/>Recent commits</h3>
+            {activity.commits.map((item, index) => <div className="code-ai-activity-row" key={item.sha}><a href={item.url} target="_blank" rel="noreferrer"><span><strong>{item.message.split("\n")[0]}</strong><small>{item.sha.slice(0, 7)} · {item.author}</small></span><ExternalLink size={13}/></a>{index === 0 && <button onClick={() => undoLatestApply(item)}>Undo</button>}</div>)}
             <h3><GitPullRequest size={15}/>Pull requests</h3>
             {activity.pullRequests.map((item) => <a key={item.number} href={item.url} target="_blank" rel="noreferrer"><span><strong>#{item.number} {item.title}</strong><small>{item.state} · {item.head} → {item.base}</small></span><ExternalLink size={13}/></a>)}
-          </div> : repoPanel === "changes" ? <div className="code-ai-changes">{data.changeSets.filter((item) => item.projectId === projectId && item.branch === branch).length > 1 && <select className="code-ai-change-set-select" value={currentChangeSetId} onChange={(event) => { const selected = data.changeSets.find((item) => item._id === event.target.value); if (selected) { setCurrentChangeSetId(selected._id); setProposedChanges(selected.changes); } }}>{data.changeSets.filter((item) => item.projectId === projectId && item.branch === branch).map((item) => <option value={item._id} key={item._id}>{new Date(item.createdAt).toLocaleString()} · {item.changes.length} files</option>)}</select>}{proposedChanges.length ? <><div className="code-ai-change-actions"><small>Saved for review</small><button onClick={commitAllChanges}><CheckCircle2 size={14}/>Commit all atomically</button></div>{proposedChanges.map((change) => <article key={change._key}><header><div><strong>{change.path}</strong><small>{change.message}</small></div><button disabled={repoLoading} onClick={() => applyProposedChange(change)}><CheckCircle2 size={14}/>Commit</button></header><ChangePreview change={change}/></article>)}</> : <p>No changes are waiting for review. Enable “File changes approved” when you want Legal AI to prepare edits.</p>}</div> : repoPanel === "settings" ? <div className="code-ai-settings"><h3>{project?.name}</h3><dl><div><dt>Estimated this month</dt><dd>${projectUsage.cost.toFixed(4)}</dd></div><div><dt>Monthly budget</dt><dd>${(project?.monthlyBudgetUsd ?? 5).toFixed(2)}</dd></div><div><dt>Tokens</dt><dd>{(projectUsage.input + projectUsage.output).toLocaleString()}</dd></div></dl><label>Default model<select value={model} onChange={(event) => setModel(event.target.value)}><option value="gpt-5.6-luna">Luna · lowest cost</option><option value="gpt-5.6-terra">Terra · balanced</option><option value="gpt-5.6-sol">Sol · strongest</option></select></label><button onClick={saveProjectSettings}>Save model and budget</button><small>Estimates use published standard short-context API rates. OpenAI billing remains the final source of truth.</small></div> : <div className="code-ai-connections">{connections.map((connection) => <article key={connection.id}><span className={connection.connected ? "connected" : ""}/><div><strong>{connection.name}</strong><p>{connection.description}</p>{connection.note && <small>{connection.note}</small>}</div><b>{connection.connected ? "Connected" : "Needs setup"}</b></article>)}</div>}
+          </div> : repoPanel === "changes" ? <div className="code-ai-changes">{data.changeSets.filter((item) => item.projectId === projectId && item.branch === branch).length > 1 && <select className="code-ai-change-set-select" value={currentChangeSetId} onChange={(event) => { const selected = data.changeSets.find((item) => item._id === event.target.value); if (selected) { setCurrentChangeSetId(selected._id); setProposedChanges(selected.changes); } }}>{data.changeSets.filter((item) => item.projectId === projectId && item.branch === branch).map((item) => <option value={item._id} key={item._id}>{new Date(item.createdAt).toLocaleString()} · {item.changes.length} files</option>)}</select>}{proposedChanges.length ? <><div className="code-ai-change-actions"><small>Saved for review</small><button onClick={commitAllChanges}><CheckCircle2 size={14}/>Apply all</button></div>{proposedChanges.map((change) => <article key={change._key}><header><div><strong>{change.path}</strong><small>{change.message}</small></div><button disabled={repoLoading} onClick={() => applyProposedChange(change)}><CheckCircle2 size={14}/>Apply</button></header><ChangePreview change={change}/></article>)}</> : <p>No draft work is waiting for review.</p>}</div> : repoPanel === "settings" ? <div className="code-ai-settings"><h3>{project?.name}</h3><dl><div><dt>Estimated this month</dt><dd>${projectUsage.cost.toFixed(4)}</dd></div><div><dt>Monthly budget</dt><dd>${(project?.monthlyBudgetUsd ?? 5).toFixed(2)}</dd></div><div><dt>Tokens</dt><dd>{(projectUsage.input + projectUsage.output).toLocaleString()}</dd></div></dl><label>Default model<select value={model} onChange={(event) => setModel(event.target.value)}><option value="gpt-5.6-luna">Luna · lowest cost</option><option value="gpt-5.6-terra">Terra · balanced</option><option value="gpt-5.6-sol">Sol · strongest</option></select></label><button onClick={saveProjectSettings}>Save model and budget</button><small>Estimates use published standard short-context API rates. OpenAI billing remains the final source of truth.</small></div> : <div className="code-ai-connections">{connections.map((connection) => <article key={connection.id}><span className={connection.connected ? "connected" : ""}/><div><strong>{connection.name}</strong><p>{connection.description}</p>{connection.note && <small>{connection.note}</small>}</div><b>{connection.connected ? "Connected" : "Needs setup"}</b></article>)}</div>}
         </aside> : null}
         </div>
 
         <div className="code-ai-composer-wrap">
           {error && <div className="code-ai-error">{error}</div>}
           <div className="code-ai-composer">
-            <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} placeholder="Message Legal AI about your project…" rows={3}/>
+            <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); } }} placeholder="Ask Legal AI about your matter…" rows={3}/>
             <div>
-              <div className="code-ai-composer-options"><select aria-label="AI model" value={model} onChange={(event) => setModel(event.target.value)}><option value="gpt-5.6-luna">Luna · lowest cost</option><option value="gpt-5.6-terra">Terra · balanced</option><option value="gpt-5.6-sol">Sol · strongest</option></select>{attachmentIds.length > 0 && <span className="code-ai-attached-count"><Paperclip size={12}/>{attachmentIds.length}</span>}<label className={approveChanges ? "approved" : ""}><input type="checkbox" checked={approveChanges} onChange={(event) => setApproveChanges(event.target.checked)}/><CheckCircle2 size={15}/>{approveChanges ? "File changes approved" : "Review only"}</label></div>
+              <div className="code-ai-composer-options"><select aria-label="AI model" value={model} onChange={(event) => setModel(event.target.value)}><option value="gpt-5.6-luna">Luna · lowest cost</option><option value="gpt-5.6-terra">Terra · balanced</option><option value="gpt-5.6-sol">Sol · strongest</option></select>{attachmentIds.length > 0 && <span className="code-ai-attached-count"><Paperclip size={12}/>{attachmentIds.length}</span>}<label className={approveChanges ? "approved" : ""}><input type="checkbox" checked={approveChanges} onChange={(event) => setApproveChanges(event.target.checked)}/><CheckCircle2 size={15}/>{approveChanges ? "Actions approved" : "Research only"}</label></div>
               {sending ? <button className="code-ai-stop" aria-label="Stop generating" onClick={() => requestController.current?.abort()}><Square size={16}/></button> : <button aria-label="Send message" disabled={!prompt.trim()} onClick={() => sendMessage()}><Send size={19}/></button>}
             </div>
           </div>
-          <small>Legal AI can make mistakes. Review committed changes before deployment.</small>
+          <small>Legal AI can make mistakes and is not a substitute for a licensed attorney. Verify law, citations, deadlines, and important decisions.</small>
         </div>
       </section>
     </main>
