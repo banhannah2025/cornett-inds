@@ -12,7 +12,7 @@ export async function getLegalAiOwner() {
   if (
     email?.verification?.status !== "verified" ||
     email.emailAddress.trim().toLowerCase() !==
-      process.env.LEGAL_AI_OWNER_EMAIL?.trim().toLowerCase()
+      (process.env.LEGAL_AI_OWNER_EMAIL ?? process.env.CODE_AI_OWNER_EMAIL)?.trim().toLowerCase()
   ) {
     return null;
   }

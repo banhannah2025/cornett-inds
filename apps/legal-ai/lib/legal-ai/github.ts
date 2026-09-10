@@ -4,7 +4,7 @@ const API_ROOT = "https://api.github.com";
 const DEFAULT_REPOSITORY = "banhannah2025/cornett-inds";
 
 function allowedRepository(repository: string) {
-  const allowed = (process.env.LEGAL_AI_GITHUB_REPOSITORIES ?? DEFAULT_REPOSITORY)
+  const allowed = (process.env.LEGAL_AI_GITHUB_REPOSITORIES ?? process.env.CODE_AI_GITHUB_REPOSITORIES ?? DEFAULT_REPOSITORY)
     .split(",")
     .map((item) => item.trim().toLowerCase());
   return allowed.includes(repository.toLowerCase());
