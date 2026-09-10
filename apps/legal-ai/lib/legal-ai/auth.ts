@@ -28,14 +28,3 @@ export async function requireLegalAiUser() {
   if (!user) throw new Error("LEGAL_AI_UNAUTHORIZED");
   return user;
 }
-
-export async function getLegalAiOwner() {
-  const user = await getLegalAiUser();
-  return user?.isAdmin ? user : null;
-}
-
-export async function requireLegalAiOwner() {
-  const owner = await getLegalAiOwner();
-  if (!owner) throw new Error("LEGAL_AI_ADMIN_REQUIRED");
-  return owner;
-}
