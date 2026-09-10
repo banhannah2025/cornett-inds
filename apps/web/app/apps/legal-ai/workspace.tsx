@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import type { LegalAiAttachment, LegalAiAudit, LegalAiChangeSet, LegalAiConversation, LegalAiMessage, LegalAiProject } from "@/lib/legal-ai/store";
+import type { LegalAiAttachment, LegalAiConversation, LegalAiMessage, LegalAiProject } from "@/lib/legal-ai/store";
 
-type WorkspaceData = { projects: LegalAiProject[]; conversations: LegalAiConversation[]; files: LegalAiAttachment[]; audit: LegalAiAudit[]; changeSets: LegalAiChangeSet[] };
+type WorkspaceData = { projects: LegalAiProject[]; conversations: LegalAiConversation[]; files: LegalAiAttachment[] };
 const MODEL_PRICES: Record<string, { input: number; output: number }> = { "gpt-5.6-luna": { input: .2, output: 1.2 }, "gpt-5.6-terra": { input: 2, output: 12 }, "gpt-5.6-sol": { input: 4, output: 20 } };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -32,7 +32,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; isAdmin: boolean }) {
-  const [data, setData] = useState<WorkspaceData>({ projects: [], conversations: [], files: [], audit: [], changeSets: [] });
+  const [data, setData] = useState<WorkspaceData>({ projects: [], conversations: [], files: [] });
   const [projectId, setProjectId] = useState("");
   const [conversationId, setConversationId] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -84,7 +84,7 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
     if (project) return project;
     const created = await api<LegalAiProject>("/api/legal-ai/workspace", {
       method: "POST",
-      body: JSON.stringify({ type: "project", name: "My Legal Matter", repository: "" }),
+      body: JSON.stringify({ type: "project", name: "My Legal Matter" }),
     });
     setData((current) => ({ ...current, projects: [created, ...current.projects] }));
     setProjectId(created._id);
@@ -110,10 +110,8 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
   async function newProject() {
     const name = window.prompt("Matter name", "My Legal Matter");
     if (!name?.trim()) return;
-    const repository = "";
-    
     try {
-      const created = await api<LegalAiProject>("/api/legal-ai/workspace", { method: "POST", body: JSON.stringify({ type: "project", name, repository: "" }) });
+      const created = await api<LegalAiProject>("/api/legal-ai/workspace", { method: "POST", body: JSON.stringify({ type: "project", name }) });
       setData((current) => ({ ...current, projects: [created, ...current.projects] }));
       setProjectId(created._id);
       setConversationId("");
