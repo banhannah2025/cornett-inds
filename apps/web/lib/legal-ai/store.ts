@@ -15,8 +15,8 @@ export type LegalAiMessage = {
 
 export type LegalAiProject = {
   _id: string;
+  userId: string;
   name: string;
-  repository: string;
   createdAt: string;
   updatedAt: string;
   archived?: boolean;
@@ -26,6 +26,7 @@ export type LegalAiProject = {
 
 export type LegalAiConversation = {
   _id: string;
+  userId: string;
   projectId: string;
   title: string;
   messages: LegalAiMessage[];
@@ -33,65 +34,53 @@ export type LegalAiConversation = {
   updatedAt: string;
   archived?: boolean;
 };
-export type LegalAiAttachment = { _id: string; projectId: string; name: string; mimeType: string; size: number; url: string; createdAt: string };
-export type LegalAiAudit = { _id: string; action: string; summary: string; createdAt: string };
-export type LegalAiChangeSet = { _id: string; projectId: string; conversationId: string; repository: string; branch: string; changes: Array<{ _key: string; path: string; previousContent: string; content: string; message: string }>; createdAt: string };
+
+export type LegalAiAttachment = {
+  _id: string;
+  userId: string;
+  projectId: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  createdAt: string;
+};
 
 const cleanId = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, "-");
 
-export async function listLegalAiWorkspace() {
+export async function listLegalAiWorkspace(userId: string) {
   const client = getSanityWriteClient();
-  const [projects, conversations, files, audit, changeSets] = await Promise.all([
+  const [projects, conversations, files] = await Promise.all([
     client.fetch<LegalAiProject[]>(
-      `*[_type == "legalAiProject"] | order(updatedAt desc){_id,name,repository,createdAt,updatedAt,archived,monthlyBudgetUsd,defaultModel}`,
+      `*[_type == "legalAiProject" && userId == $userId] | order(updatedAt desc){_id,userId,name,createdAt,updatedAt,archived,monthlyBudgetUsd,defaultModel}`,
+      { userId },
     ),
     client.fetch<LegalAiConversation[]>(
-      `*[_type == "legalAiConversation"] | order(updatedAt desc){_id,projectId,title,messages,createdAt,updatedAt,archived}`,
+      `*[_type == "legalAiConversation" && userId == $userId] | order(updatedAt desc){_id,userId,projectId,title,messages,createdAt,updatedAt,archived}`,
+      { userId },
     ),
     client.fetch<LegalAiAttachment[]>(
-      `*[_type == "legalAiFile"] | order(createdAt desc){_id,projectId,name,mimeType,size,"url":asset->url,createdAt}`,
+      `*[_type == "legalAiFile" && userId == $userId] | order(createdAt desc){_id,userId,projectId,name,mimeType,size,"url":asset->url,createdAt}`,
+      { userId },
     ),
-    client.fetch<LegalAiAudit[]>(`*[_type == "legalAiAudit"] | order(createdAt desc)[0...100]{_id,action,summary,createdAt}`),
-    client.fetch<LegalAiChangeSet[]>(`*[_type == "legalAiChangeSet"] | order(createdAt desc){_id,projectId,conversationId,repository,branch,changes,createdAt}`),
   ]);
-  return { projects, conversations, files, audit, changeSets };
+  return { projects, conversations, files };
 }
 
-export async function logLegalAiAudit(action: string, summary: string) {
-  return getSanityWriteClient().create({ _id: `legalAiAudit-${randomUUID()}`, _type: "legalAiAudit", action, summary: summary.slice(0, 500), createdAt: new Date().toISOString() });
-}
-
-export async function getLegalAiFiles(ids: string[], projectId: string) {
+export async function getLegalAiFiles(ids: string[], projectId: string, userId: string) {
   return getSanityWriteClient().fetch<LegalAiAttachment[]>(
-    `*[_type == "legalAiFile" && _id in $ids && projectId == $projectId]{_id,projectId,name,mimeType,size,"url":asset->url,createdAt}`,
-    { ids, projectId },
+    `*[_type == "legalAiFile" && userId == $userId && _id in $ids && projectId == $projectId]{_id,userId,projectId,name,mimeType,size,"url":asset->url,createdAt}`,
+    { ids, projectId, userId },
   );
 }
 
-export async function createLegalAiChangeSet(args: Omit<LegalAiChangeSet, "_id" | "createdAt" | "changes"> & { changes: Array<Omit<LegalAiChangeSet["changes"][number], "_key">> }) {
-  const totalSize = args.changes.reduce((sum, item) => sum + item.previousContent.length + item.content.length, 0);
-  if (!args.changes.length || args.changes.length > 40 || totalSize > 700_000) throw new Error("The proposed change set is too large to save for review.");
-  return getSanityWriteClient().create({
-    _id: `legalAiChangeSet-${randomUUID()}`, _type: "legalAiChangeSet", ...args,
-    changes: args.changes.map((item) => ({ ...item, _key: randomUUID() })), createdAt: new Date().toISOString(),
-  }) as Promise<LegalAiChangeSet>;
-}
-
-export async function consumeLegalAiChange(changeSetId: string, key: string) {
-  if (!/^legalAiChangeSet-[a-zA-Z0-9-]+$/.test(changeSetId) || !/^[a-zA-Z0-9-]+$/.test(key)) throw new Error("Invalid change-set reference.");
-  const client = getSanityWriteClient();
-  await client.patch(changeSetId).unset([`changes[_key == "${key}"]`]).commit();
-  const remaining = await client.fetch<number>(`count(*[_id == $id][0].changes)`, { id: changeSetId });
-  if (remaining === 0) await client.delete(changeSetId);
-}
-
-export async function createLegalAiProject(name: string, repository: string) {
+export async function createLegalAiProject(userId: string, name: string) {
   const now = new Date().toISOString();
   return getSanityWriteClient().create({
     _id: `legalAiProject-${cleanId(randomUUID())}`,
     _type: "legalAiProject",
+    userId,
     name,
-    repository,
     monthlyBudgetUsd: 5,
     defaultModel: "gpt-5.6-luna",
     createdAt: now,
@@ -99,11 +88,18 @@ export async function createLegalAiProject(name: string, repository: string) {
   }) as Promise<LegalAiProject>;
 }
 
-export async function createLegalAiConversation(projectId: string, title: string) {
+export async function createLegalAiConversation(userId: string, projectId: string, title: string) {
+  const client = getSanityWriteClient();
+  const ownedProject = await client.fetch<string | null>(
+    `*[_type == "legalAiProject" && _id == $projectId && userId == $userId][0]._id`,
+    { projectId, userId },
+  );
+  if (!ownedProject) throw new Error("Matter not found.");
   const now = new Date().toISOString();
-  return getSanityWriteClient().create({
+  return client.create({
     _id: `legalAiConversation-${cleanId(randomUUID())}`,
     _type: "legalAiConversation",
+    userId,
     projectId,
     title,
     messages: [],
@@ -112,10 +108,10 @@ export async function createLegalAiConversation(projectId: string, title: string
   }) as Promise<LegalAiConversation>;
 }
 
-export async function getLegalAiConversation(id: string) {
+export async function getLegalAiConversation(id: string, userId: string) {
   return getSanityWriteClient().fetch<LegalAiConversation | null>(
-    `*[_type == "legalAiConversation" && _id == $id][0]{_id,projectId,title,messages,createdAt,updatedAt}`,
-    { id },
+    `*[_type == "legalAiConversation" && _id == $id && userId == $userId][0]{_id,userId,projectId,title,messages,createdAt,updatedAt}`,
+    { id, userId },
   );
 }
 
@@ -129,23 +125,43 @@ export function estimateLegalAiCost(messages: LegalAiMessage[]) {
   return messages.reduce((total, message) => {
     if (message.role !== "assistant" || !message.model) return total;
     const price = MODEL_PRICES[message.model];
-    return price ? total + ((message.inputTokens ?? 0) * price.input + (message.outputTokens ?? 0) * price.output) / 1_000_000 : total;
+    return price
+      ? total + ((message.inputTokens ?? 0) * price.input + (message.outputTokens ?? 0) * price.output) / 1_000_000
+      : total;
   }, 0);
 }
 
-export async function getLegalAiProjectUsage(projectId: string) {
+export async function getLegalAiProjectUsage(projectId: string, userId: string) {
   const client = getSanityWriteClient();
   const [project, conversations] = await Promise.all([
-    client.fetch<LegalAiProject | null>(`*[_type == "legalAiProject" && _id == $projectId][0]{_id,name,repository,monthlyBudgetUsd,defaultModel}`, { projectId }),
-    client.fetch<Array<{ messages: LegalAiMessage[] }>>(`*[_type == "legalAiConversation" && projectId == $projectId]{messages}`, { projectId }),
+    client.fetch<LegalAiProject | null>(
+      `*[_type == "legalAiProject" && _id == $projectId && userId == $userId][0]{_id,userId,name,monthlyBudgetUsd,defaultModel}`,
+      { projectId, userId },
+    ),
+    client.fetch<Array<{ messages: LegalAiMessage[] }>>(
+      `*[_type == "legalAiConversation" && projectId == $projectId && userId == $userId]{messages}`,
+      { projectId, userId },
+    ),
   ]);
   const start = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
-  const messages = conversations.flatMap((item) => item.messages ?? []).filter((message) => message.createdAt >= start);
-  return { project, estimatedCostUsd: estimateLegalAiCost(messages), inputTokens: messages.reduce((sum, item) => sum + (item.inputTokens ?? 0), 0), outputTokens: messages.reduce((sum, item) => sum + (item.outputTokens ?? 0), 0) };
+  const messages = conversations
+    .flatMap((item) => item.messages ?? [])
+    .filter((message) => message.createdAt >= start);
+  return {
+    project,
+    estimatedCostUsd: estimateLegalAiCost(messages),
+    inputTokens: messages.reduce((sum, item) => sum + (item.inputTokens ?? 0), 0),
+    outputTokens: messages.reduce((sum, item) => sum + (item.outputTokens ?? 0), 0),
+  };
 }
 
-export async function appendLegalAiMessages(id: string, messages: LegalAiMessage[]) {
+export async function appendLegalAiMessages(id: string, userId: string, messages: LegalAiMessage[]) {
   const client = getSanityWriteClient();
+  const owned = await client.fetch<string | null>(
+    `*[_type == "legalAiConversation" && _id == $id && userId == $userId][0]._id`,
+    { id, userId },
+  );
+  if (!owned) throw new Error("Conversation not found.");
   await client
     .patch(id)
     .setIfMissing({ messages: [] })
@@ -156,19 +172,33 @@ export async function appendLegalAiMessages(id: string, messages: LegalAiMessage
 
 export async function updateLegalAiDocument(
   id: string,
-  changes: { name?: string; title?: string; archived?: boolean; projectId?: string; monthlyBudgetUsd?: number; defaultModel?: string },
+  userId: string,
+  changes: {
+    name?: string;
+    title?: string;
+    archived?: boolean;
+    projectId?: string;
+    monthlyBudgetUsd?: number;
+    defaultModel?: string;
+  },
 ) {
+  const client = getSanityWriteClient();
+  const owned = await client.fetch<{ _id: string; _type: string } | null>(
+    `*[_id == $id && userId == $userId && _type in ["legalAiProject","legalAiConversation"]][0]{_id,_type}`,
+    { id, userId },
+  );
+  if (!owned) throw new Error("Item not found.");
+  if (changes.projectId && owned._type === "legalAiConversation") {
+    const target = await client.fetch<string | null>(
+      `*[_type == "legalAiProject" && _id == $projectId && userId == $userId][0]._id`,
+      { projectId: changes.projectId, userId },
+    );
+    if (!target) throw new Error("Destination matter not found.");
+  }
   const allowed = Object.fromEntries(
     Object.entries(changes).filter(([, value]) => value !== undefined),
   );
-  return getSanityWriteClient()
-    .patch(id)
-    .set({ ...allowed, updatedAt: new Date().toISOString() })
-    .commit();
-}
-
-export async function deleteLegalAiDocument(id: string) {
-  return getSanityWriteClient().delete(id);
+  return client.patch(id).set({ ...allowed, updatedAt: new Date().toISOString() }).commit();
 }
 
 export function makeLegalAiMessage(
