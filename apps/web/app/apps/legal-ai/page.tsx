@@ -15,5 +15,5 @@ export default async function LegalAiPage() {
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) redirect("/");
   const user = await getLegalAiUser();
   if (!user) redirect("/sign-in?redirect_url=/apps/legal-ai");
-  return <LegalAiWorkspace ownerEmail={user.emailAddress} />;
+  return <LegalAiWorkspace userEmail={user.emailAddress} isAdmin={user.isAdmin} />;
 }
