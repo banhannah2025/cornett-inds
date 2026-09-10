@@ -246,7 +246,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     if (project) return project;
     const created = await api<LegalAiProject>("/api/legal-ai/workspace", {
       method: "POST",
-      body: JSON.stringify({ type: "project", name: "Blended Works", repository: "banhannah2025/cornett-inds" }),
+      body: JSON.stringify({ type: "project", name: "My Legal Matter", repository: "" }),
     });
     setData((current) => ({ ...current, projects: [created, ...current.projects] }));
     setProjectId(created._id);
@@ -259,7 +259,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
       const selectedProject = await ensureProject();
       const created = await api<LegalAiConversation>("/api/legal-ai/workspace", {
         method: "POST",
-        body: JSON.stringify({ type: "conversation", projectId: selectedProject._id, title: "New coding task" }),
+        body: JSON.stringify({ type: "conversation", projectId: selectedProject._id, title: "New legal matter" }),
       });
       setData((current) => ({ ...current, conversations: [created, ...current.conversations] }));
       setConversationId(created._id);
@@ -272,14 +272,14 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
   async function newProject() {
     const name = window.prompt("Project name", "Blended Works");
     if (!name?.trim()) return;
-    const repository = window.prompt("GitHub repository (owner/name)", "banhannah2025/cornett-inds");
-    if (!repository?.trim()) return;
+    const repository = "";
+    
     try {
-      const created = await api<LegalAiProject>("/api/legal-ai/workspace", { method: "POST", body: JSON.stringify({ type: "project", name, repository }) });
+      const created = await api<LegalAiProject>("/api/legal-ai/workspace", { method: "POST", body: JSON.stringify({ type: "project", name, repository: "" }) });
       setData((current) => ({ ...current, projects: [created, ...current.projects] }));
       setProjectId(created._id);
       setConversationId("");
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to create project."); }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to create matter."); }
   }
 
   async function renameConversation(item: LegalAiConversation) {
@@ -317,7 +317,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
 
   async function moveConversation(item: LegalAiConversation) {
     const targets = data.projects.filter((candidate) => candidate._id !== item.projectId && !candidate.archived);
-    if (!targets.length) { setError("Create another project before moving a chat."); return; }
+    if (!targets.length) { setError("Create another matter before moving a chat."); return; }
     const name = window.prompt(`Move to project: ${targets.map((candidate) => candidate.name).join(", ")}`, targets[0]?.name);
     const target = targets.find((candidate) => candidate.name.toLowerCase() === name?.trim().toLowerCase());
     if (!target) return;
@@ -330,16 +330,16 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
 
   async function renameProject() {
     if (!project) return;
-    const name = window.prompt("Rename project", project.name);
+    const name = window.prompt("Rename matter", project.name);
     if (!name?.trim() || name.trim() === project.name) return;
     try { await api("/api/legal-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: project._id, name: name.trim() }) }); setData((current) => ({ ...current, projects: current.projects.map((item) => item._id === project._id ? { ...item, name: name.trim() } : item) })); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to rename project."); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to rename matter."); }
   }
 
   async function archiveProject() {
     if (!project || !window.confirm(`Archive ${project.name}? Its chats and files will remain saved.`)) return;
     try { await api("/api/legal-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: project._id, archived: true }) }); setData((current) => ({ ...current, projects: current.projects.map((item) => item._id === project._id ? { ...item, archived: true } : item) })); setProjectId(data.projects.find((item) => item._id !== project._id && !item.archived)?._id ?? ""); setConversationId(""); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to archive project."); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to archive matter."); }
   }
 
   async function restoreProject() {
@@ -357,7 +357,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
     const monthlyBudgetUsd = Number(raw);
     if (!Number.isFinite(monthlyBudgetUsd) || monthlyBudgetUsd < 0) { setError("Enter a valid budget."); return; }
     try { await api("/api/legal-ai/workspace", { method: "PATCH", body: JSON.stringify({ id: project._id, monthlyBudgetUsd, defaultModel: model }) }); setData((current) => ({ ...current, projects: current.projects.map((item) => item._id === project._id ? { ...item, monthlyBudgetUsd, defaultModel: model } : item) })); }
-    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to save project settings."); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to save matter settings."); }
   }
 
   async function deleteAttachment(file: LegalAiAttachment) {
@@ -440,7 +440,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
         setData((current) => ({ ...current, changeSets: [result.changeSet!, ...current.changeSets.filter((item) => item._id !== result.changeSet!._id)] }));
         setCurrentChangeSetId(result.changeSet._id); setProposedChanges(result.changeSet.changes); setRepoPanel("changes");
       }
-      if (notificationsEnabled && document.visibilityState !== "visible") new Notification("Legal AI finished", { body: result.proposedChanges?.length ? `${result.proposedChanges.length} changes are ready for review.` : "Your coding response is ready." });
+      if (notificationsEnabled && document.visibilityState !== "visible") new Notification("Legal AI finished", { body: result.proposedChanges?.length ? `${result.proposedChanges.length} changes are ready for review.` : "Your Legal AI response is ready." });
       setApproveChanges(false);
       setAttachmentIds([]);
     } catch (caught) {
@@ -527,13 +527,13 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
       <aside className={`code-ai-sidebar ${sidebarOpen ? "is-open" : ""}`}>
         <div className="code-ai-brand"><span><Scale size={21} /></span><div><strong>Legal AI</strong><small>Blended Works</small></div><button aria-label="Close sidebar" onClick={() => setSidebarOpen(false)}><X size={19}/></button></div>
         <button className="code-ai-new" onClick={newConversation}><MessageSquarePlus size={17}/>New legal matter</button>
-        <div className="code-ai-project-label"><span><FolderGit2 size={14}/>Project</span><div><button aria-label="Project settings" onClick={() => setRepoPanel("settings")}><Settings size={14}/></button><button aria-label="Rename project" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore project" : "Archive project"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create project" onClick={newProject}><Plus size={15}/></button></div></div>
+        <div className="code-ai-project-label"><span><Scale size={14}/>Matter</span><div><button aria-label="Matter settings" onClick={() => setRepoPanel("settings")}><Settings size={14}/></button><button aria-label="Rename matter" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore matter" : "Archive matter"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create matter" onClick={newProject}><Plus size={15}/></button></div></div>
         {data.projects.length ? (
           <select value={projectId} onChange={(event) => { setProjectId(event.target.value); setConversationId(""); }}>
             {data.projects.map((item) => <option key={item._id} value={item._id}>{item.archived ? "Archived · " : ""}{item.name}</option>)}
           </select>
-        ) : <button className="code-ai-create-project" onClick={newConversation}>Create Blended Works project</button>}
-        <div className="code-ai-project-label"><span><Paperclip size={14}/>Project files</span><button aria-label="Upload file" onClick={() => uploadRef.current?.click()}><Plus size={15}/></button></div>
+        ) : <button className="code-ai-create-project" onClick={newConversation}>Create legal matter</button>}
+        <div className="code-ai-project-label"><span><Paperclip size={14}/>Matter files</span><button aria-label="Upload file" onClick={() => uploadRef.current?.click()}><Plus size={15}/></button></div>
         <input ref={uploadRef} hidden type="file" onChange={(event) => uploadFile(event.target.files?.[0])}/>
         <div className="code-ai-attachments">{projectFiles.slice(0, 12).map((file) => <div key={file._id}><button className={attachmentIds.includes(file._id) ? "selected" : ""} onClick={() => setAttachmentIds((current) => current.includes(file._id) ? current.filter((id) => id !== file._id) : [...current, file._id].slice(-5))}><Paperclip size={12}/><span>{file.name}</span></button><button aria-label={`Delete ${file.name}`} onClick={() => deleteAttachment(file)}><Trash2 size={11}/></button></div>)}{!projectFiles.length && <small>No uploaded files</small>}</div>
         <div className="code-ai-history">
@@ -541,22 +541,22 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
           <div className="code-ai-chat-search"><FileSearch size={13}/><input value={chatSearch} onChange={(event) => setChatSearch(event.target.value)} placeholder="Search chats"/></div>
           {projectConversations.map((item) => (
             <div className={`code-ai-chat-row ${item._id === conversationId ? "active" : ""}`} key={item._id}>
-              <button onClick={() => { setConversationId(item._id); setSidebarOpen(false); }}><FileCode2 size={15}/><span>{item.title}</span></button>
+              <button onClick={() => { setConversationId(item._id); setSidebarOpen(false); }}><Scale size={15}/><span>{item.title}</span></button>
               <button aria-label={`Rename ${item.title}`} onClick={() => renameConversation(item)}><Pencil size={13}/></button>
-              <button aria-label={`Move ${item.title}`} onClick={() => moveConversation(item)}><FolderGit2 size={13}/></button>
+              <button aria-label={`Move ${item.title}`} onClick={() => moveConversation(item)}><Scale size={13}/></button>
               <button aria-label={`${item.archived ? "Restore" : "Archive"} ${item.title}`} onClick={() => item.archived ? restoreConversation(item) : archiveConversation(item)}>{item.archived ? <RotateCcw size={13}/> : <Archive size={13}/>}</button>
               <button aria-label={`Delete ${item.title}`} onClick={() => deleteConversation(item)}><Trash2 size={13}/></button>
             </div>
           ))}
-          {!loading && !projectConversations.length && <small>Your coding conversations will appear here.</small>}
+          {!loading && !projectConversations.length && <small>Your legal conversations will appear here.</small>}
         </div>
-        <div className="code-ai-owner"><ShieldCheck size={17}/><div><strong>Private workspace</strong><small>{ownerEmail}</small></div></div>
+        <div className="code-ai-owner"><ShieldCheck size={17}/><div><strong>Legal AI administrator</strong><small>{ownerEmail}</small></div></div>
       </aside>
 
       <section className="code-ai-main">
         <header className="code-ai-header">
           <button className="code-ai-menu" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Menu size={21}/></button>
-          <div><strong>{project?.name ?? "Legal AI"}</strong><span>{project?.repository ?? "Private development workspace"}</span></div>
+          <div><strong>{project?.name ?? "Legal AI"}</strong><span>{project?.repository ?? "Legal research workspace"}</span></div>
 
           <button className={notificationsEnabled ? "active" : ""} onClick={toggleNotifications} title="Browser notifications"><Bell size={16}/><span>Alerts</span></button>
         </header>
@@ -580,7 +580,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
           {sending && <div className="code-ai-thinking"><span><Bot size={18}/></span><LoaderCircle className="animate-spin" size={16}/>Working in {project?.repository ?? "the repository"}…</div>}
         </div>
         {repoPanel ? <aside className="code-ai-repo-panel">
-          <div className="code-ai-repo-title"><div>{repoPanel === "files" ? <FileSearch size={17}/> : repoPanel === "activity" ? <History size={17}/> : repoPanel === "changes" ? <GitCompareArrows size={17}/> : repoPanel === "settings" ? <Settings size={17}/> : <Plug size={17}/>}<strong>{repoPanel === "files" ? "Repository files" : repoPanel === "activity" ? "Repository activity" : repoPanel === "changes" ? "Proposed changes" : repoPanel === "settings" ? "Project settings" : "Tools and connections"}</strong></div><button aria-label="Close repository panel" onClick={() => setRepoPanel(null)}><X size={18}/></button></div>
+          <div className="code-ai-repo-title"><div>{repoPanel === "files" ? <FileSearch size={17}/> : repoPanel === "activity" ? <History size={17}/> : repoPanel === "changes" ? <GitCompareArrows size={17}/> : repoPanel === "settings" ? <Settings size={17}/> : <Plug size={17}/>}<strong>{repoPanel === "files" ? "Repository files" : repoPanel === "activity" ? "Repository activity" : repoPanel === "changes" ? "Proposed changes" : repoPanel === "settings" ? "Matter settings" : "Tools and connections"}</strong></div><button aria-label="Close repository panel" onClick={() => setRepoPanel(null)}><X size={18}/></button></div>
           {repoLoading && <div className="code-ai-repo-loading"><LoaderCircle className="animate-spin" size={17}/>Loading from GitHub…</div>}
           {repoPanel === "files" ? <>
             <div className="code-ai-file-search"><FileSearch size={15}/><input value={repoSearch} onChange={(event) => setRepoSearch(event.target.value)} placeholder="Filter files by path"/></div>
@@ -611,7 +611,7 @@ export function LegalAiWorkspace({ ownerEmail }: { ownerEmail: string }) {
               {sending ? <button className="code-ai-stop" aria-label="Stop generating" onClick={() => requestController.current?.abort()}><Square size={16}/></button> : <button aria-label="Send message" disabled={!prompt.trim()} onClick={() => sendMessage()}><Send size={19}/></button>}
             </div>
           </div>
-          <small>Legal AI can make mistakes. Review committed changes before deployment.</small>
+          <small>Legal AI can make mistakes. Verify important legal information, citations, deadlines, and decisions.</small>
         </div>
       </section>
     </main>
