@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getLegalAiOwner } from "@/lib/legal-ai/auth";
+import { getLegalAiUser } from "@/lib/legal-ai/auth";
 import {
   appendLegalAiMessages,
   createLegalAiChangeSet,
@@ -70,8 +70,8 @@ async function readOpenAiStream(response: Response, onDelta: (delta: string) => 
 }
 
 export async function POST(request: Request) {
-  const owner = await getLegalAiOwner();
-  if (!owner) return Response.json({ error: "Forbidden" }, { status: 403 });
+  const user = await getLegalAiUser();
+  if (!user) return Response.json({ error: "Forbidden" }, { status: 403 });
   const body = (await request.json().catch(() => null)) as
     | { conversationId?: string; projectId?: string; message?: string; repository?: string; branch?: string; model?: string; attachmentIds?: string[]; approveChanges?: boolean }
     | null;
