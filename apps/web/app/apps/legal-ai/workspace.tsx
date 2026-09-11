@@ -22,7 +22,8 @@ import ReactMarkdown from "react-markdown";
 import type { LegalAiAttachment, LegalAiConversation, LegalAiMessage, LegalAiProject } from "@/lib/legal-ai/store";
 
 type WorkspaceData = { projects: LegalAiProject[]; conversations: LegalAiConversation[]; files: LegalAiAttachment[] };
-// Provider pricing estimates used only for the administrator usage display.\nconst MODEL_PRICES: Record<string, { input: number; output: number }> = { "gpt-5.6-luna": { input: .2, output: 1.2 }, "gpt-5.6-terra": { input: 2, output: 12 }, "gpt-5.6-sol": { input: 4, output: 20 } };
+// Provider pricing estimates used only for the administrator usage display.
+const MODEL_PRICES: Record<string, { input: number; output: number }> = { "gpt-5.6-luna": { input: .2, output: 1.2 }, "gpt-5.6-terra": { input: 2, output: 12 }, "gpt-5.6-sol": { input: 4, output: 20 } };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...init?.headers } });
