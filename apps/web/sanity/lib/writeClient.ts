@@ -15,13 +15,14 @@ function makeClient(token: string) {
 
 export function getSanityWriteClients() {
   const tokens = [
+    process.env.SANITY_EDITOR_API_KEY,
     process.env.SANITY_API_WRITE_TOKEN,
     process.env.SANITY_READ_WRITE_DEVELOPER_API,
   ].filter((token): token is string => Boolean(token?.trim()));
 
   const uniqueTokens = [...new Set(tokens.map((token) => token.trim()))];
   if (!uniqueTokens.length) {
-    throw new Error("Sanity write token is not configured on the web server.");
+    throw new Error("Sanity editor/write token is not configured on the web server.");
   }
 
   return uniqueTokens.map(makeClient);
