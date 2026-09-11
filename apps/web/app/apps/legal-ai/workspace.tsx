@@ -22,7 +22,7 @@ import ReactMarkdown from "react-markdown";
 import type { LegalAiAttachment, LegalAiConversation, LegalAiMessage, LegalAiProject } from "@/lib/legal-ai/store";
 
 type WorkspaceData = { projects: LegalAiProject[]; conversations: LegalAiConversation[]; files: LegalAiAttachment[] };
-const MODEL_PRICES: Record<string, { input: number; output: number }> = { "gpt-5.6-luna": { input: .2, output: 1.2 }, "gpt-5.6-terra": { input: 2, output: 12 }, "gpt-5.6-sol": { input: 4, output: 20 } };
+// Provider pricing estimates used only for the administrator usage display.\nconst MODEL_PRICES: Record<string, { input: number; output: number }> = { "gpt-5.6-luna": { input: .2, output: 1.2 }, "gpt-5.6-terra": { input: 2, output: 12 }, "gpt-5.6-sol": { input: 4, output: 20 } };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...init?.headers } });
@@ -36,7 +36,7 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
   const [projectId, setProjectId] = useState("");
   const [conversationId, setConversationId] = useState("");
   const [prompt, setPrompt] = useState("");
-  const [repoPanel, setRepoPanel] = useState<"settings" | null>(null);
+  const [matterPanel, setMatterPanel] = useState<"settings" | null>(null);
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]);
   const [model, setModel] = useState("gpt-5.6-terra");
   const [loading, setLoading] = useState(true);
@@ -295,7 +295,7 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
       <aside className={`code-ai-sidebar ${sidebarOpen ? "is-open" : ""}`}>
         <div className="code-ai-brand"><span><Scale size={21} /></span><div><strong>Legal AI</strong><small>Blended Works</small></div><button aria-label="Close sidebar" onClick={() => setSidebarOpen(false)}><X size={19}/></button></div>
         <button className="code-ai-new" onClick={newConversation}><MessageSquarePlus size={17}/>New legal matter</button>
-        <div className="code-ai-project-label"><span><Scale size={14}/>Matter</span><div><button aria-label="Matter settings" onClick={() => setRepoPanel(repoPanel === "settings" ? null : "settings")}><Settings size={14}/></button><button aria-label="Rename matter" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore matter" : "Archive matter"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create matter" onClick={newProject}><Plus size={15}/></button></div></div>
+        <div className="code-ai-project-label"><span><Scale size={14}/>Matter</span><div><button aria-label="Matter settings" onClick={() => setMatterPanel(matterPanel === "settings" ? null : "settings")}><Settings size={14}/></button><button aria-label="Rename matter" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore matter" : "Archive matter"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create matter" onClick={newProject}><Plus size={15}/></button></div></div>
         {data.projects.length ? (
           <select value={projectId} onChange={(event) => { setProjectId(event.target.value); setConversationId(""); }}>
             {data.projects.map((item) => <option key={item._id} value={item._id}>{item.archived ? "Archived · " : ""}{item.name}</option>)}
@@ -347,7 +347,7 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
           )}
           {sending && <div className="code-ai-thinking"><span><Bot size={18}/></span><LoaderCircle className="animate-spin" size={16}/>Working on your legal request…</div>}
         </div>
-        {repoPanel === "settings" ? <aside className="code-ai-repo-panel"><div className="code-ai-repo-title"><div><Settings size={17}/><strong>Matter settings</strong></div><button aria-label="Close matter settings" onClick={() => setRepoPanel(null)}><X size={18}/></button></div><div className="code-ai-settings"><h3>{project?.name}</h3><dl><div><dt>Estimated this month</dt><dd>${projectUsage.cost.toFixed(4)}</dd></div><div><dt>Monthly budget</dt><dd>${(project?.monthlyBudgetUsd ?? 5).toFixed(2)}</dd></div><div><dt>Tokens</dt><dd>{(projectUsage.input + projectUsage.output).toLocaleString()}</dd></div></dl><label>Default model<select value={model} onChange={(event) => setModel(event.target.value)}><option value="gpt-5.6-luna">Luna · lowest cost</option><option value="gpt-5.6-terra">Terra · balanced</option><option value="gpt-5.6-sol">Sol · strongest</option></select></label><button onClick={saveProjectSettings}>Save model and budget</button><small>Usage estimates are approximate. Provider billing remains the final source of truth.</small></div></aside> : null}
+        {matterPanel === "settings" ? <aside className="code-ai-matter-panel"><div className="code-ai-matter-title"><div><Settings size={17}/><strong>Matter settings</strong></div><button aria-label="Close matter settings" onClick={() => setMatterPanel(null)}><X size={18}/></button></div><div className="code-ai-settings"><h3>{project?.name}</h3><dl><div><dt>Estimated this month</dt><dd>${projectUsage.cost.toFixed(4)}</dd></div><div><dt>Monthly budget</dt><dd>${(project?.monthlyBudgetUsd ?? 5).toFixed(2)}</dd></div><div><dt>Tokens</dt><dd>{(projectUsage.input + projectUsage.output).toLocaleString()}</dd></div></dl><label>Default model<select value={model} onChange={(event) => setModel(event.target.value)}><option value="gpt-5.6-luna">Luna · lowest cost</option><option value="gpt-5.6-terra">Terra · balanced</option><option value="gpt-5.6-sol">Sol · strongest</option></select></label><button onClick={saveProjectSettings}>Save model and budget</button><small>Usage estimates are approximate. Provider billing remains the final source of truth.</small></div></aside> : null}
         </div>
 
         <div className="code-ai-composer-wrap">
