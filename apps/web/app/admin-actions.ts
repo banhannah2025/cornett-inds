@@ -512,17 +512,30 @@ export async function savePostImage(
     );
     if (!validAsset) throw new Error("The selected image no longer exists.");
 
-    await client
-      .patch(documentId)
-      .set({
-        mainImage: {
-          _type: "image",
-          asset: { _type: "reference", _ref: assetId },
-          alt: required(formData, "alt", "Alternative text", 240),
-          caption: value(formData, "caption"),
-        },
-      })
-      .commit();
+    const imageValue = {
+      _type: "image",
+      asset: { _type: "reference", _ref: assetId },
+      alt: required(formData, "alt", "Alternative text", 240),
+      caption: value(formData, "caption"),
+    };
+    let patched = false;
+    let patchError: unknown;
+    for (const candidate of getSanityWriteClients()) {
+      try {
+        await candidate.patch(documentId).set({ mainImage: imageValue }).commit();
+        patched = true;
+        break;
+      } catch (error) {
+        patchError = error;
+        const message = error instanceof Error ? error.message : String(error);
+        if (!/insufficient permissions|permission .*required/i.test(message)) throw error;
+      }
+    }
+    if (!patched) {
+      const target = sanityWriteTarget();
+      const detail = patchError instanceof Error ? patchError.message : "Sanity rejected the image update.";
+      throw new Error(`Image attachment failed for Sanity ${target.projectId}/${target.dataset}: ${detail}`);
+    }
     revalidatePath("/", "layout");
     return { ok: true, message: "Post image updated." };
   } catch (error) {
