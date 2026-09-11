@@ -11,7 +11,7 @@ export default function LegalAiRegisterPage() {
   return (
     <main className="min-h-screen bg-[#f6f3eb] text-[#1e2a24]">
       <header className="border-b border-[#1e2a24]/10 bg-[#1e2a24] text-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-8">
           <Link className="flex items-center gap-3" href="/">
             <Scale className="size-7 text-[#f4b860]" />
             <div>
@@ -19,7 +19,7 @@ export default function LegalAiRegisterPage() {
               <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">by Blended Works</span>
             </div>
           </Link>
-          <Link className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white" href="/apps/legal-ai">
+          <Link className="inline-flex items-center gap-2 text-xs font-semibold text-white/80 hover:text-white sm:text-sm" href="/apps/legal-ai">
             <ArrowLeft className="size-4" /> Back to Legal AI
           </Link>
         </div>
