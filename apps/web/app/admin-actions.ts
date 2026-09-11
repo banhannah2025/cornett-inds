@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdministrator } from "@/lib/admin";
 import { editorTextToPortableText } from "@/sanity/lib/editor";
-import { getSanityWriteClient } from "@/sanity/lib/writeClient";
+import { getSanityWriteClient, getSanityWriteClients, sanityWriteTarget } from "@/sanity/lib/writeClient";
 
 export type AdminActionResult = { ok: boolean; message: string; href?: string };
 
@@ -480,10 +480,30 @@ export async function savePostImage(
         throw new Error("Choose a valid image file.");
       if (upload.size > 10 * 1024 * 1024)
         throw new Error("Images must be 10 MB or smaller.");
-      const asset = await client.assets.upload("image", upload, {
-        filename: upload.name,
-      });
-      assetId = asset._id;
+      const clients = getSanityWriteClients();
+      let uploadedAssetId = "";
+      let lastError: unknown;
+      for (const candidate of clients) {
+        try {
+          const asset = await candidate.assets.upload("image", upload, {
+            filename: upload.name,
+          });
+          uploadedAssetId = asset._id;
+          break;
+        } catch (error) {
+          lastError = error;
+          const message = error instanceof Error ? error.message : String(error);
+          if (!/insufficient permissions|permission .*create.*required/i.test(message)) {
+            throw error;
+          }
+        }
+      }
+      if (!uploadedAssetId) {
+        const target = sanityWriteTarget();
+        const detail = lastError instanceof Error ? lastError.message : "Sanity rejected the upload.";
+        throw new Error(`Image upload failed for Sanity ${target.projectId}/${target.dataset}: ${detail}`);
+      }
+      assetId = uploadedAssetId;
     }
     if (!assetId) throw new Error("Upload an image or select an existing one.");
     const validAsset = await client.fetch<string | null>(
