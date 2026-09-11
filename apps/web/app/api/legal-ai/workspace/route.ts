@@ -80,11 +80,11 @@ export async function POST(request: Request) {
   const user = await getLegalAiUser();
   if (!user) return Response.json({ error: "Forbidden" }, { status: 403 });
   const body = (await request.json().catch(() => null)) as
-    | { type?: "project" | "conversation"; name?: string; projectId?: string; title?: string }
+    | { type?: "project" | "conversation"; name?: string; projectId?: string; parentProjectId?: string; title?: string }
     | null;
   try {
     if (body?.type === "project" && body.name?.trim()) {
-      return Response.json(await createLegalAiProject(user.userId, body.name.trim()));
+      return Response.json(await createLegalAiProject(user.userId, body.name.trim(), body.parentProjectId));
     }
     if (body?.type === "conversation" && body.projectId && body.title?.trim()) {
       return Response.json(await createLegalAiConversation(user.userId, body.projectId, body.title.trim()));

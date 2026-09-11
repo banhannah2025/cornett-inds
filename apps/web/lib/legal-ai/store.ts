@@ -20,6 +20,9 @@ export type LegalAiProject = {
   createdAt: string;
   updatedAt: string;
   archived?: boolean;
+  parentProjectId?: string;
+  matterType?: "portfolio" | "case" | "claim" | "investigation";
+  relatedProjectIds?: string[];
   monthlyBudgetUsd?: number;
   defaultModel?: string;
 };
@@ -52,7 +55,7 @@ export async function listLegalAiWorkspace(userId: string) {
   const client = getSanityWriteClient();
   const [projects, conversations, files] = await Promise.all([
     client.fetch<LegalAiProject[]>(
-      `*[_type == "legalAiProject" && userId == $userId] | order(updatedAt desc){_id,userId,name,createdAt,updatedAt,archived,monthlyBudgetUsd,defaultModel}`,
+      `*[_type == "legalAiProject" && userId == $userId] | order(updatedAt desc){_id,userId,name,createdAt,updatedAt,archived,parentProjectId,matterType,relatedProjectIds,monthlyBudgetUsd,defaultModel}`,
       { userId },
     ),
     client.fetch<LegalAiConversation[]>(
@@ -74,13 +77,16 @@ export async function getLegalAiFiles(ids: string[], projectId: string, userId: 
   );
 }
 
-export async function createLegalAiProject(userId: string, name: string) {
+export async function createLegalAiProject(userId: string, name: string, parentProjectId?: string) {
   const now = new Date().toISOString();
   return getSanityWriteClient().create({
     _id: `legalAiProject-${cleanId(randomUUID())}`,
     _type: "legalAiProject",
     userId,
     name,
+    parentProjectId,
+    matterType: parentProjectId ? "case" : "portfolio",
+    relatedProjectIds: [],
     monthlyBudgetUsd: 5,
     defaultModel: "gpt-5.6-luna",
     createdAt: now,
@@ -180,6 +186,9 @@ export async function updateLegalAiDocument(
     projectId?: string;
     monthlyBudgetUsd?: number;
     defaultModel?: string;
+    parentProjectId?: string;
+    matterType?: "portfolio" | "case" | "claim" | "investigation";
+    relatedProjectIds?: string[];
   },
 ) {
   const client = getSanityWriteClient();
