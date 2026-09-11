@@ -109,6 +109,17 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
     }
   }
 
+  async function newSubProject() {
+    if (!project) { await newProject(); return; }
+    const name = window.prompt("Connected case or sub-matter name", "Related case");
+    if (!name?.trim()) return;
+    try {
+      const created = await api<LegalAiProject>("/api/legal-ai/workspace", { method: "POST", body: JSON.stringify({ type: "project", name, parentProjectId: project._id }) });
+      setData((current) => ({ ...current, projects: [created, ...current.projects] }));
+      setProjectId(created._id); setConversationId(""); setSidebarOpen(false);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Unable to create connected matter."); }
+  }
+
   async function newProject() {
     const name = window.prompt("Matter name", "My Legal Matter");
     if (!name?.trim()) return;
@@ -295,10 +306,10 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
       <aside className={`code-ai-sidebar ${sidebarOpen ? "is-open" : ""}`}>
         <div className="code-ai-brand"><span><Scale size={21} /></span><div><strong>Legal AI</strong><small>Blended Works</small></div><button aria-label="Close sidebar" onClick={() => setSidebarOpen(false)}><X size={19}/></button></div>
         <button className="code-ai-new" onClick={newConversation}><MessageSquarePlus size={17}/>New legal matter</button>
-        <div className="code-ai-project-label"><span><Scale size={14}/>Matter</span><div><button aria-label="Matter settings" onClick={() => setMatterPanel(matterPanel === "settings" ? null : "settings")}><Settings size={14}/></button><button aria-label="Rename matter" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore matter" : "Archive matter"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create matter" onClick={newProject}><Plus size={15}/></button></div></div>
+        <div className="code-ai-project-label"><span><Scale size={14}/>Matter</span><div><button aria-label="Matter settings" onClick={() => setMatterPanel(matterPanel === "settings" ? null : "settings")}><Settings size={14}/></button><button aria-label="Rename matter" onClick={renameProject}><Pencil size={14}/></button><button aria-label={project?.archived ? "Restore matter" : "Archive matter"} onClick={project?.archived ? restoreProject : archiveProject}>{project?.archived ? <RotateCcw size={14}/> : <Archive size={14}/>}</button><button aria-label="Create connected case or sub-matter" title="Add connected case" onClick={newSubProject}><Plus size={15}/></button></div></div>
         {data.projects.length ? (
           <select value={projectId} onChange={(event) => { setProjectId(event.target.value); setConversationId(""); }}>
-            {data.projects.map((item) => <option key={item._id} value={item._id}>{item.archived ? "Archived · " : ""}{item.name}</option>)}
+            {data.projects.map((item) => <option key={item._id} value={item._id}>{item.archived ? "Archived · " : ""}{item.parentProjectId ? "↳ " : ""}{item.name}</option>)}
           </select>
         ) : <button className="code-ai-create-project" onClick={newConversation}>Create legal matter</button>}
         <div className="code-ai-project-label"><span><Paperclip size={14}/>Matter files</span><button aria-label="Upload file" onClick={() => uploadRef.current?.click()}><Plus size={15}/></button></div>
@@ -324,7 +335,7 @@ export function LegalAiWorkspace({ userEmail, isAdmin }: { userEmail: string; is
       <section className="code-ai-main">
         <header className="code-ai-header">
           <button className="code-ai-menu" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Menu size={21}/></button>
-          <div><strong>{project?.name ?? "Legal AI"}</strong><span>Legal research workspace</span></div>
+          <div><strong>{project?.name ?? "Legal AI"}</strong><span>{project?.parentProjectId ? "Connected case · Legal research workspace" : "Legal matter portfolio · research workspace"}</span></div>
 
           <button className={notificationsEnabled ? "active" : ""} onClick={toggleNotifications} title="Browser notifications"><Bell size={16}/><span>Alerts</span></button>
         </header>
