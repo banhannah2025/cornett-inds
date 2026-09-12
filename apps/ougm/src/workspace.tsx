@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createIncidentReportPdf } from "./incident-report";
 import {
   CalendarDays,
   Shield,
@@ -192,6 +193,29 @@ export function OugmWorkspace({
   const [form, setForm] = useState<string | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const dialog = useRef<HTMLDialogElement>(null);
+  const printFrame = useRef<HTMLIFrameElement>(null);
+  const printEpoch = useRef(0);
+  const [printUrl, setPrintUrl] = useState("");
+  const [printBusy, setPrintBusy] = useState(false);
+  const [printError, setPrintError] = useState("");
+  useEffect(
+    () => () => {
+      if (printUrl) URL.revokeObjectURL(printUrl);
+    },
+    [printUrl],
+  );
+  useEffect(() => {
+    printEpoch.current++;
+    setPrintUrl("");
+    setPrintError("");
+    setPrintBusy(false);
+  }, [values]);
+  useEffect(
+    () => () => {
+      printEpoch.current++;
+    },
+    [],
+  );
   const [draft, setDraft] = useState<DevotionalDraft>(emptyDraft);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<
@@ -239,9 +263,41 @@ export function OugmWorkspace({
     if (form) dialog.current?.showModal();
   }, [form]);
   function closeForm() {
+    printEpoch.current++;
+    setPrintUrl("");
+    setPrintBusy(false);
+    setPrintError("");
     setValues({});
     setForm(null);
     dialog.current?.close();
+  }
+  async function printReport() {
+    if (template?.id !== "incident-report") {
+      window.print();
+      return;
+    }
+    const epoch = ++printEpoch.current;
+    setPrintBusy(true);
+    setPrintError("");
+    setPrintUrl("");
+    try {
+      const bytes = await createIncidentReportPdf(values);
+      if (epoch !== printEpoch.current) return;
+      setPrintUrl(
+        URL.createObjectURL(
+          new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
+        ),
+      );
+    } catch (error) {
+      if (epoch === printEpoch.current)
+        setPrintError(
+          error instanceof Error
+            ? error.message
+            : "The report could not be prepared.",
+        );
+    } finally {
+      if (epoch === printEpoch.current) setPrintBusy(false);
+    }
   }
   function submitEvent(e: React.FormEvent) {
     e.preventDefault();
@@ -515,10 +571,7 @@ export function OugmWorkspace({
           </p>
           <div className="panel">
             <h3>Mission form library</h3>
-            <p>
-              Official printable and fillable templates will be added from your
-              PDF forms.
-            </p>
+            <p>Choose a form to fill and print, or open a blank PDF.</p>
             {securityTemplates.map((t) => (
               <article className="event" key={t.id}>
                 <h3>{t.title}</h3>
@@ -531,6 +584,11 @@ export function OugmWorkspace({
                 >
                   Open form
                 </button>
+                {t.pdfUrl && (
+                  <a href={t.pdfUrl} target="_blank" rel="noopener noreferrer">
+                    Blank fillable / printable PDF
+                  </a>
+                )}
               </article>
             ))}
           </div>
@@ -652,9 +710,33 @@ export function OugmWorkspace({
               <div className="stack" key={f.key}>
                 <label>
                   {f.label}
-                  {f.multiline ? (
+                  {f.type === "checkbox" ? (
+                    <input
+                      type="checkbox"
+                      checked={values[f.key] === "true"}
+                      onChange={(e) =>
+                        setValues((v) => ({
+                          ...v,
+                          [f.key]: String(e.target.checked),
+                        }))
+                      }
+                    />
+                  ) : f.type === "select" ? (
+                    <select
+                      value={values[f.key] || ""}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, [f.key]: e.target.value }))
+                      }
+                    >
+                      <option value="">Not specified</option>
+                      {f.options?.map((option) => (
+                        <option key={option}>{option}</option>
+                      ))}
+                    </select>
+                  ) : f.multiline ? (
                     <textarea
-                      rows={5}
+                      rows={f.key === "summary" ? 10 : 4}
+                      maxLength={20000}
                       value={values[f.key] || ""}
                       onChange={(e) =>
                         setValues((v) => ({ ...v, [f.key]: e.target.value }))
@@ -662,6 +744,10 @@ export function OugmWorkspace({
                     />
                   ) : (
                     <input
+                      type={
+                        f.type === "date" || f.type === "time" ? f.type : "text"
+                      }
+                      maxLength={20000}
                       value={values[f.key] || ""}
                       onChange={(e) =>
                         setValues((v) => ({ ...v, [f.key]: e.target.value }))
@@ -669,23 +755,54 @@ export function OugmWorkspace({
                     />
                   )}
                 </label>
-                <div className="screen-only">
-                  <Dictate
-                    onText={(t) =>
-                      setValues((v) => ({
-                        ...v,
-                        [f.key]: `${v[f.key] || ""} ${t}`.trim(),
-                      }))
-                    }
-                  />
-                </div>
+                {!f.type && (
+                  <div className="screen-only">
+                    <Dictate
+                      onText={(t) =>
+                        setValues((v) => ({
+                          ...v,
+                          [f.key]: `${v[f.key] || ""} ${t}`.trim(),
+                        }))
+                      }
+                    />
+                  </div>
+                )}
               </div>
             ))}
             <div className="screen-only">
-              <button type="button" onClick={() => window.print()}>
+              <button type="button" disabled={printBusy} onClick={printReport}>
                 <Printer size={18} />
-                Print form
+                {printBusy ? "Preparing report…" : "Print form"}
               </button>
+              {printError && <p role="alert">{printError}</p>}
+              {printUrl && (
+                <>
+                  <p>
+                    <a
+                      href={printUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open prepared report to print
+                    </a>
+                  </p>
+                  <iframe
+                    title="Printable incident report"
+                    ref={printFrame}
+                    src={printUrl}
+                    className="incident-preview"
+                    onLoad={() => {
+                      try {
+                        printFrame.current?.contentWindow?.print();
+                      } catch {
+                        setPrintError(
+                          "Use Open prepared report to print in your browser’s PDF viewer.",
+                        );
+                      }
+                    }}
+                  />
+                </>
+              )}
               <p>
                 After printing, close this form to clear its contents. If you
                 cancel printing, you can keep editing.
@@ -694,7 +811,7 @@ export function OugmWorkspace({
           </form>
         </dialog>
       )}
-      {template && (
+      {template && template.id !== "incident-report" && (
         <section className="print-copy">
           <h1>Olympia Union Gospel Mission</h1>
           <h2>{template.title}</h2>
