@@ -1,4 +1,7 @@
 "use client";
+import { SpiritualOutcomesEditor } from "./spiritual-outcomes-editor";
+import { createSpiritualOutcomesPdf } from "./spiritual-outcomes";
+import { StaffShifts } from "./staff-shifts";
 import { ShelterLogEditor } from "./shelter-log-editor";
 import { createShelterLogPdf } from "./shelter-log";
 
@@ -17,6 +20,7 @@ import {
 import { saveDevotional } from "../../web/app/admin-actions";
 import {
   securityTemplates,
+  calendarEntryOnDay,
   devotionalFields,
   type CalendarEntry,
   type DevotionalDraft,
@@ -239,6 +243,7 @@ export function OugmWorkspace({
   const [entries, setEntries] = useState<CalendarEntry[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [calendarError, setCalendarError] = useState("");
+  const [shiftEditing, setShiftEditing] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [event, setEvent] = useState({
     title: "",
@@ -298,6 +303,9 @@ export function OugmWorkspace({
               v &&
               ["id", "title", "date", "time", "category", "notes"].every(
                 (k) => typeof v[k] === "string",
+              ) &&
+              ["staff", "endDate", "endTime"].every(
+                (k) => v[k] === undefined || typeof v[k] === "string",
               ),
           ),
         );
@@ -332,7 +340,8 @@ export function OugmWorkspace({
     if (
       template?.id !== "incident-report" &&
       template?.id !== "shift-notes" &&
-      template?.id !== "shelter-log"
+      template?.id !== "shelter-log" &&
+      template?.id !== "spiritual-outcomes"
     ) {
       window.print();
       return;
@@ -343,11 +352,13 @@ export function OugmWorkspace({
     setPrintUrl("");
     try {
       const bytes =
-        template.id === "shelter-log"
-          ? await createShelterLogPdf(values)
-          : template.id === "shift-notes"
-            ? await createShiftNotesPdf(values)
-            : await createIncidentReportPdf(values);
+        template.id === "spiritual-outcomes"
+          ? await createSpiritualOutcomesPdf(values)
+          : template.id === "shelter-log"
+            ? await createShelterLogPdf(values)
+            : template.id === "shift-notes"
+              ? await createShiftNotesPdf(values)
+              : await createIncidentReportPdf(values);
       if (epoch !== printEpoch.current) return;
       setPrintUrl(
         URL.createObjectURL(
@@ -424,7 +435,7 @@ export function OugmWorkspace({
     }
   }
   const displayed = entries
-    .filter((e) => e.date === date)
+    .filter((e) => calendarEntryOnDay(e, date))
     .sort((a, b) => a.time.localeCompare(b.time));
   const monthDate = month ? new Date(`${month}-01T12:00:00`) : null;
   const days = monthDate
@@ -485,7 +496,9 @@ export function OugmWorkspace({
                 ))}
                 {Array.from({ length: days }, (_, i) => {
                   const key = `${month}-${String(i + 1).padStart(2, "0")}`;
-                  const count = entries.filter((e) => e.date === key).length;
+                  const count = entries.filter((e) =>
+                    calendarEntryOnDay(e, key),
+                  ).length;
                   return (
                     <button
                       key={key}
@@ -508,7 +521,10 @@ export function OugmWorkspace({
               {displayed.map((e) => (
                 <article className="event" key={e.id}>
                   <strong>
-                    {e.time || "All day"} · {e.title}
+                    {e.time || "All day"}
+                    {e.endTime && ` – ${e.endTime}`} ·{" "}
+                    {e.staff && `${e.staff} · `}
+                    {e.title}
                   </strong>
                   <p>
                     {e.category}
@@ -517,8 +533,15 @@ export function OugmWorkspace({
                   <button
                     className="quiet"
                     onClick={() => {
-                      setEditing(e.id);
-                      setEvent(e);
+                      if (e.category === "Staff Shift") {
+                        setShiftEditing(e.id);
+                        document
+                          .getElementById("staff-shifts")
+                          ?.scrollIntoView({ behavior: "smooth" });
+                      } else {
+                        setEditing(e.id);
+                        setEvent(e);
+                      }
                     }}
                   >
                     Edit
@@ -582,8 +605,8 @@ export function OugmWorkspace({
                   {[
                     "Office",
                     "Security",
-                    "Staff meeting",
-                    "Meal / devotional",
+                    "Staff Meeting",
+                    "Meal / Devotional",
                   ].map((v) => (
                     <option key={v}>{v}</option>
                   ))}
@@ -627,6 +650,18 @@ export function OugmWorkspace({
               )}
             </form>
           </div>
+          {loaded && (
+            <StaffShifts
+              key={shiftEditing || "new-shift"}
+              entries={entries}
+              onChange={setEntries}
+              month={month}
+              date={date}
+              loaded={loaded}
+              editing={shiftEditing}
+              onEdit={setShiftEditing}
+            />
+          )}
         </section>
       )}
       {tab === "security" && (
@@ -772,7 +807,13 @@ export function OugmWorkspace({
             autoComplete="off"
             onSubmit={(e) => e.preventDefault()}
           >
-            {template.id === "shelter-log" ? (
+            {template.id === "spiritual-outcomes" ? (
+              <SpiritualOutcomesEditor
+                values={values}
+                onChange={setValues}
+                Dictation={Dictate}
+              />
+            ) : template.id === "shelter-log" ? (
               <ShelterLogEditor
                 values={values}
                 onChange={setValues}
@@ -820,7 +861,7 @@ export function OugmWorkspace({
                             }))
                           }
                         >
-                          <option value="">Not specified</option>
+                          <option value="">Not Specified</option>
                           {f.options?.map((option) => (
                             <option key={option}>{option}</option>
                           ))}
@@ -840,7 +881,9 @@ export function OugmWorkspace({
                       ) : (
                         <input
                           type={
-                            f.type === "date" || f.type === "time"
+                            f.type === "date" ||
+                            f.type === "time" ||
+                            f.type === "datetime-local"
                               ? f.type
                               : "text"
                           }
@@ -916,7 +959,8 @@ export function OugmWorkspace({
       {template &&
         template.id !== "incident-report" &&
         template.id !== "shift-notes" &&
-        template.id !== "shelter-log" && (
+        template.id !== "shelter-log" &&
+        template.id !== "spiritual-outcomes" && (
           <section className="print-copy">
             <h1>Olympia Union Gospel Mission</h1>
             <h2>{template.title}</h2>

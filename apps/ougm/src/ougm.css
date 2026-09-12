@@ -360,3 +360,36 @@
     grid-template-columns: 1fr;
   }
 }
+
+.ougm .shift-table-scroll {
+  overflow-x: auto;
+}
+.ougm .shift-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ougm .shift-table-scroll th,
+.ougm .shift-table-scroll td {
+  padding: 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid #cbd5e1;
+}
+.ougm .shift-table-scroll td button {
+  margin: 0.2rem;
+}
+.ougm .outcomes-scroll {
+  overflow-x: auto;
+}
+.ougm .outcomes-scroll table {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+.ougm .outcomes-scroll th,
+.ougm .outcomes-scroll td {
+  padding: 0.4rem;
+  border: 1px solid #cbd5e1;
+}
+.ougm .outcomes-scroll input[type="number"] {
+  min-width: 65px;
+}
