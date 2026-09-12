@@ -240,14 +240,15 @@
     background: white;
     color: black;
     font:
-      12pt/1.5 Arial,
-      sans-serif;
+      12pt/1.5 "Times New Roman",
+      Times,
+      serif;
   }
   .ougm .print-copy h1 {
-    font-size: 20pt;
+    font-size: 12pt;
   }
   .ougm .print-copy h2 {
-    font-size: 16pt;
+    font-size: 12pt;
   }
   .ougm .print-copy p {
     color: black;
@@ -392,4 +393,19 @@
 }
 .ougm .outcomes-scroll input[type="number"] {
   min-width: 65px;
+}
+
+.ougm .offender-photo {
+  width: 216px;
+  height: 360px;
+  object-fit: contain;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+.ougm dialog input,
+.ougm dialog textarea,
+.ougm dialog select {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12pt;
+  line-height: 1.5;
 }

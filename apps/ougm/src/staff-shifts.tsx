@@ -62,8 +62,8 @@ export function StaffShifts({
       <h3>Staff shifts</h3>
       <p>
         Review staff coverage for this month, including overnight shifts. Shifts
-        also appear on the office calendar. Saved on this device for your
-        account.
+        also appear on the shared office calendar. Use Save Schedule to keep
+        changes in Sanity.
       </p>
       <label>
         View Staff

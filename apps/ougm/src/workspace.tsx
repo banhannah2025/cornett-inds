@@ -1,4 +1,11 @@
 "use client";
+import { useSharedCalendar } from "./use-shared-calendar";
+import {
+  useSpiritualReports,
+  type SpiritualReport,
+} from "./use-spiritual-reports";
+import { PhotoInput } from "./photo-input";
+import { createUnidentifiedOffenderPdf } from "./unidentified-offender";
 import { SpiritualOutcomesEditor } from "./spiritual-outcomes-editor";
 import { createSpiritualOutcomesPdf } from "./spiritual-outcomes";
 import { StaffShifts } from "./staff-shifts";
@@ -22,7 +29,6 @@ import {
   securityTemplates,
   calendarEntryOnDay,
   devotionalFields,
-  type CalendarEntry,
   type DevotionalDraft,
 } from "./index";
 
@@ -240,9 +246,17 @@ export function OugmWorkspace({
   const [tab, setTab] = useState("calendar");
   const [date, setDate] = useState("");
   const [month, setMonth] = useState("");
-  const [entries, setEntries] = useState<CalendarEntry[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [calendarError, setCalendarError] = useState("");
+  const calendar = useSharedCalendar(userId);
+  const { entries, setEntries, loaded } = calendar;
+  const spiritual = useSpiritualReports(userId);
+  const [savedReport, setSavedReport] = useState<{
+    id: string;
+    revision: string;
+  } | null>(null);
+  const [reportSaving, setReportSaving] = useState(false);
+  const [reportStatus, setReportStatus] = useState("");
+  const [reportError, setReportError] = useState("");
+  const reportEpoch = useRef(0);
   const [shiftEditing, setShiftEditing] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [event, setEvent] = useState({
@@ -271,6 +285,7 @@ export function OugmWorkspace({
     setPrintUrl("");
     setPrintError("");
     setPrintBusy(false);
+    setReportStatus("");
   }, [values]);
   useEffect(
     () => () => {
@@ -287,47 +302,51 @@ export function OugmWorkspace({
   const [status, setStatus] = useState("");
   const [published, setPublished] = useState("");
   const template = securityTemplates.find((t) => t.id === form);
-  const storageKey = `ougm-calendar:${userId}`;
   useEffect(() => {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     setDate(today);
     setMonth(today.slice(0, 7));
     setEvent((e) => ({ ...e, date: today }));
+  }, []);
+  function openReport(report: SpiritualReport) {
+    reportEpoch.current++;
+    setValues(report.values);
+    setSavedReport({ id: report.id, revision: report.revision });
+    setReportStatus("");
+    setReportError("");
+    setForm("spiritual-outcomes");
+  }
+  async function saveReport() {
+    if (reportSaving) return;
+    const epoch = reportEpoch.current;
+    setReportSaving(true);
+    setReportError("");
+    const snapshot = values;
     try {
-      const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      if (Array.isArray(saved))
-        setEntries(
-          saved.filter(
-            (v) =>
-              v &&
-              ["id", "title", "date", "time", "category", "notes"].every(
-                (k) => typeof v[k] === "string",
-              ) &&
-              ["staff", "endDate", "endTime"].every(
-                (k) => v[k] === undefined || typeof v[k] === "string",
-              ),
-          ),
-        );
-    } catch {
-      setCalendarError("Saved schedules could not be loaded on this device.");
-    }
-    setLoaded(true);
-  }, [storageKey]);
-  useEffect(() => {
-    if (loaded)
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(entries));
-      } catch {
-        setCalendarError(
-          "Device storage is unavailable. Calendar changes will last only until this page closes.",
-        );
+      const report = await spiritual.save(snapshot, savedReport);
+      if (epoch === reportEpoch.current) {
+        setSavedReport({ id: report.id, revision: report.revision });
+        setReportStatus("Report saved to Sanity.");
       }
-  }, [entries, loaded, storageKey]);
+    } catch (e) {
+      if (epoch === reportEpoch.current)
+        setReportError(
+          e instanceof Error ? e.message : "The report could not be saved.",
+        );
+    } finally {
+      if (epoch === reportEpoch.current) setReportSaving(false);
+    }
+  }
   useEffect(() => {
     if (form) dialog.current?.showModal();
   }, [form]);
   function closeForm() {
+    reportEpoch.current++;
+    setSavedReport(null);
+    setReportSaving(false);
+    setReportStatus("");
+    setReportError("");
     printEpoch.current++;
     setPrintUrl("");
     setPrintBusy(false);
@@ -341,7 +360,8 @@ export function OugmWorkspace({
       template?.id !== "incident-report" &&
       template?.id !== "shift-notes" &&
       template?.id !== "shelter-log" &&
-      template?.id !== "spiritual-outcomes"
+      template?.id !== "spiritual-outcomes" &&
+      template?.id !== "unidentified-offender"
     ) {
       window.print();
       return;
@@ -352,13 +372,15 @@ export function OugmWorkspace({
     setPrintUrl("");
     try {
       const bytes =
-        template.id === "spiritual-outcomes"
-          ? await createSpiritualOutcomesPdf(values)
-          : template.id === "shelter-log"
-            ? await createShelterLogPdf(values)
-            : template.id === "shift-notes"
-              ? await createShiftNotesPdf(values)
-              : await createIncidentReportPdf(values);
+        template.id === "unidentified-offender"
+          ? await createUnidentifiedOffenderPdf(values)
+          : template.id === "spiritual-outcomes"
+            ? await createSpiritualOutcomesPdf(values)
+            : template.id === "shelter-log"
+              ? await createShelterLogPdf(values)
+              : template.id === "shift-notes"
+                ? await createShiftNotesPdf(values)
+                : await createIncidentReportPdf(values);
       if (epoch !== printEpoch.current) return;
       setPrintUrl(
         URL.createObjectURL(
@@ -473,7 +495,7 @@ export function OugmWorkspace({
           <div className="section-heading">
             <div>
               <h2>Office calendar</h2>
-              <p>Schedules saved on this device for your account.</p>
+              <p>Shared schedules saved in Sanity.</p>
             </div>
             <label>
               Month
@@ -484,7 +506,32 @@ export function OugmWorkspace({
               />
             </label>
           </div>
-          {calendarError && <p role="alert">{calendarError}</p>}
+          <div className="actions">
+            <button
+              disabled={!loaded || calendar.busy || !calendar.dirty}
+              onClick={() => void calendar.save()}
+            >
+              {calendar.busy ? "Saving Schedule…" : "Save Schedule"}
+            </button>
+            <button
+              className="quiet"
+              disabled={calendar.busy}
+              onClick={() => void calendar.load()}
+            >
+              Reload Saved Schedule
+            </button>
+            <button
+              className="quiet"
+              disabled={!loaded || calendar.busy}
+              onClick={calendar.importDevice}
+            >
+              Import Old Device Schedule
+            </button>
+          </div>
+          <p role="status">
+            {calendar.dirty ? "Unsaved schedule changes." : calendar.status}
+          </p>
+          {calendar.error && <p role="alert">{calendar.error}</p>}
           <div className="columns">
             <div className="panel">
               <div className="calendar">
@@ -668,7 +715,8 @@ export function OugmWorkspace({
         <section>
           <h2>Security forms</h2>
           <p>
-            Fill, print, then close. Entries are cleared when you close a form.
+            Fill, print, then close security forms to clear entries. Spiritual
+            outcomes reports can also be saved and reopened.
           </p>
           <div className="panel">
             <h3>Mission form library</h3>
@@ -679,6 +727,10 @@ export function OugmWorkspace({
                 <p>{t.description}</p>
                 <button
                   onClick={() => {
+                    reportEpoch.current++;
+                    setSavedReport(null);
+                    setReportStatus("");
+                    setReportError("");
                     setValues({});
                     setForm(t.id);
                   }}
@@ -693,6 +745,34 @@ export function OugmWorkspace({
               </article>
             ))}
           </div>
+        </section>
+      )}
+      {tab === "security" && (
+        <section className="panel stack">
+          <h3>Saved Spiritual Outcomes</h3>
+          <button className="quiet" onClick={() => void spiritual.load()}>
+            Reload Saved Reports
+          </button>
+          {spiritual.error && <p role="alert">{spiritual.error}</p>}
+          {!spiritual.reports.length && (
+            <p>No saved spiritual outcomes reports.</p>
+          )}
+          {spiritual.reports.map((report) => (
+            <article className="event" key={report.id}>
+              <strong>
+                {report.values.from} through {report.values.to}
+              </strong>
+              <button onClick={() => openReport(report)}>
+                Open / Edit / Print
+              </button>
+              <button
+                className="quiet"
+                onClick={() => void spiritual.remove(report)}
+              >
+                Delete Saved Report
+              </button>
+            </article>
+          ))}
         </section>
       )}
       {tab === "devotionals" && (
@@ -795,18 +875,24 @@ export function OugmWorkspace({
           <div className="dialog-heading">
             <h2 id="security-title">{template.title}</h2>
             <button className="quiet" onClick={closeForm}>
-              Close and clear
+              {template.id === "spiritual-outcomes"
+                ? "Close Report"
+                : "Close and Clear"}
             </button>
           </div>
           <p className="screen-only">
-            Entries stay in this browser while the form is open. Closing clears
-            all fields.
+            {template.id === "spiritual-outcomes"
+              ? "Use Save Report to keep this report in Sanity. Closing clears any unsaved edits from this editor."
+              : "Entries and photos stay in this form while it is open. Closing clears all fields."}
           </p>
           <form
             className="stack"
             autoComplete="off"
             onSubmit={(e) => e.preventDefault()}
           >
+            {template.id === "unidentified-offender" && (
+              <PhotoInput values={values} onChange={setValues} />
+            )}
             {template.id === "spiritual-outcomes" ? (
               <SpiritualOutcomesEditor
                 values={values}
@@ -915,6 +1001,19 @@ export function OugmWorkspace({
               ))
             )}
             <div className="screen-only">
+              {template.id === "spiritual-outcomes" && (
+                <>
+                  <button
+                    type="button"
+                    disabled={reportSaving}
+                    onClick={() => void saveReport()}
+                  >
+                    {reportSaving ? "Saving Report…" : "Save Report to Sanity"}
+                  </button>
+                  {reportStatus && <p role="status">{reportStatus}</p>}
+                  {reportError && <p role="alert">{reportError}</p>}
+                </>
+              )}
               <button type="button" disabled={printBusy} onClick={printReport}>
                 <Printer size={18} />
                 {printBusy ? "Preparing report…" : "Print form"}
@@ -949,8 +1048,9 @@ export function OugmWorkspace({
                 </>
               )}
               <p>
-                After printing, close this form to clear its contents. If you
-                cancel printing, you can keep editing.
+                {template.id === "spiritual-outcomes"
+                  ? "Save Report keeps this report in Sanity. Print does not save unsaved edits."
+                  : "After printing, close this form to clear its entries and photo. If you cancel printing, you can keep editing."}
               </p>
             </div>
           </form>
@@ -960,7 +1060,8 @@ export function OugmWorkspace({
         template.id !== "incident-report" &&
         template.id !== "shift-notes" &&
         template.id !== "shelter-log" &&
-        template.id !== "spiritual-outcomes" && (
+        template.id !== "spiritual-outcomes" &&
+        template.id !== "unidentified-offender" && (
           <section className="print-copy">
             <h1>Olympia Union Gospel Mission</h1>
             <h2>{template.title}</h2>

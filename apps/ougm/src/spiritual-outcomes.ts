@@ -1,3 +1,4 @@
+import { drawPrintLine, wrapPrint, addPrintContinuations } from "./pdf-layout";
 import layout from "./spiritual-outcomes-layout.json";
 export { layout as spiritualLayout };
 export function spiritualTotals(
@@ -28,7 +29,7 @@ export async function createSpiritualOutcomesPdf(
       import("pdf-lib"),
       import("@pdf-lib/fontkit"),
       load("/ougm/forms/spiritual-outcomes-fillable.pdf"),
-      load("/ougm/fonts/DejaVuSans.ttf"),
+      load("/ougm/fonts/DejaVuSerif.ttf"),
     ]);
   if (!template.ok || !typeface.ok)
     throw new Error("The spiritual outcomes template could not be loaded.");
@@ -42,20 +43,20 @@ export async function createSpiritualOutcomesPdf(
   const font = await pdf.embedFont(await typeface.arrayBuffer(), {
     subset: true,
   });
+  const overflow: { label: string; lines: string[] }[] = [];
   function draw(
     text: string,
     x: number,
     top: number,
     width: number,
-    size = 10,
+    label = "Continued value",
   ) {
     if (!text) return;
-    const fitted = Math.min(size, width / font.widthOfTextAtSize(text, 1));
-    if (fitted < 6)
-      throw new Error(
-        "A value is too long to print. Shorten the recovery meeting name.",
-      );
-    page.drawText(text, { x, y: 612 - top - fitted, size: fitted, font });
+    const lines = wrapPrint(text, font, width);
+    if (lines.length > 1) {
+      drawPrintLine(page, font, "*", x, top, 18);
+      overflow.push({ label, lines: wrapPrint(text, font, 528) });
+    } else drawPrintLine(page, font, text, x, top, 18);
   }
   const date = (value: string) =>
     /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -69,12 +70,12 @@ export async function createSpiritualOutcomesPdf(
       layout.columns[index]! + 3,
       83,
       layout.columns[index + 1]! - layout.columns[index]! - 6,
-      9,
+      `${day} date`,
     ),
   );
   for (const row of layout.rows) {
     if (row.key.startsWith("recovery"))
-      draw(values[`${row.key}.label`] || "", 45, row.top + 6, 220);
+      draw(values[`${row.key}.label`] || "", 45, row.top + 4, 220, row.label);
     layout.days.forEach((day, index) => {
       const value = values[`${row.key}.${day}`] || "";
       if (value && !/^\d{1,5}$/.test(value))
@@ -82,8 +83,9 @@ export async function createSpiritualOutcomesPdf(
       draw(
         value,
         layout.columns[index]! + 4,
-        row.top + 7,
+        row.top + 4,
         layout.columns[index + 1]! - layout.columns[index]! - 8,
+        `${row.label} ${day}`,
       );
     });
   }
@@ -94,6 +96,22 @@ export async function createSpiritualOutcomesPdf(
       total.x,
       total.top,
       total.key === "meal" ? 65 : 38,
+      `Total ${total.label}`,
     );
+  if (overflow.length)
+    drawPrintLine(
+      page,
+      font,
+      "* See continuation for the full value.",
+      42,
+      580,
+      18,
+    );
+  addPrintContinuations(
+    pdf,
+    font,
+    "Weekly Spiritual Outcomes - Continued",
+    overflow,
+  );
   return pdf.save();
 }

@@ -1,4 +1,5 @@
-import type { PDFFont, PDFPage } from "pdf-lib";
+import { wrapPrint, drawPrintLine } from "./pdf-layout";
+import type { PDFPage } from "pdf-lib";
 import { parseShiftEntries } from "./shift-entries";
 
 export async function createShiftNotesPdf(
@@ -6,7 +7,7 @@ export async function createShiftNotesPdf(
   load: typeof fetch = fetch,
 ): Promise<Uint8Array> {
   const [
-    { PDFDocument, PDFName, PDFArray, rgb },
+    { PDFDocument, PDFName, PDFArray },
     { default: fontkit },
     template,
     typeface,
@@ -14,7 +15,7 @@ export async function createShiftNotesPdf(
     import("pdf-lib"),
     import("@pdf-lib/fontkit"),
     load("/ougm/forms/shift-notes-fillable.pdf"),
-    load("/ougm/fonts/DejaVuSans.ttf"),
+    load("/ougm/fonts/DejaVuSerif.ttf"),
   ]);
   if (!template.ok || !typeface.ok)
     throw new Error("The shift notes template could not be loaded.");
@@ -58,49 +59,35 @@ export async function createShiftNotesPdf(
       { x: 210, width: 357, text: entry.notes },
     ].map((column) => ({
       ...column,
-      lines: wrap(column.text, font, column.width),
+      lines: wrapPrint(column.text, font, column.width),
     }));
-    const chunks = Math.max(
-      1,
-      ...columns.map((column) => Math.ceil(column.lines.length / 2)),
-    );
+    const chunks = Math.max(1, ...columns.map((column) => column.lines.length));
     for (let chunk = 0; chunk < chunks; chunk++, slot++) {
       const pageIndex = Math.floor(slot / 25);
       if (pageIndex >= pdf.getPageCount()) {
         await addArtwork(pageIndex % 2);
       }
       const page = pdf.getPages()[pageIndex]!;
-      const top = 148 + (slot % 25) * 24.263044;
-      columns.forEach((column, index) =>
-        column.lines
-          .slice(
-            index < 3 && column.lines.length <= 2 ? 0 : chunk * 2,
-            index < 3 && column.lines.length <= 2 ? 2 : chunk * 2 + 2,
-          )
-          .forEach((line, index) => {
-            if (line)
-              page.drawText(line, {
-                x: column.x,
-                y: 792 - top - 9 - index * 10,
-                size: 9,
-                font,
-                color: rgb(0, 0, 0),
-              });
-          }),
-      );
+      const top = 144.763044 + (slot % 25) * 24.263044;
+      columns.forEach((column, index) => {
+        const line =
+          index < 3 && column.lines.length <= 1
+            ? column.lines[0]
+            : column.lines[chunk];
+        if (line) drawPrintLine(page, font, line, column.x, top, 24.263044);
+      });
     }
   }
   function header(value: string, x: number, page: PDFPage) {
     const [day, clock] = value.split("T");
     const lines = clock
       ? [date(day || "").replace("\n", ""), time(clock).replace("\n", " ")]
-      : wrap(value, font, 110);
+      : wrapPrint(value, font, 110);
     if (lines.length > 2)
       throw new Error("Enter a date and time for the shift beginning and end.");
-    lines.forEach((line, index) => {
-      if (line)
-        page.drawText(line, { x, y: 792 - 82 - 9 - index * 10, size: 9, font });
-    });
+    lines.forEach((line, index) =>
+      drawPrintLine(page, font, line, x, 76 + index * 18, 16),
+    );
   }
   pdf.getPages().forEach((page, index) => {
     header(values.begin || "", 296, page);
@@ -108,34 +95,9 @@ export async function createShiftNotesPdf(
     page.drawText(`Page ${index + 1} of ${pdf.getPageCount()}`, {
       x: 510,
       y: 20,
-      size: 8,
+      size: 12,
       font,
     });
   });
   return pdf.save();
-}
-
-function wrap(text: string, font: PDFFont, width: number): string[] {
-  if (!text) return [];
-  const lines: string[] = [];
-  for (const paragraph of text
-    .replace(/\r\n?/g, "\n")
-    .replace(/\t/g, "    ")
-    .split("\n")) {
-    let line = "";
-    for (const character of paragraph) {
-      if (line && font.widthOfTextAtSize(line + character, 9) > width) {
-        const space = line.lastIndexOf(" ");
-        if (space > 0) {
-          lines.push(line.slice(0, space));
-          line = line.slice(space + 1) + character;
-        } else {
-          lines.push(line);
-          line = character;
-        }
-      } else line += character;
-    }
-    lines.push(line);
-  }
-  return lines;
 }

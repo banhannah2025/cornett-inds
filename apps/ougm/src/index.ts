@@ -39,6 +39,60 @@ export type SecurityTemplate = {
 };
 export const securityTemplates: SecurityTemplate[] = [
   {
+    id: "unidentified-offender",
+    title: "Security: Unidentified Offender Report",
+    description:
+      "Observed incident, identifying description, and a tall 3 × 5 inch photo.",
+    pdfUrl: "/ougm/forms/unidentified-offender-fillable.pdf",
+    fields: [
+      { key: "dateFiled", label: "Date Filed", type: "date" },
+      { key: "staff", label: "Reporting Staff" },
+      { key: "incidentDate", label: "Incident Date", type: "date" },
+      { key: "incidentTime", label: "Incident Time", type: "time" },
+      {
+        key: "location",
+        label: "Location(s)",
+        type: "multiselect",
+        options: [
+          "Foyer",
+          "Outside Entry Way",
+          "Day Room South",
+          "Day Room North",
+          "Tiny Home Village",
+          "Back Lot",
+          "Front Lot",
+          "Gazebo",
+          "Sitting Bench",
+          "Sleeping Bench",
+          "Receiving",
+          "Clothing Closet Entry",
+          "Clothing Closet",
+          "Front Office",
+          "Kitchen Front",
+          "Kitchen Back",
+          "Bathrooms Day Room",
+          "Bathrooms Staff",
+        ],
+      },
+      {
+        key: "description",
+        label: "Physical Description / Clothing / Distinguishing Features",
+        multiline: true,
+      },
+      {
+        key: "summary",
+        label: "Observed Incident / Behavior",
+        multiline: true,
+      },
+      { key: "action", label: "Actions Taken / Response", multiline: true },
+      {
+        key: "followup",
+        label: "Follow-Up / Identifying Information",
+        multiline: true,
+      },
+    ],
+  },
+  {
     id: "spiritual-outcomes",
     title: "Weekly Spiritual Outcomes Report",
     description:

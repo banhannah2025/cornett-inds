@@ -1,3 +1,4 @@
+from pdf_fonts import configure_font
 """Add interactive fields to the supplied Mission spiritual outcomes report.
 Usage: python create-spiritual-outcomes-pdf.py source.pdf output.pdf
 """
@@ -18,7 +19,7 @@ for page in range(1,2):
     def field(name, label, x, top, width, height, multiline=False):
         expected.add(name)
         c.acroForm.textfield(name=name,tooltip=label,x=x,y=612-top-height,width=width,height=height,
-            fontName='Courier',fontSize=8,borderWidth=0,textColor=black,fillColor=white,
+            fontName='Times-Roman',fontSize=12,borderWidth=0,textColor=black,fillColor=white,
             fieldFlags='multiline' if multiline else '',maxlen=20000,forceBorder=False)
     layout=json.loads((Path(__file__).parent.parent/'src/spiritual-outcomes-layout.json').read_text())
     for key,top in [('from',60),('to',96)]: field(key,f'Report {key}',637,top,105,15)
@@ -40,7 +41,7 @@ for page,extra in zip(writer.pages,overlay.pages):
     for ref in page['/Annots']:
         widget=ref.get_object()
         widget[NameObject('/P')]=page.indirect_reference
-        widget[NameObject('/DA')]=TextStringObject('0 Tc 0 Tw 100 Tz /Cour 8 Tf 0 g')
+        widget[NameObject('/DA')]=TextStringObject('0 Tc 0 Tw 100 Tz /Time 12 Tf 0 g')
         appearance=DecodedStreamObject();appearance.set_data(b'q Q')
         appearance.update({NameObject('/Type'):NameObject('/XObject'),NameObject('/Subtype'):NameObject('/Form'),NameObject('/BBox'):widget['/AP']['/N'].get_object()['/BBox']})
         widget[NameObject('/AP')]=DictionaryObject({NameObject('/N'):writer._add_object(appearance)})
@@ -48,8 +49,9 @@ for page,extra in zip(writer.pages,overlay.pages):
         canonical.append(ref)
 form=writer.root_object['/AcroForm']
 form[NameObject('/Fields')]=ArrayObject(canonical)
-form['/DR']['/Font']['/Cour'][NameObject('/Encoding')]=NameObject('/WinAnsiEncoding')
+form['/DR']['/Font']['/Time'][NameObject('/Encoding')]=NameObject('/WinAnsiEncoding')
 form[NameObject('/NeedAppearances')]=BooleanObject(False)
+configure_font(writer)
 writer.write(destination)
 reader=PdfReader(destination)
 assert set(reader.get_fields())==expected
