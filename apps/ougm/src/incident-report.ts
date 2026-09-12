@@ -113,8 +113,22 @@ export async function createIncidentReportPdf(
     if (values[key] === "true")
       first.drawText("X", { x: x + 1, y: 398, size: 10, font });
   }
-  field("Ban", values.ban || "", 307, 412, 54, 2);
-  field("Trespass", values.trespass || "", 413, 412, 50, 2);
+  field(
+    "Banned until",
+    date(values.ban || "").replace(/(\d{2}\/\d{2}\/)(\d{4})$/, "$1\n$2"),
+    307,
+    412,
+    54,
+    2,
+  );
+  field(
+    "Trespassed until",
+    date(values.trespass || "").replace(/(\d{2}\/\d{2}\/)(\d{4})$/, "$1\n$2"),
+    413,
+    412,
+    50,
+    2,
+  );
   for (const x of [483.5, 525.5])
     first.drawCircle({
       x,

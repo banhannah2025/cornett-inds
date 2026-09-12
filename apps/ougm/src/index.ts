@@ -40,8 +40,8 @@ export const securityTemplates: SecurityTemplate[] = [
         label: key,
         type: "checkbox" as const,
       })),
-      { key: "ban", label: "Ban" },
-      { key: "trespass", label: "Trespass" },
+      { key: "ban", label: "Banned until", type: "date" },
+      { key: "trespass", label: "Trespassed until", type: "date" },
       {
         key: "override",
         label: "Override?",
