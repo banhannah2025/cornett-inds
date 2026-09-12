@@ -1,0 +1,146 @@
+{
+  "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  "columns": [271.1, 316.7, 361.5, 408.7, 457.5, 499.9, 543.1, 588],
+  "rows": [
+    {
+      "key": "morning",
+      "label": "Morning Bible Studies",
+      "top": 131.87,
+      "group": "bible"
+    },
+    {
+      "key": "afternoon",
+      "label": "Afternoon Bible Studies",
+      "top": 157.63,
+      "group": "bible"
+    },
+    {
+      "key": "recovery1",
+      "label": "Recovery Meeting 1",
+      "top": 209.17,
+      "group": "recovery"
+    },
+    {
+      "key": "recovery2",
+      "label": "Recovery Meeting 2",
+      "top": 234.93,
+      "group": "recovery"
+    },
+    {
+      "key": "recovery3",
+      "label": "Recovery Meeting 3",
+      "top": 260.7,
+      "group": "recovery"
+    },
+    {
+      "key": "bibles",
+      "label": "Bibles Given",
+      "top": 286.47,
+      "group": "bibles"
+    },
+    {
+      "key": "prayer",
+      "label": "Prayer Requests",
+      "top": 312.23,
+      "group": "prayer"
+    },
+    {
+      "key": "counseling",
+      "label": "Counseling Sessions",
+      "top": 338,
+      "group": "counseling"
+    },
+    {
+      "key": "faith",
+      "label": "Faith Response / Re-Commit",
+      "top": 363.77,
+      "group": "faith"
+    },
+    {
+      "key": "baptisms",
+      "label": "Baptisms",
+      "top": 389.53,
+      "group": "baptisms"
+    },
+    {
+      "key": "church",
+      "label": "Church Attendance / Vespers",
+      "top": 441.07,
+      "group": "church"
+    },
+    {
+      "key": "breakfast",
+      "label": "Breakfast Devotion / Prayer",
+      "top": 492.6,
+      "group": "meal"
+    },
+    {
+      "key": "lunch",
+      "label": "Lunch Devotion / Prayer",
+      "top": 518.37,
+      "group": "meal"
+    },
+    {
+      "key": "dinner",
+      "label": "Dinner Devotion / Prayer",
+      "top": 544.13,
+      "group": "meal"
+    }
+  ],
+  "totals": [
+    {
+      "key": "bible",
+      "label": "Bible Studies",
+      "x": 704,
+      "top": 165
+    },
+    {
+      "key": "recovery",
+      "label": "Recovery Meetings",
+      "x": 699,
+      "top": 260
+    },
+    {
+      "key": "bibles",
+      "label": "Bibles Given",
+      "x": 700,
+      "top": 297
+    },
+    {
+      "key": "prayer",
+      "label": "Prayer Requests",
+      "x": 701,
+      "top": 324
+    },
+    {
+      "key": "counseling",
+      "label": "Counseling Sessions",
+      "x": 699,
+      "top": 351
+    },
+    {
+      "key": "faith",
+      "label": "Faith Responses",
+      "x": 701,
+      "top": 379
+    },
+    {
+      "key": "baptisms",
+      "label": "Baptisms",
+      "x": 701,
+      "top": 403
+    },
+    {
+      "key": "church",
+      "label": "Church Attendance",
+      "x": 704,
+      "top": 454
+    },
+    {
+      "key": "meal",
+      "label": "Pre-Meal Attendance",
+      "x": 679,
+      "top": 552
+    }
+  ]
+}

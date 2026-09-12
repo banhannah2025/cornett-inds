@@ -1,3 +1,4 @@
+from pdf_fonts import configure_font
 """Attach interactive fields to the supplied Mission incident report.
 Usage: python create-incident-pdf.py source.pdf output.pdf
 """
@@ -19,9 +20,11 @@ fields = {
     'outcomes': (270, 311, 295, 64), 'ban': (306, 412, 55, 30),
     'trespass': (412, 412, 51, 30), 'summary': (46, 483, 519, 262),
 }
+fields.pop('summary')
+for i in range(12): fields['summary' if i==0 else f'summary.line{i+1}']=(46,480.5+i*22.58333+2,519,18)
 for name, (x, top, width, height) in fields.items():
     c.acroForm.textfield(name=name, tooltip=name, x=x, y=792-top-height,
-        width=width, height=height, fontName="Courier", fontSize=10, borderWidth=0,
+        width=width, height=height, fontName="Times-Roman", fontSize=12, borderWidth=0,
         textColor=black, fillColor=white, forceBorder=False,
         fieldFlags='multiline' if height>25 else '', maxlen=20000)
 for name,x in [('OPD',284),('CRU',337),('OFD',389),('EMT',441),('COR',493)]:
@@ -68,13 +71,14 @@ writer.root_object['/AcroForm'][NameObject('/Fields')]=ArrayObject(canonical)
 for widget in writer.pages[0]['/Annots']:
     widget=widget.get_object()
     if widget.get('/FT')=='/Tx':
-        widget[NameObject('/DA')]=TextStringObject('0 Tc 0 Tw 100 Tz /Cour 10 Tf 0 g')
+        widget[NameObject('/DA')]=TextStringObject('0 Tc 0 Tw 100 Tz /Time 12 Tf 0 g')
         appearance=DecodedStreamObject(); appearance.set_data(b'q Q')
         appearance.update({NameObject('/Type'):NameObject('/XObject'),NameObject('/Subtype'):NameObject('/Form'),NameObject('/BBox'):widget['/AP']['/N'].get_object()['/BBox']})
         widget[NameObject('/AP')]=DictionaryObject({NameObject('/N'):writer._add_object(appearance)})
         widget['/MK'].pop(NameObject('/BG'),None)
-writer.root_object['/AcroForm']['/DR']['/Font']['/Cour'][NameObject('/Encoding')]=NameObject('/WinAnsiEncoding')
+writer.root_object['/AcroForm']['/DR']['/Font']['/Time'][NameObject('/Encoding')]=NameObject('/WinAnsiEncoding')
 writer.root_object['/AcroForm'][NameObject('/NeedAppearances')]=BooleanObject(False)
+configure_font(writer)
 writer.write(destination)
 reader=PdfReader(destination)
 expected=set(fields)|{'OPD','CRU','OFD','EMT','COR','override','period'}

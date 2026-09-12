@@ -5,7 +5,19 @@ export type CalendarEntry = {
   time: string;
   category: string;
   notes: string;
+  staff?: string;
+  endDate?: string;
+  endTime?: string;
 };
+export function calendarEntryOnDay(entry: CalendarEntry, day: string): boolean {
+  if (entry.category !== "Staff Shift") return entry.date === day;
+  const end = entry.endDate || entry.date;
+  return (
+    entry.date <= day &&
+    end >= day &&
+    !(end === day && entry.endTime === "00:00" && end !== entry.date)
+  );
+}
 export type SecurityTemplate = {
   id: string;
   title: string;
@@ -14,12 +26,96 @@ export type SecurityTemplate = {
     key: string;
     label: string;
     multiline?: boolean;
-    type?: "date" | "time" | "checkbox" | "select" | "multiselect";
+    type?:
+      | "date"
+      | "time"
+      | "datetime-local"
+      | "checkbox"
+      | "select"
+      | "multiselect";
     options?: string[];
   }[];
   pdfUrl?: string;
 };
 export const securityTemplates: SecurityTemplate[] = [
+  {
+    id: "unidentified-offender",
+    title: "Security: Unidentified Offender Report",
+    description:
+      "Observed incident, identifying description, and a tall 3 × 5 inch photo.",
+    pdfUrl: "/ougm/forms/unidentified-offender-fillable.pdf",
+    fields: [
+      { key: "dateFiled", label: "Date Filed", type: "date" },
+      { key: "staff", label: "Reporting Staff" },
+      { key: "incidentDate", label: "Incident Date", type: "date" },
+      { key: "incidentTime", label: "Incident Time", type: "time" },
+      {
+        key: "location",
+        label: "Location(s)",
+        type: "multiselect",
+        options: [
+          "Foyer",
+          "Outside Entry Way",
+          "Day Room South",
+          "Day Room North",
+          "Tiny Home Village",
+          "Back Lot",
+          "Front Lot",
+          "Gazebo",
+          "Sitting Bench",
+          "Sleeping Bench",
+          "Receiving",
+          "Clothing Closet Entry",
+          "Clothing Closet",
+          "Front Office",
+          "Kitchen Front",
+          "Kitchen Back",
+          "Bathrooms Day Room",
+          "Bathrooms Staff",
+        ],
+      },
+      {
+        key: "description",
+        label: "Physical Description / Clothing / Distinguishing Features",
+        multiline: true,
+      },
+      {
+        key: "summary",
+        label: "Observed Incident / Behavior",
+        multiline: true,
+      },
+      { key: "action", label: "Actions Taken / Response", multiline: true },
+      {
+        key: "followup",
+        label: "Follow-Up / Identifying Information",
+        multiline: true,
+      },
+    ],
+  },
+  {
+    id: "spiritual-outcomes",
+    title: "Weekly Spiritual Outcomes Report",
+    description:
+      "Monday–Sunday activities, attendance, and calculated weekly totals.",
+    pdfUrl: "/ougm/forms/spiritual-outcomes-fillable.pdf",
+    fields: [],
+  },
+  {
+    id: "shelter-log",
+    title: "Security: Shelter Sign-In Log",
+    description:
+      "Male and female sign-in slots, dates, and quarantine names and locations.",
+    pdfUrl: "/ougm/forms/shelter-log-fillable.pdf",
+    fields: [],
+  },
+  {
+    id: "shift-notes",
+    title: "Security: Shift Notes / Security Log",
+    description:
+      "Shift beginning and end, with dated entries for time, initials, and notes.",
+    pdfUrl: "/ougm/forms/shift-notes-fillable.pdf",
+    fields: [],
+  },
   {
     id: "incident-report",
     title: "Security: Incident Report",
@@ -40,19 +136,19 @@ export const securityTemplates: SecurityTemplate[] = [
           "Day Room South",
           "Day Room North",
           "Tiny Home Village",
-          "back lot",
-          "front lot",
-          "gazebo",
-          "sitting bench",
-          "sleeping bench",
-          "recieving",
-          "clothing closet entry",
-          "clothing closet",
-          "front office",
-          "kitchen front",
-          "kitchen back",
-          "bathrooms day room",
-          "bathrooms staff",
+          "Back Lot",
+          "Front Lot",
+          "Gazebo",
+          "Sitting Bench",
+          "Sleeping Bench",
+          "Receiving",
+          "Clothing Closet Entry",
+          "Clothing Closet",
+          "Front Office",
+          "Kitchen Front",
+          "Kitchen Back",
+          "Bathrooms Day Room",
+          "Bathrooms Staff",
         ],
       },
       { key: "incidentDate", label: "Date of incident", type: "date" },
@@ -84,7 +180,7 @@ export const securityTemplates: SecurityTemplate[] = [
     title: "General security log",
     description: "General-purpose log for observations and staff handoffs.",
     fields: [
-      { key: "date", label: "Date and time" },
+      { key: "date", label: "Date and time", type: "datetime-local" },
       { key: "officer", label: "Staff member" },
       { key: "location", label: "Location" },
       { key: "summary", label: "Observations", multiline: true },

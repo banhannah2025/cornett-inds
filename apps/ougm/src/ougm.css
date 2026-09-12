@@ -240,14 +240,15 @@
     background: white;
     color: black;
     font:
-      12pt/1.5 Arial,
-      sans-serif;
+      12pt/1.5 "Times New Roman",
+      Times,
+      serif;
   }
   .ougm .print-copy h1 {
-    font-size: 20pt;
+    font-size: 12pt;
   }
   .ougm .print-copy h2 {
-    font-size: 16pt;
+    font-size: 12pt;
   }
   .ougm .print-copy p {
     color: black;
@@ -331,4 +332,80 @@
 .ougm .location-picker p {
   overflow-wrap: anywhere;
   font-size: 0.95rem;
+}
+
+.ougm .shift-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.ougm .shift-entry {
+  min-width: 0;
+  border: 1px solid #bccdd9;
+  border-radius: 0.6rem;
+  padding: 1rem;
+  margin-top: 0.75rem;
+}
+.ougm .shift-entry legend {
+  font-weight: 700;
+  padding: 0 0.4rem;
+}
+.ougm .shift-entry-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+@media (max-width: 600px) {
+  .ougm .shift-range,
+  .ougm .shift-entry-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ougm .shift-table-scroll {
+  overflow-x: auto;
+}
+.ougm .shift-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ougm .shift-table-scroll th,
+.ougm .shift-table-scroll td {
+  padding: 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid #cbd5e1;
+}
+.ougm .shift-table-scroll td button {
+  margin: 0.2rem;
+}
+.ougm .outcomes-scroll {
+  overflow-x: auto;
+}
+.ougm .outcomes-scroll table {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+.ougm .outcomes-scroll th,
+.ougm .outcomes-scroll td {
+  padding: 0.4rem;
+  border: 1px solid #cbd5e1;
+}
+.ougm .outcomes-scroll input[type="number"] {
+  min-width: 65px;
+}
+
+.ougm .offender-photo {
+  width: 216px;
+  height: 360px;
+  object-fit: contain;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+.ougm dialog input,
+.ougm dialog textarea,
+.ougm dialog select {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12pt;
+  line-height: 1.5;
 }
