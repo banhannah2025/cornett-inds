@@ -1,4 +1,6 @@
 "use client";
+import { ShelterLogEditor } from "./shelter-log-editor";
+import { createShelterLogPdf } from "./shelter-log";
 
 import { useEffect, useRef, useState } from "react";
 import { createIncidentReportPdf } from "./incident-report";
@@ -327,7 +329,11 @@ export function OugmWorkspace({
     dialog.current?.close();
   }
   async function printReport() {
-    if (template?.id !== "incident-report" && template?.id !== "shift-notes") {
+    if (
+      template?.id !== "incident-report" &&
+      template?.id !== "shift-notes" &&
+      template?.id !== "shelter-log"
+    ) {
       window.print();
       return;
     }
@@ -337,9 +343,11 @@ export function OugmWorkspace({
     setPrintUrl("");
     try {
       const bytes =
-        template.id === "shift-notes"
-          ? await createShiftNotesPdf(values)
-          : await createIncidentReportPdf(values);
+        template.id === "shelter-log"
+          ? await createShelterLogPdf(values)
+          : template.id === "shift-notes"
+            ? await createShiftNotesPdf(values)
+            : await createIncidentReportPdf(values);
       if (epoch !== printEpoch.current) return;
       setPrintUrl(
         URL.createObjectURL(
@@ -764,7 +772,13 @@ export function OugmWorkspace({
             autoComplete="off"
             onSubmit={(e) => e.preventDefault()}
           >
-            {template.id === "shift-notes" ? (
+            {template.id === "shelter-log" ? (
+              <ShelterLogEditor
+                values={values}
+                onChange={setValues}
+                Dictation={Dictate}
+              />
+            ) : template.id === "shift-notes" ? (
               <ShiftNotesEditor
                 values={values}
                 onChange={setValues}
@@ -901,7 +915,8 @@ export function OugmWorkspace({
       )}
       {template &&
         template.id !== "incident-report" &&
-        template.id !== "shift-notes" && (
+        template.id !== "shift-notes" &&
+        template.id !== "shelter-log" && (
           <section className="print-copy">
             <h1>Olympia Union Gospel Mission</h1>
             <h2>{template.title}</h2>

@@ -21,6 +21,14 @@ export type SecurityTemplate = {
 };
 export const securityTemplates: SecurityTemplate[] = [
   {
+    id: "shelter-log",
+    title: "Security: Shelter Sign-In Log",
+    description:
+      "Male and female sign-in slots, dates, and quarantine names and locations.",
+    pdfUrl: "/ougm/forms/shelter-log-fillable.pdf",
+    fields: [],
+  },
+  {
     id: "shift-notes",
     title: "Security: Shift Notes / Security Log",
     description:
