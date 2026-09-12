@@ -21,6 +21,14 @@ export type SecurityTemplate = {
 };
 export const securityTemplates: SecurityTemplate[] = [
   {
+    id: "shift-notes",
+    title: "Security: Shift Notes / Security Log",
+    description:
+      "Shift beginning and end, with dated entries for time, initials, and notes.",
+    pdfUrl: "/ougm/forms/shift-notes-fillable.pdf",
+    fields: [],
+  },
+  {
     id: "incident-report",
     title: "Security: Incident Report",
     description:

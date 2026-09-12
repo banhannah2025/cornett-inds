@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createIncidentReportPdf } from "./incident-report";
+import { createShiftNotesPdf } from "./shift-notes";
+import { ShiftNotesEditor } from "./shift-notes-editor";
 import {
   CalendarDays,
   Shield,
@@ -325,7 +327,7 @@ export function OugmWorkspace({
     dialog.current?.close();
   }
   async function printReport() {
-    if (template?.id !== "incident-report") {
+    if (template?.id !== "incident-report" && template?.id !== "shift-notes") {
       window.print();
       return;
     }
@@ -334,7 +336,10 @@ export function OugmWorkspace({
     setPrintError("");
     setPrintUrl("");
     try {
-      const bytes = await createIncidentReportPdf(values);
+      const bytes =
+        template.id === "shift-notes"
+          ? await createShiftNotesPdf(values)
+          : await createIncidentReportPdf(values);
       if (epoch !== printEpoch.current) return;
       setPrintUrl(
         URL.createObjectURL(
@@ -759,82 +764,99 @@ export function OugmWorkspace({
             autoComplete="off"
             onSubmit={(e) => e.preventDefault()}
           >
-            {template.fields.map((f) => (
-              <div className="stack" key={f.key}>
-                {f.type === "multiselect" ? (
-                  <MultipleLocationPicker
-                    label={f.label}
-                    options={f.options || []}
-                    value={values[f.key] || ""}
-                    onChange={(value) =>
-                      setValues((v) => ({ ...v, [f.key]: value }))
-                    }
-                  />
-                ) : (
-                  <label>
-                    {f.label}
-                    {f.type === "checkbox" ? (
-                      <input
-                        type="checkbox"
-                        checked={values[f.key] === "true"}
-                        onChange={(e) =>
+            {template.id === "shift-notes" ? (
+              <ShiftNotesEditor
+                values={values}
+                onChange={setValues}
+                Dictation={Dictate}
+              />
+            ) : (
+              template.fields.map((f) => (
+                <div className="stack" key={f.key}>
+                  {f.type === "multiselect" ? (
+                    <MultipleLocationPicker
+                      label={f.label}
+                      options={f.options || []}
+                      value={values[f.key] || ""}
+                      onChange={(value) =>
+                        setValues((v) => ({ ...v, [f.key]: value }))
+                      }
+                    />
+                  ) : (
+                    <label>
+                      {f.label}
+                      {f.type === "checkbox" ? (
+                        <input
+                          type="checkbox"
+                          checked={values[f.key] === "true"}
+                          onChange={(e) =>
+                            setValues((v) => ({
+                              ...v,
+                              [f.key]: String(e.target.checked),
+                            }))
+                          }
+                        />
+                      ) : f.type === "select" ? (
+                        <select
+                          value={values[f.key] || ""}
+                          onChange={(e) =>
+                            setValues((v) => ({
+                              ...v,
+                              [f.key]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">Not specified</option>
+                          {f.options?.map((option) => (
+                            <option key={option}>{option}</option>
+                          ))}
+                        </select>
+                      ) : f.multiline ? (
+                        <textarea
+                          rows={f.key === "summary" ? 10 : 4}
+                          maxLength={20000}
+                          value={values[f.key] || ""}
+                          onChange={(e) =>
+                            setValues((v) => ({
+                              ...v,
+                              [f.key]: e.target.value,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <input
+                          type={
+                            f.type === "date" || f.type === "time"
+                              ? f.type
+                              : "text"
+                          }
+                          maxLength={20000}
+                          value={values[f.key] || ""}
+                          onChange={(e) =>
+                            setValues((v) => ({
+                              ...v,
+                              [f.key]: e.target.value,
+                            }))
+                          }
+                        />
+                      )}
+                    </label>
+                  )}
+                  {!f.type && (
+                    <div className="screen-only">
+                      <Dictate
+                        onText={(t) =>
                           setValues((v) => ({
                             ...v,
-                            [f.key]: String(e.target.checked),
+                            [f.key]: `${v[f.key] || ""} ${t}`.trim(),
                           }))
                         }
                       />
-                    ) : f.type === "select" ? (
-                      <select
-                        value={values[f.key] || ""}
-                        onChange={(e) =>
-                          setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                        }
-                      >
-                        <option value="">Not specified</option>
-                        {f.options?.map((option) => (
-                          <option key={option}>{option}</option>
-                        ))}
-                      </select>
-                    ) : f.multiline ? (
-                      <textarea
-                        rows={f.key === "summary" ? 10 : 4}
-                        maxLength={20000}
-                        value={values[f.key] || ""}
-                        onChange={(e) =>
-                          setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                        }
-                      />
-                    ) : (
-                      <input
-                        type={
-                          f.type === "date" || f.type === "time"
-                            ? f.type
-                            : "text"
-                        }
-                        maxLength={20000}
-                        value={values[f.key] || ""}
-                        onChange={(e) =>
-                          setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                        }
-                      />
-                    )}
-                  </label>
-                )}
-                {!f.type && (
-                  <div className="screen-only">
-                    <Dictate
-                      onText={(t) =>
-                        setValues((v) => ({
-                          ...v,
-                          [f.key]: `${v[f.key] || ""} ${t}`.trim(),
-                        }))
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
             <div className="screen-only">
               <button type="button" disabled={printBusy} onClick={printReport}>
                 <Printer size={18} />
@@ -853,7 +875,7 @@ export function OugmWorkspace({
                     </a>
                   </p>
                   <iframe
-                    title="Printable incident report"
+                    title="Printable security form"
                     ref={printFrame}
                     src={printUrl}
                     className="incident-preview"
@@ -877,18 +899,20 @@ export function OugmWorkspace({
           </form>
         </dialog>
       )}
-      {template && template.id !== "incident-report" && (
-        <section className="print-copy">
-          <h1>Olympia Union Gospel Mission</h1>
-          <h2>{template.title}</h2>
-          {template.fields.map((f) => (
-            <div key={f.key}>
-              <strong>{f.label}</strong>
-              <p>{values[f.key] || " \u00a0"}</p>
-            </div>
-          ))}
-        </section>
-      )}
+      {template &&
+        template.id !== "incident-report" &&
+        template.id !== "shift-notes" && (
+          <section className="print-copy">
+            <h1>Olympia Union Gospel Mission</h1>
+            <h2>{template.title}</h2>
+            {template.fields.map((f) => (
+              <div key={f.key}>
+                <strong>{f.label}</strong>
+                <p>{values[f.key] || " \u00a0"}</p>
+              </div>
+            ))}
+          </section>
+        )}
     </main>
   );
 }
