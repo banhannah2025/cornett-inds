@@ -10,14 +10,79 @@ export type SecurityTemplate = {
   id: string;
   title: string;
   description: string;
-  fields: { key: string; label: string; multiline?: boolean }[];
+  fields: {
+    key: string;
+    label: string;
+    multiline?: boolean;
+    type?: "date" | "time" | "checkbox" | "select" | "multiselect";
+    options?: string[];
+  }[];
+  pdfUrl?: string;
 };
 export const securityTemplates: SecurityTemplate[] = [
   {
+    id: "incident-report",
+    title: "Security: Incident Report",
+    description:
+      "Mission incident report for staff, guests, outcomes, and a detailed summary.",
+    pdfUrl: "/ougm/forms/incident-report-fillable.pdf",
+    fields: [
+      { key: "dateFiled", label: "Date filed", type: "date" },
+      { key: "receivedBy", label: "Received by (initial)" },
+      { key: "staff", label: "Staff / volunteers involved", multiline: true },
+      {
+        key: "location",
+        label: "Location(s) of incident",
+        type: "multiselect",
+        options: [
+          "Foyer",
+          "Outside Entry Way",
+          "Day Room South",
+          "Day Room North",
+          "Tiny Home Village",
+          "back lot",
+          "front lot",
+          "gazebo",
+          "sitting bench",
+          "sleeping bench",
+          "recieving",
+          "clothing closet entry",
+          "clothing closet",
+          "front office",
+          "kitchen front",
+          "kitchen back",
+          "bathrooms day room",
+          "bathrooms staff",
+        ],
+      },
+      { key: "incidentDate", label: "Date of incident", type: "date" },
+      { key: "incidentTime", label: "Time of incident", type: "time" },
+      { key: "guests", label: "Guests / visitors involved", multiline: true },
+      { key: "outcomes", label: "Outcomes of incident", multiline: true },
+      ...["OPD", "CRU", "OFD", "EMT", "COR"].map((key) => ({
+        key,
+        label: key,
+        type: "checkbox" as const,
+      })),
+      { key: "ban", label: "Banned until", type: "date" },
+      { key: "trespass", label: "Trespassed until", type: "date" },
+      {
+        key: "override",
+        label: "Override?",
+        type: "select",
+        options: ["Yes", "No"],
+      },
+      {
+        key: "summary",
+        label: "Detailed summary of incident",
+        multiline: true,
+      },
+    ],
+  },
+  {
     id: "general",
     title: "General security log",
-    description:
-      "Starter log. Official Mission forms will be added from the supplied PDFs.",
+    description: "General-purpose log for observations and staff handoffs.",
     fields: [
       { key: "date", label: "Date and time" },
       { key: "officer", label: "Staff member" },
