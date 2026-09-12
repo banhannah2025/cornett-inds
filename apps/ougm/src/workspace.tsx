@@ -169,6 +169,59 @@ function Dictate({ onText }: { onText: (text: string) => void }) {
   );
 }
 
+function MultipleLocationPicker({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const selected = value ? value.split("\n") : [];
+  function toggle(option: string, checked: boolean) {
+    const next = new Set(selected);
+    if (checked) next.add(option);
+    else next.delete(option);
+    onChange(options.filter((option) => next.has(option)).join("\n"));
+  }
+  return (
+    <fieldset className="location-picker">
+      <legend>{label}</legend>
+      <details>
+        <summary>
+          {selected.length
+            ? `${selected.length} location${selected.length === 1 ? "" : "s"} selected`
+            : "Choose locations"}
+        </summary>
+        <div className="location-options">
+          {options.map((option) => (
+            <label key={option}>
+              <input
+                type="checkbox"
+                checked={selected.includes(option)}
+                onChange={(e) => toggle(option, e.target.checked)}
+              />
+              <span>{option}</span>
+            </label>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="quiet"
+          disabled={!selected.length}
+          onClick={() => onChange("")}
+        >
+          Clear locations
+        </button>
+      </details>
+      {selected.length > 0 && <p>{selected.join(", ")}</p>}
+    </fieldset>
+  );
+}
+
 export function OugmWorkspace({
   userId,
   isAdmin,
@@ -708,53 +761,66 @@ export function OugmWorkspace({
           >
             {template.fields.map((f) => (
               <div className="stack" key={f.key}>
-                <label>
-                  {f.label}
-                  {f.type === "checkbox" ? (
-                    <input
-                      type="checkbox"
-                      checked={values[f.key] === "true"}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          [f.key]: String(e.target.checked),
-                        }))
-                      }
-                    />
-                  ) : f.type === "select" ? (
-                    <select
-                      value={values[f.key] || ""}
-                      onChange={(e) =>
-                        setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                      }
-                    >
-                      <option value="">Not specified</option>
-                      {f.options?.map((option) => (
-                        <option key={option}>{option}</option>
-                      ))}
-                    </select>
-                  ) : f.multiline ? (
-                    <textarea
-                      rows={f.key === "summary" ? 10 : 4}
-                      maxLength={20000}
-                      value={values[f.key] || ""}
-                      onChange={(e) =>
-                        setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <input
-                      type={
-                        f.type === "date" || f.type === "time" ? f.type : "text"
-                      }
-                      maxLength={20000}
-                      value={values[f.key] || ""}
-                      onChange={(e) =>
-                        setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                      }
-                    />
-                  )}
-                </label>
+                {f.type === "multiselect" ? (
+                  <MultipleLocationPicker
+                    label={f.label}
+                    options={f.options || []}
+                    value={values[f.key] || ""}
+                    onChange={(value) =>
+                      setValues((v) => ({ ...v, [f.key]: value }))
+                    }
+                  />
+                ) : (
+                  <label>
+                    {f.label}
+                    {f.type === "checkbox" ? (
+                      <input
+                        type="checkbox"
+                        checked={values[f.key] === "true"}
+                        onChange={(e) =>
+                          setValues((v) => ({
+                            ...v,
+                            [f.key]: String(e.target.checked),
+                          }))
+                        }
+                      />
+                    ) : f.type === "select" ? (
+                      <select
+                        value={values[f.key] || ""}
+                        onChange={(e) =>
+                          setValues((v) => ({ ...v, [f.key]: e.target.value }))
+                        }
+                      >
+                        <option value="">Not specified</option>
+                        {f.options?.map((option) => (
+                          <option key={option}>{option}</option>
+                        ))}
+                      </select>
+                    ) : f.multiline ? (
+                      <textarea
+                        rows={f.key === "summary" ? 10 : 4}
+                        maxLength={20000}
+                        value={values[f.key] || ""}
+                        onChange={(e) =>
+                          setValues((v) => ({ ...v, [f.key]: e.target.value }))
+                        }
+                      />
+                    ) : (
+                      <input
+                        type={
+                          f.type === "date" || f.type === "time"
+                            ? f.type
+                            : "text"
+                        }
+                        maxLength={20000}
+                        value={values[f.key] || ""}
+                        onChange={(e) =>
+                          setValues((v) => ({ ...v, [f.key]: e.target.value }))
+                        }
+                      />
+                    )}
+                  </label>
+                )}
                 {!f.type && (
                   <div className="screen-only">
                     <Dictate

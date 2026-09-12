@@ -14,7 +14,7 @@ export type SecurityTemplate = {
     key: string;
     label: string;
     multiline?: boolean;
-    type?: "date" | "time" | "checkbox" | "select";
+    type?: "date" | "time" | "checkbox" | "select" | "multiselect";
     options?: string[];
   }[];
   pdfUrl?: string;
@@ -30,7 +30,31 @@ export const securityTemplates: SecurityTemplate[] = [
       { key: "dateFiled", label: "Date filed", type: "date" },
       { key: "receivedBy", label: "Received by (initial)" },
       { key: "staff", label: "Staff / volunteers involved", multiline: true },
-      { key: "location", label: "Location(s) of incident", multiline: true },
+      {
+        key: "location",
+        label: "Location(s) of incident",
+        type: "multiselect",
+        options: [
+          "Foyer",
+          "Outside Entry Way",
+          "Day Room South",
+          "Day Room North",
+          "Tiny Home Village",
+          "back lot",
+          "front lot",
+          "gazebo",
+          "sitting bench",
+          "sleeping bench",
+          "recieving",
+          "clothing closet entry",
+          "clothing closet",
+          "front office",
+          "kitchen front",
+          "kitchen back",
+          "bathrooms day room",
+          "bathrooms staff",
+        ],
+      },
       { key: "incidentDate", label: "Date of incident", type: "date" },
       { key: "incidentTime", label: "Time of incident", type: "time" },
       { key: "guests", label: "Guests / visitors involved", multiline: true },
