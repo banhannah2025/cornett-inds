@@ -409,3 +409,21 @@
   font-size: 12pt;
   line-height: 1.5;
 }
+
+
+.ougm .medical-inside-meta,
+.ougm .medical-inside-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.ougm .medical-inside-editor textarea {
+  min-height: 7rem;
+  white-space: pre-wrap;
+}
+@media (max-width: 760px) {
+  .ougm .medical-inside-meta,
+  .ougm .medical-inside-columns {
+    grid-template-columns: 1fr;
+  }
+}

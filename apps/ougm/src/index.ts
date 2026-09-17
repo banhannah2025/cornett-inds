@@ -93,6 +93,14 @@ export const securityTemplates: SecurityTemplate[] = [
     ],
   },
   {
+    id: "medical-inside-list",
+    title: "Security: Medical & Inside List",
+    description:
+      "Authorized medical, worker, behavior-contingent, weather-dependent, and staff-pick inside access list.",
+    pdfUrl: "/ougm/forms/medical-inside-list.pdf",
+    fields: [],
+  },
+  {
     id: "spiritual-outcomes",
     title: "Weekly Spiritual Outcomes Report",
     description:
