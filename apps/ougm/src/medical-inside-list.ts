@@ -51,7 +51,7 @@ export async function createMedicalInsideListPdf(
     rgb(68 / 255, 68 / 255, 68 / 255),
   );
 
-  const meta = [
+  const meta: [string, string][] = [
     ["Effective Date", formatPrintDate(values.effectiveDate || "")],
     ["Updated By", values.updatedBy || ""],
     ["Authorized By", values.authorizedBy || ""],
@@ -66,14 +66,14 @@ export async function createMedicalInsideListPdf(
   page.drawRectangle({ x: 42, y: 636, width: 528, height: 28, color: PALE_GOLD, borderColor: GOLD, borderWidth: 1 });
   centered(page, bold, "DO NOT ADD, REMOVE, OR MOVE NAMES EXCEPT AS DIRECTED BY STEVE OR DAWN.", 9.5, 646);
 
-  const xPositions = [42, 218, 394, 570];
+  const xPositions = [42, 218, 394, 570] as const;
   const tableTop = 625;
   const headerHeight = 28;
   const rowHeight = 22;
   const rows = 15;
   page.drawRectangle({ x: 42, y: tableTop - headerHeight, width: 528, height: headerHeight, color: BLUE, borderColor: BLACK, borderWidth: 1 });
   ["MEDICAL", "WORKERS", "STAFF PICKS"].forEach((title, index) => {
-    const x = xPositions[index];
+    const x = xPositions[index] ?? 42;
     const width = 176;
     const textWidth = bold.widthOfTextAtSize(title, 11);
     page.drawText(title, { x: x + (width - textWidth) / 2, y: tableTop - 19, size: 11, font: bold, color: rgb(1, 1, 1) });
@@ -103,7 +103,9 @@ export async function createMedicalInsideListPdf(
       const size = fit(usedFont, text, 160, isSection ? 9.5 : 12);
       const width = usedFont.widthOfTextAtSize(text, size);
       page.drawText(text, {
-        x: isSection ? 394 + (176 - width) / 2 : xPositions[column] + 7,
+        x: isSection
+          ? 394 + (176 - width) / 2
+          : (xPositions[column] ?? 42) + 7,
         y: bottom + (rowHeight - size) / 2 + 2,
         size,
         font: usedFont,
