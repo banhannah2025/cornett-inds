@@ -6,14 +6,11 @@ export const initialMedicalInsideValues: Record<string, string> = {
   effectiveDate: "",
   updatedBy: "",
   authorizedBy: "",
-  medical:
-    "Israel Garcia\nRachel Patterson (Per Dawn)\nRaymond Knowl\nScotty Nohl\nRachel Patterson",
-  workers:
-    "Jason Bratcher\nBrock Pelletier\nBrayden Mackay\nKelvin Hughes\nAntonio Matthews\nJonathan Gerrard",
-  behaviorContingent: "Adam Swan\nNadine Barrick\nDena Brown",
-  weatherDependent: "Terry Kandoll",
-  staffPicks:
-    "Diane Alceus\nTim Logie\nJosh Bailey (RC, MD)\nRandy Mills\nJennifer Hanson\nJesse Littlehorse\nSonya Littlehorse",
+  medical: "",
+  workers: "",
+  behaviorContingent: "",
+  weatherDependent: "",
+  staffPicks: "",
 };
 
 export function MedicalInsideListEditor({
