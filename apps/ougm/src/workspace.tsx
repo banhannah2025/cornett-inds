@@ -11,6 +11,11 @@ import { createSpiritualOutcomesPdf } from "./spiritual-outcomes";
 import { StaffShifts } from "./staff-shifts";
 import { ShelterLogEditor } from "./shelter-log-editor";
 import { createShelterLogPdf } from "./shelter-log";
+import {
+  MedicalInsideListEditor,
+  initialMedicalInsideValues,
+} from "./medical-inside-list-editor";
+import { createMedicalInsideListPdf } from "./medical-inside-list";
 
 import { useEffect, useRef, useState } from "react";
 import { createIncidentReportPdf } from "./incident-report";
@@ -361,7 +366,8 @@ export function OugmWorkspace({
       template?.id !== "shift-notes" &&
       template?.id !== "shelter-log" &&
       template?.id !== "spiritual-outcomes" &&
-      template?.id !== "unidentified-offender"
+      template?.id !== "unidentified-offender" &&
+      template?.id !== "medical-inside-list"
     ) {
       window.print();
       return;
@@ -374,6 +380,8 @@ export function OugmWorkspace({
       const bytes =
         template.id === "unidentified-offender"
           ? await createUnidentifiedOffenderPdf(values)
+          : template.id === "medical-inside-list"
+            ? await createMedicalInsideListPdf(values)
           : template.id === "spiritual-outcomes"
             ? await createSpiritualOutcomesPdf(values)
             : template.id === "shelter-log"
@@ -731,7 +739,11 @@ export function OugmWorkspace({
                     setSavedReport(null);
                     setReportStatus("");
                     setReportError("");
-                    setValues({});
+                    setValues(
+                      t.id === "medical-inside-list"
+                        ? { ...initialMedicalInsideValues }
+                        : {},
+                    );
                     setForm(t.id);
                   }}
                 >
@@ -739,7 +751,9 @@ export function OugmWorkspace({
                 </button>
                 {t.pdfUrl && (
                   <a href={t.pdfUrl} target="_blank" rel="noopener noreferrer">
-                    Blank fillable / printable PDF
+                    {t.id === "medical-inside-list"
+                      ? "Current printable PDF"
+                      : "Blank fillable / printable PDF"}
                   </a>
                 )}
               </article>
@@ -898,6 +912,11 @@ export function OugmWorkspace({
                 values={values}
                 onChange={setValues}
                 Dictation={Dictate}
+              />
+            ) : template.id === "medical-inside-list" ? (
+              <MedicalInsideListEditor
+                values={values}
+                onChange={setValues}
               />
             ) : template.id === "shelter-log" ? (
               <ShelterLogEditor
@@ -1061,7 +1080,8 @@ export function OugmWorkspace({
         template.id !== "shift-notes" &&
         template.id !== "shelter-log" &&
         template.id !== "spiritual-outcomes" &&
-        template.id !== "unidentified-offender" && (
+        template.id !== "unidentified-offender" &&
+        template.id !== "medical-inside-list" && (
           <section className="print-copy">
             <h1>Olympia Union Gospel Mission</h1>
             <h2>{template.title}</h2>
