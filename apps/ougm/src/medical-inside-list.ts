@@ -37,7 +37,7 @@ export async function createMedicalInsideListPdf(
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   const font = await pdf.embedFont(await typeface.arrayBuffer(), { subset: true });
-  const bold = await pdf.embedFont(await typeface.arrayBuffer(), { subset: true });
+  const bold = font;
   const page = pdf.addPage([612, 792]);
 
   centered(page, bold, "OLYMPIA UNION GOSPEL MISSION", 12, 760, BLUE);
