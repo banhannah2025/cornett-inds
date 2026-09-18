@@ -29,8 +29,14 @@ export function BanLogEditor({
             {Array.from({ length: 22 }, (_, index) => {
               const row = (side - 1) * 22 + index + 1;
               const prefix = `ban.${row}`;
+              const endDate = values[`${prefix}.endDate`] || "";
+              const trespass = values[`${prefix}.trespass`] || "";
+              const priority = endDate === "TFN" || trespass === "Yes";
               return (
-                <fieldset className="shift-entry stack" key={row}>
+                <fieldset
+                  className={`shift-entry stack${priority ? " ban-priority" : ""}`}
+                  key={row}
+                >
                   <legend>Ban / trespass row {row}</legend>
                   <div className="ban-log-row">
                     <label>
@@ -54,20 +60,39 @@ export function BanLogEditor({
                       />
                     </label>
                     <label>
-                      End Date
-                      <input
-                        type="date"
-                        min={values[`${prefix}.startDate`] || undefined}
-                        value={values[`${prefix}.endDate`] || ""}
+                      End
+                      <select
+                        className={endDate === "TFN" ? "ban-alert" : undefined}
+                        value={endDate === "TFN" ? "TFN" : "date"}
                         onChange={(event) =>
-                          change(`${prefix}.endDate`, event.target.value)
+                          change(
+                            `${prefix}.endDate`,
+                            event.target.value === "TFN" ? "TFN" : "",
+                          )
                         }
-                      />
+                      >
+                        <option value="date">Use End Date</option>
+                        <option value="TFN">TFN - Till Further Notice</option>
+                      </select>
                     </label>
+                    {endDate !== "TFN" && (
+                      <label>
+                        End Date
+                        <input
+                          type="date"
+                          min={values[`${prefix}.startDate`] || undefined}
+                          value={endDate}
+                          onChange={(event) =>
+                            change(`${prefix}.endDate`, event.target.value)
+                          }
+                        />
+                      </label>
+                    )}
                     <label>
                       Trespass?
                       <select
-                        value={values[`${prefix}.trespass`] || ""}
+                        className={trespass === "Yes" ? "ban-alert" : undefined}
+                        value={trespass}
                         onChange={(event) =>
                           change(`${prefix}.trespass`, event.target.value)
                         }

@@ -431,7 +431,7 @@
 
 .ougm .ban-log-row {
   display: grid;
-  grid-template-columns: minmax(12rem, 2fr) repeat(3, minmax(8rem, 1fr));
+  grid-template-columns: minmax(12rem, 2fr) repeat(4, minmax(8rem, 1fr));
   gap: 1rem;
 }
 .ougm .ban-log-editor summary {
@@ -443,4 +443,14 @@
   .ougm .ban-log-row {
     grid-template-columns: 1fr;
   }
+}
+
+.ougm .ban-priority {
+  border: 2px solid #a16207;
+  background: #fffbea;
+}
+.ougm .ban-alert {
+  background: #fde68a;
+  border-color: #a16207;
+  font-weight: 700;
 }
