@@ -3,6 +3,7 @@ import {
   drawPrintLine,
   wrapPrint,
 } from "./pdf-layout";
+import type { PDFPage } from "pdf-lib";
 
 const formatBanDate = (value: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -34,6 +35,27 @@ export async function createBanLogPdf(
   pdf.registerFontkit(fontkit);
   const font = await pdf.embedFont(await typeface.arrayBuffer(), { subset: true });
 
+  function fittedLine(
+    page: PDFPage,
+    text: string,
+    x: number,
+    top: number,
+    width: number,
+    band = 20,
+  ) {
+    if (!text) return;
+    let size = 12;
+    while (size > 8 && font.widthOfTextAtSize(text, size) > width) size -= 0.25;
+    const ascent = font.heightAtSize(size, { descender: false });
+    const full = font.heightAtSize(size, { descender: true });
+    page.drawText(text, {
+      x,
+      y: page.getHeight() - top - (band - full) / 2 - ascent,
+      font,
+      size,
+    });
+  }
+
   for (const index of [0, 1]) {
     const [page] = await pdf.copyPages(artwork, [index]);
     const contents = page!.node.Contents();
@@ -51,7 +73,7 @@ export async function createBanLogPdf(
     top: number,
     width: number,
   ) {
-    const lines = wrapPrint(values[key] || "", font, width - 8);
+    const lines = wrapPrint(values[key] || "", font, width - 18);
     if (lines[0])
       drawPrintLine(
         pdf.getPages()[pageIndex]!,
@@ -84,9 +106,9 @@ export async function createBanLogPdf(
         opacity: 0.58,
       });
     if (start)
-      drawPrintLine(page, font, start, 263, top, 20);
+      fittedLine(page, start, 262, top, 50, 20);
     if (end)
-      drawPrintLine(page, font, end, 319, top, 20);
+      fittedLine(page, end, 318, top, 47, 20);
     oneLine(pageIndex, `${prefix}.reason`, `Row ${number} reason / notes`, 371, top, 164);
     const trespass = values[`${prefix}.trespass`] || "";
     if (trespass === "Yes")
@@ -99,12 +121,12 @@ export async function createBanLogPdf(
         opacity: 0.58,
       });
     if (trespass)
-      drawPrintLine(
+      fittedLine(
         page,
-        font,
         trespass === "Yes" ? "Y" : trespass === "No" ? "N" : trespass,
         547,
         top,
+        20,
         20,
       );
   }
