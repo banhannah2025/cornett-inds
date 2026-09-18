@@ -427,3 +427,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.ougm .ban-log-row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) repeat(3, minmax(8rem, 1fr));
+  gap: 1rem;
+}
+.ougm .ban-log-editor summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.5rem 0;
+}
+@media (max-width: 760px) {
+  .ougm .ban-log-row {
+    grid-template-columns: 1fr;
+  }
+}

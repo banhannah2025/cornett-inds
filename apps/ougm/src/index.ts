@@ -93,6 +93,14 @@ export const securityTemplates: SecurityTemplate[] = [
     ],
   },
   {
+    id: "ban-log",
+    title: "Security: Ban & Trespass List",
+    description:
+      "Two-sided list for names, ban dates, reason/notes, and trespass status.",
+    pdfUrl: "/ougm/forms/ban-log-fillable.pdf",
+    fields: [],
+  },
+  {
     id: "medical-inside-list",
     title: "Security: Medical & Inside List",
     description:

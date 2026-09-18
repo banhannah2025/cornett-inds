@@ -16,6 +16,8 @@ import {
   initialMedicalInsideValues,
 } from "./medical-inside-list-editor";
 import { createMedicalInsideListPdf } from "./medical-inside-list";
+import { BanLogEditor } from "./ban-log-editor";
+import { createBanLogPdf } from "./ban-log";
 
 import { useEffect, useRef, useState } from "react";
 import { createIncidentReportPdf } from "./incident-report";
@@ -367,7 +369,8 @@ export function OugmWorkspace({
       template?.id !== "shelter-log" &&
       template?.id !== "spiritual-outcomes" &&
       template?.id !== "unidentified-offender" &&
-      template?.id !== "medical-inside-list"
+      template?.id !== "medical-inside-list" &&
+      template?.id !== "ban-log"
     ) {
       window.print();
       return;
@@ -382,6 +385,8 @@ export function OugmWorkspace({
           ? await createUnidentifiedOffenderPdf(values)
           : template.id === "medical-inside-list"
             ? await createMedicalInsideListPdf(values)
+            : template.id === "ban-log"
+              ? await createBanLogPdf(values)
           : template.id === "spiritual-outcomes"
             ? await createSpiritualOutcomesPdf(values)
             : template.id === "shelter-log"
@@ -918,6 +923,12 @@ export function OugmWorkspace({
                 values={values}
                 onChange={setValues}
               />
+            ) : template.id === "ban-log" ? (
+              <BanLogEditor
+                values={values}
+                onChange={setValues}
+                Dictation={Dictate}
+              />
             ) : template.id === "shelter-log" ? (
               <ShelterLogEditor
                 values={values}
@@ -1081,7 +1092,8 @@ export function OugmWorkspace({
         template.id !== "shelter-log" &&
         template.id !== "spiritual-outcomes" &&
         template.id !== "unidentified-offender" &&
-        template.id !== "medical-inside-list" && (
+        template.id !== "medical-inside-list" &&
+        template.id !== "ban-log" && (
           <section className="print-copy">
             <h1>Olympia Union Gospel Mission</h1>
             <h2>{template.title}</h2>
