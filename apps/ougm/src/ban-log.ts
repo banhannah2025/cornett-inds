@@ -14,7 +14,7 @@ export async function createBanLogPdf(
   load: typeof fetch = fetch,
 ): Promise<Uint8Array> {
   const [
-    { PDFArray, PDFDocument, PDFName },
+    { PDFArray, PDFDocument, PDFName, rgb },
     { default: fontkit },
     template,
     typeface,
@@ -73,15 +73,34 @@ export async function createBanLogPdf(
     oneLine(pageIndex, `${prefix}.name`, `Row ${number} name`, 44, top, 211);
     const start = formatBanDate(values[`${prefix}.startDate`] || "");
     const end = formatBanDate(values[`${prefix}.endDate`] || "");
+    const page = pdf.getPages()[pageIndex]!;
+    if (end === "TFN")
+      page.drawRectangle({
+        x: 315.5,
+        y: page.getHeight() - top - 19,
+        width: 51,
+        height: 19,
+        color: rgb(1, 0.88, 0.2),
+        opacity: 0.58,
+      });
     if (start)
-      drawPrintLine(pdf.getPages()[pageIndex]!, font, start, 263, top, 20);
+      drawPrintLine(page, font, start, 263, top, 20);
     if (end)
-      drawPrintLine(pdf.getPages()[pageIndex]!, font, end, 319, top, 20);
+      drawPrintLine(page, font, end, 319, top, 20);
     oneLine(pageIndex, `${prefix}.reason`, `Row ${number} reason / notes`, 371, top, 164);
     const trespass = values[`${prefix}.trespass`] || "";
+    if (trespass === "Yes")
+      page.drawRectangle({
+        x: 539.5,
+        y: page.getHeight() - top - 19,
+        width: 31,
+        height: 19,
+        color: rgb(1, 0.88, 0.2),
+        opacity: 0.58,
+      });
     if (trespass)
       drawPrintLine(
-        pdf.getPages()[pageIndex]!,
+        page,
         font,
         trespass === "Yes" ? "Y" : trespass === "No" ? "N" : trespass,
         547,
