@@ -1,4 +1,4 @@
-import { drawPrintLine, wrapPrint, addPrintContinuations } from "./pdf-layout";
+import { drawPrintLine, wrapPrint } from "./pdf-layout";
 
 export async function createIncidentReportPdf(
   values: Record<string, string>,
@@ -27,7 +27,7 @@ export async function createIncidentReportPdf(
   pdf.catalog.delete(PDFName.of("AcroForm"));
   for (const page of pdf.getPages()) page.node.delete(PDFName.of("Annots"));
   const first = pdf.getPages()[0]!;
-  const overflow: { label: string; lines: string[] }[] = [];
+  const overflow: string[] = [];
   function field(
     label: string,
     text: string,
@@ -39,23 +39,14 @@ export async function createIncidentReportPdf(
   ) {
     const lines = wrapPrint(text, font, width);
     const fits = lines.length <= rows;
-    const visible = lines.slice(0, fits ? rows : Math.max(0, rows - 1));
+    const visible = lines.slice(0, rows);
     visible.forEach((line, i) =>
       drawPrintLine(first, font, line, x, top + i * leading, leading),
     );
     if (!fits) {
-      drawPrintLine(
-        first,
-        font,
-        "More",
-        x,
-        top + (rows - 1) * leading,
-        leading,
+      overflow.push(
+        ...wrapPrint(lines.slice(visible.length).join("\n"), font, 517),
       );
-      overflow.push({
-        label,
-        lines: wrapPrint(lines.slice(visible.length).join("\n"), font, 520),
-      });
     }
   }
   const date = (value: string) =>
@@ -153,19 +144,23 @@ export async function createIncidentReportPdf(
     12,
     22.58,
   );
-  addPrintContinuations(
-    pdf,
-    font,
-    "Security: Incident Report - Continuation",
-    overflow,
-  );
-  pdf.getPages().forEach((page, i) =>
-    page.drawText(`Page ${i + 1} of ${pdf.getPageCount()}`, {
-      x: 510,
-      y: 20,
-      size: 12,
-      font,
-    }),
-  );
+  // Continuation sheets contain only entered text, with the same ruled
+  // writing bands as the original summary. No headings, labels, or footers.
+  const leading = 22.58;
+  const top = 44;
+  const rows = Math.floor((792 - top - 44) / leading);
+  for (let offset = 0; offset < overflow.length; offset += rows) {
+    const page = pdf.addPage([612, 792]);
+    for (let row = 0; row < rows; row++) {
+      const bandTop = top + row * leading;
+      page.drawLine({
+        start: { x: 46, y: 792 - bandTop - leading },
+        end: { x: 565, y: 792 - bandTop - leading },
+        thickness: 0.5,
+        color: rgb(0, 0, 0),
+      });
+      drawPrintLine(page, font, overflow[offset + row] || "", 47, bandTop, leading);
+    }
+  }
   return pdf.save();
 }
