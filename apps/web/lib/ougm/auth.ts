@@ -1,6 +1,9 @@
 import "server-only";
 import { currentUser } from "@clerk/nextjs/server";
 import { getAdminContext } from "@/lib/admin";
+// These administrators are scoped to the OUGM workspace only.
+const ougmAdministratorEmails = ["livesimplydiedaily@gmail.com"];
+
 export async function getOugmAccess() {
   const admin = await getAdminContext();
   if (admin.isAdmin) return { userId: admin.userId!, isAdmin: true };
@@ -9,6 +12,12 @@ export async function getOugmAccess() {
   const email = user?.emailAddresses.find(
     (e) => e.id === user.primaryEmailAddressId,
   );
+  const administrators = [
+    ...ougmAdministratorEmails,
+    ...(process.env.OUGM_ADMIN_EMAILS ?? "").split(","),
+  ]
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
   const allowed = (process.env.OUGM_STAFF_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
@@ -16,8 +25,12 @@ export async function getOugmAccess() {
   if (
     !user ||
     email?.verification?.status !== "verified" ||
-    !allowed.includes(email.emailAddress.toLowerCase())
+    (!allowed.includes(email.emailAddress.toLowerCase()) &&
+      !administrators.includes(email.emailAddress.toLowerCase()))
   )
     return null;
-  return { userId: user.id, isAdmin: false };
+  return {
+    userId: user.id,
+    isAdmin: administrators.includes(email.emailAddress.toLowerCase()),
+  };
 }
