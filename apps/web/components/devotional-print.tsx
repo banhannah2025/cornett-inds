@@ -48,7 +48,7 @@ export function DevotionalPrint({ devotional }: { devotional: Devotional }) {
         </section>
         <section className="prayer"><h2>Closing Prayer</h2>{(devotional.prayer ?? "").split(/\n\s*\n/).map((p, i) => <p key={i}>{p}</p>)}</section>
       </article>
-      <style jsx>{`
+      <style jsx global>{`
         .devotional-print-controls { display:flex; gap:12px; flex-wrap:wrap; margin:16px 0; }
         .devotional-print-controls button { border:1px solid #444; border-radius:6px; padding:10px 16px; cursor:pointer; background:white; color:#111; }
         .devotional-print-sheet { display:none; max-width:8.5in; padding:.7in; margin:12px auto; background:white; color:#151515; font:13pt/1.48 Georgia,"Times New Roman",serif; }
@@ -64,10 +64,10 @@ export function DevotionalPrint({ devotional }: { devotional: Devotional }) {
         .devotional-print-sheet h2 { font-size:16pt; margin:0 0 12px; break-after:avoid; }
         @page { size:letter; margin:.65in; }
         @media print {
-          body { background:white !important; }
+          body { background:white !important; }\n          body img, body picture, body video, body canvas, body svg, body figure { display:none !important; }\n          main > article > div.relative { display:none !important; }
           body * { visibility:hidden !important; }
           .devotional-print-sheet, .devotional-print-sheet * { visibility:visible !important; }
-          .devotional-print-sheet { display:block !important; position:absolute; inset:0 auto auto 0; width:100%; max-width:none; padding:0; margin:0; box-shadow:none; font-size:12pt; }
+          .devotional-print-sheet { display:block !important; position:absolute; top:0; left:0; width:100%; max-width:none; padding:0; margin:0; box-shadow:none; font-size:12pt; }
           .devotional-print-controls { display:none !important; }
           .devotional-print-sheet .scripture { background:white; }
         }
