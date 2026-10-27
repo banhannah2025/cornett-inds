@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DevotionalPrint } from "@/components/devotional-print";
 import { AdminDevotionalEditor } from "@/components/admin-devotional-editor";
 import { AdminImageEditor } from "@/components/admin-image-editor";
 import { ExpandableImage } from "@/components/expandable-image";
@@ -72,6 +73,7 @@ export default async function DevotionalPage({ params }: PageProps<"/devotionals
                 <AdminDevotionalEditor devotional={{ _id: devotional._id, title: devotional.title, excerpt: devotional.excerpt, publishedAt: devotional.publishedAt, scriptureReference: devotional.scriptureReference, scriptureText: devotional.scriptureText, prayer: devotional.prayer, bodyText: portableTextToEditorText(devotional.body) }} />
               )}
             </div>
+            <DevotionalPrint devotional={{ title: devotional.title, publishedAt: devotional.publishedAt, scriptureText: devotional.scriptureText, body: devotional.body as Array<{ _type?: string; children?: Array<{ text?: string }> }>, prayer: devotional.prayer }} />
             <div className="mt-10 flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-[#a45d2d]">
               <span>{devotional.scriptureReference}</span><span className="size-1 rounded-full bg-[#a45d2d]/40" /><time dateTime={devotional.publishedAt}>{dateFormatter.format(new Date(devotional.publishedAt))}</time>
             </div>
