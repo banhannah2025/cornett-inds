@@ -25,6 +25,8 @@ import { createShiftNotesPdf } from "./shift-notes";
 import { ShiftNotesEditor } from "./shift-notes-editor";
 import {
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Shield,
   BookHeart,
   Mic,
@@ -38,6 +40,29 @@ import {
   devotionalFields,
   type DevotionalDraft,
 } from "./index";
+
+const monthLabel = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  year: "numeric",
+});
+const dayLabel = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+});
+const scheduleTime = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+function localDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function displayTime(date: string, time: string) {
+  const value = new Date(`${date}T${time}`);
+  return Number.isNaN(value.getTime()) ? time : scheduleTime.format(value);
+}
 
 const emptyDraft: DevotionalDraft = {
   title: "",
@@ -252,6 +277,11 @@ export function OugmWorkspace({
 }) {
   const [tab, setTab] = useState("calendar");
   const [date, setDate] = useState("");
+  const [today, setToday] = useState("");
+  const [eventOpen, setEventOpen] = useState(false);
+  const roster = useRef<HTMLDetailsElement>(null);
+  const eventTitle = useRef<HTMLInputElement>(null);
+  const addEvent = useRef<HTMLButtonElement>(null);
   const [month, setMonth] = useState("");
   const calendar = useSharedCalendar(userId);
   const { entries, setEntries, loaded } = calendar;
@@ -310,8 +340,8 @@ export function OugmWorkspace({
   const [published, setPublished] = useState("");
   const template = securityTemplates.find((t) => t.id === form);
   useEffect(() => {
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const today = localDateKey(new Date());
+    setToday(today);
     setDate(today);
     setMonth(today.slice(0, 7));
     setEvent((e) => ({ ...e, date: today }));
@@ -387,13 +417,13 @@ export function OugmWorkspace({
             ? await createMedicalInsideListPdf(values)
             : template.id === "ban-log"
               ? await createBanLogPdf(values)
-          : template.id === "spiritual-outcomes"
-            ? await createSpiritualOutcomesPdf(values)
-            : template.id === "shelter-log"
-              ? await createShelterLogPdf(values)
-              : template.id === "shift-notes"
-                ? await createShiftNotesPdf(values)
-                : await createIncidentReportPdf(values);
+              : template.id === "spiritual-outcomes"
+                ? await createSpiritualOutcomesPdf(values)
+                : template.id === "shelter-log"
+                  ? await createShelterLogPdf(values)
+                  : template.id === "shift-notes"
+                    ? await createShiftNotesPdf(values)
+                    : await createIncidentReportPdf(values);
       if (epoch !== printEpoch.current) return;
       setPrintUrl(
         URL.createObjectURL(
@@ -411,14 +441,23 @@ export function OugmWorkspace({
       if (epoch === printEpoch.current) setPrintBusy(false);
     }
   }
+  function selectDate(day: string) {
+    setDate(day);
+    setMonth(day.slice(0, 7));
+  }
+  function closeEvent() {
+    setEditing(null);
+    setEventOpen(false);
+    addEvent.current?.focus();
+  }
   function submitEvent(e: React.FormEvent) {
     e.preventDefault();
     setEntries((all) => [
       ...all.filter((v) => v.id !== editing),
       { ...event, id: editing || crypto.randomUUID() },
     ]);
-    setEditing(null);
-    setEvent({ title: "", date, time: "", category: "Office", notes: "" });
+    selectDate(event.date);
+    closeEvent();
   }
   async function generate(e: React.FormEvent) {
     e.preventDefault();
@@ -473,11 +512,20 @@ export function OugmWorkspace({
     .filter((e) => calendarEntryOnDay(e, date))
     .sort((a, b) => a.time.localeCompare(b.time));
   const monthDate = month ? new Date(`${month}-01T12:00:00`) : null;
+  function moveMonth(offset: number) {
+    if (!monthDate) return;
+    const next = new Date(monthDate);
+    next.setMonth(next.getMonth() + offset);
+    selectDate(localDateKey(next));
+  }
+  useEffect(() => {
+    if (eventOpen && tab === "calendar") eventTitle.current?.focus();
+  }, [eventOpen, tab]);
   const days = monthDate
     ? new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate()
     : 0;
   return (
-    <main className="ougm">
+    <main className={tab === "calendar" ? "ougm calendar-workspace" : "ougm"}>
       <header className="mission-header">
         <div>
           <p className="eyebrow">Blended Works · Mission Operations</p>
@@ -504,49 +552,77 @@ export function OugmWorkspace({
         ))}
       </nav>
       {tab === "calendar" && (
-        <section>
+        <section
+          className="office-calendar"
+          aria-labelledby="office-calendar-title"
+        >
           <div className="section-heading">
             <div>
-              <h2>Office calendar</h2>
-              <p>Manage shared events and staff shifts.</p>
+              <h2 id="office-calendar-title">Office calendar</h2>
             </div>
-            <label>
-              Month
-              <input
-                type="month"
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-              />
-            </label>
+            <div className="actions">
+              <button
+                disabled={!loaded || calendar.busy || !calendar.dirty}
+                onClick={() => void calendar.save()}
+              >
+                {calendar.busy ? "Saving…" : "Save schedule"}
+              </button>
+              <details className="schedule-tools">
+                <summary>Schedule tools</summary>
+                <div className="actions">
+                  <button
+                    className="quiet"
+                    disabled={calendar.busy}
+                    onClick={() => {
+                      if (
+                        !calendar.dirty ||
+                        window.confirm(
+                          "Reload the saved schedule and discard unsaved changes?",
+                        )
+                      )
+                        void calendar.load();
+                    }}
+                  >
+                    Reload saved schedule
+                  </button>
+                  <button
+                    className="quiet"
+                    disabled={!loaded || calendar.busy}
+                    onClick={calendar.importDevice}
+                  >
+                    Import old device schedule
+                  </button>
+                </div>
+              </details>
+            </div>
           </div>
-          <div className="actions">
-            <button
-              disabled={!loaded || calendar.busy || !calendar.dirty}
-              onClick={() => void calendar.save()}
-            >
-              {calendar.busy ? "Saving Schedule…" : "Save Schedule"}
-            </button>
-            <button
-              className="quiet"
-              disabled={calendar.busy}
-              onClick={() => void calendar.load()}
-            >
-              Reload Saved Schedule
-            </button>
-            <button
-              className="quiet"
-              disabled={!loaded || calendar.busy}
-              onClick={calendar.importDevice}
-            >
-              Import Old Device Schedule
-            </button>
-          </div>
-          <p role="status">
-            {calendar.dirty ? "Unsaved schedule changes." : calendar.status}
+          <p className="schedule-status" role="status">
+            {calendar.dirty ? "Unsaved schedule changes" : calendar.status}
           </p>
           {calendar.error && <p role="alert">{calendar.error}</p>}
-          <div className="columns">
-            <div className="panel">
+          <div className="columns calendar-layout">
+            <section className="panel month-panel" aria-label="Month view">
+              <div className="month-heading">
+                <button
+                  className="quiet"
+                  aria-label="Previous month"
+                  disabled={!monthDate}
+                  onClick={() => moveMonth(-1)}
+                >
+                  <ChevronLeft size={20} aria-hidden="true" />
+                </button>
+                <h3 aria-live="polite">
+                  {monthDate ? monthLabel.format(monthDate) : "Calendar"}
+                </h3>
+                <button
+                  className="quiet"
+                  aria-label="Next month"
+                  disabled={!monthDate}
+                  onClick={() => moveMonth(1)}
+                >
+                  <ChevronRight size={20} aria-hidden="true" />
+                </button>
+              </div>
               <div className="calendar">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
                   <strong key={d}>{d}</strong>
@@ -556,144 +632,61 @@ export function OugmWorkspace({
                 ))}
                 {Array.from({ length: days }, (_, i) => {
                   const key = `${month}-${String(i + 1).padStart(2, "0")}`;
-                  const count = entries.filter((e) =>
-                    calendarEntryOnDay(e, key),
+                  const count = entries.filter((entry) =>
+                    calendarEntryOnDay(entry, key),
                   ).length;
                   return (
                     <button
                       key={key}
                       className={date === key ? "selected" : ""}
-                      onClick={() => {
-                        setDate(key);
-                        setEvent((v) => ({ ...v, date: key }));
-                      }}
-                      aria-label={`${key}${count ? `, ${count} events` : ""}`}
+                      onClick={() => selectDate(key)}
+                      aria-label={`${dayLabel.format(new Date(`${key}T12:00:00`))}, ${count} scheduled`}
+                      aria-current={key === today ? "date" : undefined}
                       aria-pressed={date === key}
                     >
                       {i + 1}
-                      {count > 0 && <small>{count}</small>}
+                      {count > 0 && <small aria-hidden="true">{count}</small>}
                     </button>
                   );
                 })}
               </div>
-              <h3>Schedule for {date}</h3>
-              {!displayed.length && <p>No events scheduled.</p>}
-              {displayed.map((e) => (
-                <article className="event" key={e.id}>
-                  <strong>
-                    {e.time || "All day"}
-                    {e.endTime && ` – ${e.endTime}`} ·{" "}
-                    {e.staff && `${e.staff} · `}
-                    {e.title}
-                  </strong>
-                  <p>
-                    {e.category}
-                    {e.notes && ` — ${e.notes}`}
-                  </p>
-                  <button
-                    className="quiet"
-                    onClick={() => {
-                      if (e.category === "Staff Shift") {
-                        setShiftEditing(e.id);
-                        document
-                          .getElementById("staff-shifts")
-                          ?.scrollIntoView({ behavior: "smooth" });
-                      } else {
-                        setEditing(e.id);
-                        setEvent(e);
-                      }
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="quiet"
-                    onClick={() =>
-                      setEntries((all) => all.filter((v) => v.id !== e.id))
-                    }
-                  >
-                    Delete
-                  </button>
-                </article>
-              ))}
-            </div>
-            <form className="panel stack" onSubmit={submitEvent}>
-              <h3>{editing ? "Edit event" : "Add an event"}</h3>
-              <label>
-                Title
-                <input
-                  required
-                  maxLength={160}
-                  value={event.title}
-                  onChange={(e) =>
-                    setEvent((v) => ({ ...v, title: e.target.value }))
-                  }
-                />
-              </label>
-              <Dictate
-                onText={(t) => setEvent((v) => ({ ...v, title: v.title + t }))}
-              />
-              <label>
-                Date
-                <input
-                  required
-                  type="date"
-                  value={event.date}
-                  onChange={(e) =>
-                    setEvent((v) => ({ ...v, date: e.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                Time
-                <input
-                  type="time"
-                  value={event.time}
-                  onChange={(e) =>
-                    setEvent((v) => ({ ...v, time: e.target.value }))
-                  }
-                />
-              </label>
-              <label>
-                Category
-                <select
-                  value={event.category}
-                  onChange={(e) =>
-                    setEvent((v) => ({ ...v, category: e.target.value }))
-                  }
-                >
-                  {[
-                    "Office",
-                    "Security",
-                    "Staff Meeting",
-                    "Meal / Devotional",
-                  ].map((v) => (
-                    <option key={v}>{v}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Notes
-                <textarea
-                  value={event.notes}
-                  onChange={(e) =>
-                    setEvent((v) => ({ ...v, notes: e.target.value }))
-                  }
-                />
-              </label>
-              <Dictate
-                onText={(t) =>
-                  setEvent((v) => ({ ...v, notes: `${v.notes} ${t}`.trim() }))
-                }
-              />
-              <button disabled={!loaded}>
-                <Plus size={18} />
-                {editing ? "Save changes" : "Add event"}
-              </button>
-              {editing && (
+              <div className="month-footer">
                 <button
-                  type="button"
                   className="quiet"
+                  disabled={!today || date === today}
+                  onClick={() => selectDate(today)}
+                >
+                  Today
+                </button>
+                <label>
+                  Jump to month
+                  <input
+                    type="month"
+                    value={month}
+                    onChange={(e) => {
+                      if (/^\d{4}-\d{2}$/.test(e.target.value))
+                        selectDate(`${e.target.value}-01`);
+                    }}
+                  />
+                </label>
+              </div>
+            </section>
+            <section
+              className="panel day-agenda"
+              aria-labelledby="day-agenda-title"
+            >
+              <div className="agenda-heading">
+                <div>
+                  <span className="calendar-kicker">Day schedule</span>
+                  <h3 id="day-agenda-title">
+                    {date
+                      ? dayLabel.format(new Date(`${date}T12:00:00`))
+                      : "Selected day"}
+                  </h3>
+                </div>
+                <button
+                  ref={addEvent}
+                  disabled={!loaded || !date}
                   onClick={() => {
                     setEditing(null);
                     setEvent({
@@ -703,24 +696,189 @@ export function OugmWorkspace({
                       category: "Office",
                       notes: "",
                     });
+                    setEventOpen(true);
                   }}
                 >
-                  Cancel edit
+                  <Plus size={18} aria-hidden="true" /> Add event
                 </button>
+              </div>
+              {!loaded && (
+                <p>
+                  {calendar.error
+                    ? "Schedule unavailable."
+                    : "Loading schedule…"}
+                </p>
               )}
-            </form>
+              {loaded && !displayed.length && (
+                <p className="agenda-empty">Nothing scheduled for this day.</p>
+              )}
+              {eventOpen && (
+                <form className="stack agenda-editor" onSubmit={submitEvent}>
+                  <h4>{editing ? "Edit event" : "New event"}</h4>
+                  <label>
+                    Title
+                    <input
+                      ref={eventTitle}
+                      required
+                      maxLength={160}
+                      value={event.title}
+                      onChange={(e) =>
+                        setEvent((v) => ({ ...v, title: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <Dictate
+                    onText={(t) =>
+                      setEvent((v) => ({ ...v, title: v.title + t }))
+                    }
+                  />
+                  <label>
+                    Date
+                    <input
+                      required
+                      type="date"
+                      value={event.date}
+                      onChange={(e) =>
+                        setEvent((v) => ({ ...v, date: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Time
+                    <input
+                      type="time"
+                      value={event.time}
+                      onChange={(e) =>
+                        setEvent((v) => ({ ...v, time: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Category
+                    <select
+                      value={event.category}
+                      onChange={(e) =>
+                        setEvent((v) => ({ ...v, category: e.target.value }))
+                      }
+                    >
+                      {[
+                        "Office",
+                        "Security",
+                        "Staff Meeting",
+                        "Meal / Devotional",
+                      ].map((v) => (
+                        <option key={v}>{v}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Notes
+                    <textarea
+                      value={event.notes}
+                      onChange={(e) =>
+                        setEvent((v) => ({ ...v, notes: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <Dictate
+                    onText={(t) =>
+                      setEvent((v) => ({
+                        ...v,
+                        notes: `${v.notes} ${t}`.trim(),
+                      }))
+                    }
+                  />
+                  <div className="actions">
+                    <button disabled={!loaded}>
+                      {editing ? "Apply changes" : "Add to schedule"}
+                    </button>
+                    <button
+                      type="button"
+                      className="quiet"
+                      onClick={closeEvent}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+              {displayed.map((entry) => (
+                <article className="agenda-entry" key={entry.id}>
+                  <div className="agenda-meta">
+                    <span>
+                      {entry.time
+                        ? displayTime(entry.date, entry.time)
+                        : "All day"}
+                      {entry.endTime &&
+                        ` – ${displayTime(entry.endDate || entry.date, entry.endTime)}`}
+                    </span>
+                    <span>{entry.category}</span>
+                  </div>
+                  <h4>
+                    {entry.staff
+                      ? `${entry.staff} · ${entry.title}`
+                      : entry.title}
+                  </h4>
+                  {entry.category === "Staff Shift" &&
+                    entry.endDate &&
+                    entry.endDate !== entry.date && (
+                      <p>
+                        {dayLabel.format(new Date(`${entry.date}T12:00:00`))} to{" "}
+                        {dayLabel.format(new Date(`${entry.endDate}T12:00:00`))}
+                      </p>
+                    )}
+                  {entry.notes && <p>{entry.notes}</p>}
+                  <div className="actions">
+                    <button
+                      className="quiet"
+                      onClick={() => {
+                        if (entry.category === "Staff Shift") {
+                          setShiftEditing(entry.id);
+                          if (roster.current) roster.current.open = true;
+                          roster.current?.scrollIntoView({
+                            behavior: "smooth",
+                          });
+                        } else {
+                          setEditing(entry.id);
+                          setEvent(entry);
+                          setEventOpen(true);
+                          eventTitle.current?.focus();
+                        }
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="quiet"
+                      onClick={() => {
+                        setEntries((all) =>
+                          all.filter((item) => item.id !== entry.id),
+                        );
+                        if (editing === entry.id) closeEvent();
+                        if (shiftEditing === entry.id) setShiftEditing(null);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </section>
           </div>
           {loaded && (
-            <StaffShifts
-              key={shiftEditing || "new-shift"}
-              entries={entries}
-              onChange={setEntries}
-              month={month}
-              date={date}
-              loaded={loaded}
-              editing={shiftEditing}
-              onEdit={setShiftEditing}
-            />
+            <details ref={roster} className="panel roster-disclosure">
+              <summary>Staff shift roster</summary>
+              <StaffShifts
+                key={shiftEditing || "new-shift"}
+                entries={entries}
+                onChange={setEntries}
+                month={month}
+                date={date}
+                loaded={loaded}
+                editing={shiftEditing}
+                onEdit={setShiftEditing}
+              />
+            </details>
           )}
         </section>
       )}
@@ -925,10 +1083,7 @@ export function OugmWorkspace({
                 Dictation={Dictate}
               />
             ) : template.id === "medical-inside-list" ? (
-              <MedicalInsideListEditor
-                values={values}
-                onChange={setValues}
-              />
+              <MedicalInsideListEditor values={values} onChange={setValues} />
             ) : template.id === "ban-log" ? (
               <BanLogEditor
                 values={values}
