@@ -478,9 +478,9 @@ export function OugmWorkspace({
     : 0;
   return (
     <main className="ougm">
-      <header>
+      <header className="mission-header">
         <div>
-          <p className="eyebrow">BLENDED WORKS / MISSION OPERATIONS</p>
+          <p className="eyebrow">Blended Works · Mission Operations</p>
           <h1>Olympia Union Gospel Mission</h1>
         </div>
         <span className="access">
@@ -489,16 +489,16 @@ export function OugmWorkspace({
       </header>
       <nav aria-label="Mission workspace">
         {[
-          { id: "calendar", label: "Office calendar", icon: CalendarDays },
-          { id: "security", label: "Security logs", icon: Shield },
-          { id: "devotionals", label: "Devotional writer", icon: BookHeart },
+          { id: "calendar", label: "Calendar", icon: CalendarDays },
+          { id: "security", label: "Security forms", icon: Shield },
+          { id: "devotionals", label: "Devotionals", icon: BookHeart },
         ].map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             aria-current={tab === t.id ? "page" : undefined}
           >
-            <t.icon size={20} />
+            <t.icon size={20} aria-hidden="true" />
             {t.label}
           </button>
         ))}
@@ -508,7 +508,7 @@ export function OugmWorkspace({
           <div className="section-heading">
             <div>
               <h2>Office calendar</h2>
-              <p>Shared schedules saved in Sanity.</p>
+              <p>Manage shared events and staff shifts.</p>
             </div>
             <label>
               Month
@@ -731,43 +731,47 @@ export function OugmWorkspace({
             Fill, print, then close security forms to clear entries. Spiritual
             outcomes reports can also be saved and reopened.
           </p>
-          <div className="panel">
-            <h3>Mission form library</h3>
-            <p>Choose a form to fill and print, or open a blank PDF.</p>
+          <div className="form-library">
             {securityTemplates.map((t) => (
-              <article className="event" key={t.id}>
+              <article className="panel form-card" key={t.id}>
                 <h3>{t.title}</h3>
                 <p>{t.description}</p>
-                <button
-                  onClick={() => {
-                    reportEpoch.current++;
-                    setSavedReport(null);
-                    setReportStatus("");
-                    setReportError("");
-                    setValues(
-                      t.id === "medical-inside-list"
-                        ? { ...initialMedicalInsideValues }
-                        : {},
-                    );
-                    setForm(t.id);
-                  }}
-                >
-                  Open form
-                </button>
-                {t.pdfUrl && (
-                  <a href={t.pdfUrl} target="_blank" rel="noopener noreferrer">
-                    {t.id === "medical-inside-list"
-                      ? "Current printable PDF"
-                      : "Blank fillable / printable PDF"}
-                  </a>
-                )}
+                <div className="actions">
+                  <button
+                    onClick={() => {
+                      reportEpoch.current++;
+                      setSavedReport(null);
+                      setReportStatus("");
+                      setReportError("");
+                      setValues(
+                        t.id === "medical-inside-list"
+                          ? { ...initialMedicalInsideValues }
+                          : {},
+                      );
+                      setForm(t.id);
+                    }}
+                  >
+                    Open form
+                  </button>
+                  {t.pdfUrl && (
+                    <a
+                      href={t.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t.id === "medical-inside-list"
+                        ? "Current printable PDF"
+                        : "Blank fillable / printable PDF"}
+                    </a>
+                  )}
+                </div>
               </article>
             ))}
           </div>
         </section>
       )}
       {tab === "security" && (
-        <section className="panel stack">
+        <section className="panel stack saved-reports">
           <h3>Saved Spiritual Outcomes</h3>
           <button className="quiet" onClick={() => void spiritual.load()}>
             Reload Saved Reports
@@ -781,15 +785,17 @@ export function OugmWorkspace({
               <strong>
                 {report.values.from} through {report.values.to}
               </strong>
-              <button onClick={() => openReport(report)}>
-                Open / Edit / Print
-              </button>
-              <button
-                className="quiet"
-                onClick={() => void spiritual.remove(report)}
-              >
-                Delete Saved Report
-              </button>
+              <div className="actions">
+                <button onClick={() => openReport(report)}>
+                  Open / Edit / Print
+                </button>
+                <button
+                  className="quiet"
+                  onClick={() => void spiritual.remove(report)}
+                >
+                  Delete Saved Report
+                </button>
+              </div>
             </article>
           ))}
         </section>

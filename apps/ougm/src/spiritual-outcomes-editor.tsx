@@ -40,15 +40,21 @@ export function SpiritualOutcomesEditor({
       </div>
       <p>
         Enter whole-number counts for each day. Blank counts remain blank;
-        weekly totals calculate automatically.
+        weekly totals calculate automatically. Scroll across the table to see
+        every day.
       </p>
-      <div className="outcomes-scroll">
+      <div
+        className="outcomes-scroll"
+        role="region"
+        aria-label="Weekly activity counts"
+        tabIndex={0}
+      >
         <table>
           <thead>
             <tr>
-              <th>Activity</th>
+              <th scope="col">Activity</th>
               {layout.days.map((day) => (
-                <th key={day}>
+                <th scope="col" key={day}>
                   {day}
                   <input
                     aria-label={`${day} date`}
