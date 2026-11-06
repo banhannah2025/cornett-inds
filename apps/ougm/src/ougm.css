@@ -1,23 +1,26 @@
 .ougm {
   max-width: 1440px;
   margin: auto;
-  padding: 2rem;
-  color: #142a3c;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  color: #122538;
   font-size: 1rem;
   line-height: 1.55;
-  background: #f4f7fa;
-  min-height: 75vh;
+  background: #f2f5f8;
+  min-height: 100dvh;
 }
-.ougm header,
+.ougm .mission-header,
 .ougm .section-heading,
 .ougm .dialog-heading {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  align-items: center;
+  align-items: flex-start;
+  flex-direction: column;
 }
 .ougm h1 {
-  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  font-size: clamp(1.7rem, 4vw, 2.75rem);
+  letter-spacing: -0.035em;
+  margin: 0;
   font-weight: 750;
   line-height: 1.2;
 }
@@ -38,22 +41,28 @@
   font-size: 0.875rem;
   letter-spacing: 0.1em;
   font-weight: 700;
-  color: #1b607d;
+  color: #a5dbd4;
+  text-transform: uppercase;
+  margin: 0 0 0.55rem;
 }
 .ougm .access {
-  background: #dceaf1;
+  background: #ffffff19;
+  border: 1px solid #ffffff35;
+  color: white;
   border-radius: 2rem;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   white-space: nowrap;
 }
 .ougm nav {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin: 1.8rem 0;
-  border-bottom: 1px solid #cad6e0;
-  padding-bottom: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 1rem 0 1.5rem;
+  padding: 0.25rem;
+  background: white;
+  border: 1px solid #d5dfe7;
+  border-radius: 0.85rem;
 }
 .ougm button {
   display: inline-flex;
@@ -62,7 +71,8 @@
   gap: 0.5rem;
   background: #153f5b;
   color: white;
-  padding: 0.7rem 1rem;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
   border-radius: 0.6rem;
   cursor: pointer;
   font-size: 1rem;
@@ -76,7 +86,10 @@
   cursor: wait;
 }
 .ougm nav button {
-  background: #e4ecf2;
+  background: transparent;
+  flex-direction: column;
+  font-size: 0.8125rem;
+  padding-inline: 0.15rem;
   color: #24435a;
 }
 .ougm nav button[aria-current] {
@@ -91,7 +104,7 @@
 }
 .ougm .columns {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
   margin-top: 1rem;
   align-items: start;
@@ -100,7 +113,8 @@
   background: white;
   border: 1px solid #d5dfe7;
   border-radius: 1rem;
-  padding: 1.4rem;
+  padding: clamp(0.85rem, 3vw, 1.4rem);
+  box-shadow: 0 2px 5px #12253808;
   min-width: 0;
 }
 .ougm .stack {
@@ -136,7 +150,7 @@
 .ougm .calendar {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.35rem;
+  gap: clamp(0.15rem, 0.8vw, 0.5rem);
   margin-bottom: 1.5rem;
 }
 .ougm .calendar strong {
@@ -146,8 +160,9 @@
 .ougm .calendar button {
   background: #eff4f8;
   color: #254b64;
-  min-height: 3.3rem;
-  padding: 0.4rem;
+  min-height: 44px;
+  padding: 0.25rem 0;
+  gap: 0;
   flex-direction: column;
 }
 .ougm .calendar button.selected {
@@ -171,12 +186,15 @@
   position: fixed;
   inset: 0;
   margin: auto;
-  width: min(800px, calc(100vw - 2rem));
-  max-height: 90dvh;
+  width: 100%;
+  max-width: none;
+  overscroll-behavior: contain;
+  height: 100dvh;
+  max-height: 100dvh;
   overflow: auto;
   border: 0;
-  border-radius: 1rem;
-  padding: 1.5rem;
+  border-radius: 0;
+  padding: 0 clamp(0.85rem, 3vw, 1.5rem) 1.25rem;
   background: white;
   color: #142a3c;
 }
@@ -194,32 +212,6 @@
 .ougm a {
   color: #185e86;
   text-decoration: underline;
-}
-@media (max-width: 700px) {
-  .ougm {
-    padding: 1rem;
-  }
-  .ougm header,
-  .ougm .section-heading {
-    align-items: start;
-    flex-direction: column;
-  }
-  .ougm .columns {
-    grid-template-columns: 1fr;
-  }
-  .ougm .calendar button {
-    min-height: 2.8rem;
-  }
-  .ougm .panel {
-    padding: 1rem;
-  }
-  .ougm nav button {
-    flex: 1 1 auto;
-  }
-  .ougm .dialog-heading {
-    align-items: start;
-    flex-direction: column;
-  }
 }
 @media print {
   @page {
@@ -362,24 +354,37 @@
   }
 }
 
-.ougm .shift-table-scroll {
-  overflow-x: auto;
+.ougm .shift-roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
 }
-.ougm .shift-table-scroll table {
-  width: 100%;
-  border-collapse: collapse;
+.ougm .shift-card {
+  align-content: start;
+  padding: 0.9rem;
+  background: #f4f7fa;
+  border: 1px solid #d5dfe7;
+  border-radius: 0.75rem;
+  overflow-wrap: anywhere;
 }
-.ougm .shift-table-scroll th,
-.ougm .shift-table-scroll td {
-  padding: 0.65rem;
-  text-align: left;
-  border-bottom: 1px solid #cbd5e1;
+.ougm .shift-card dl,
+.ougm .shift-card dd,
+.ougm .shift-card p {
+  margin: 0;
 }
-.ougm .shift-table-scroll td button {
-  margin: 0.2rem;
+.ougm .shift-card dt {
+  color: #435a6d;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 .ougm .outcomes-scroll {
+  min-width: 0;
   overflow-x: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
 }
 .ougm .outcomes-scroll table {
   border-collapse: collapse;
@@ -390,6 +395,14 @@
 .ougm .outcomes-scroll td {
   padding: 0.4rem;
   border: 1px solid #cbd5e1;
+}
+.ougm .outcomes-scroll th:first-child {
+  position: sticky;
+  left: 0;
+  min-width: 8rem;
+  max-width: 10rem;
+  background: #f2f5f8;
+  text-align: left;
 }
 .ougm .outcomes-scroll input[type="number"] {
   min-width: 65px;
@@ -402,15 +415,6 @@
   background: #f8fafc;
   border: 1px solid #cbd5e1;
 }
-.ougm dialog input,
-.ougm dialog textarea,
-.ougm dialog select {
-  font-family: "Times New Roman", Times, serif;
-  font-size: 12pt;
-  line-height: 1.5;
-}
-
-
 .ougm .medical-inside-meta,
 .ougm .medical-inside-columns {
   display: grid;
@@ -428,10 +432,9 @@
   }
 }
 
-
 .ougm .ban-log-row {
   display: grid;
-  grid-template-columns: minmax(12rem, 2fr) repeat(4, minmax(8rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 .ougm .ban-log-editor summary {
@@ -439,7 +442,7 @@
   font-weight: 700;
   padding: 0.5rem 0;
 }
-@media (max-width: 760px) {
+@media (max-width: 540px) {
   .ougm .ban-log-row {
     grid-template-columns: 1fr;
   }
@@ -453,4 +456,110 @@
   background: #fde68a;
   border-color: #a16207;
   font-weight: 700;
+}
+
+@media screen {
+  .ougm .mission-header {
+    padding: clamp(1rem, 4vw, 2rem);
+    border-radius: 1rem;
+    background: linear-gradient(120deg, #10253a, #184953);
+    color: white;
+  }
+  .ougm h2,
+  .ougm h3 {
+    letter-spacing: -0.018em;
+    line-height: 1.25;
+  }
+  .ougm nav button:hover:not([aria-current]),
+  .ougm .quiet:hover {
+    background: #dbeaf0;
+  }
+  .ougm button:disabled {
+    cursor: default;
+  }
+  .ougm input:not([type="checkbox"]),
+  .ougm select {
+    min-height: 44px;
+  }
+  .ougm label,
+  .ougm fieldset {
+    min-width: 0;
+  }
+  .ougm .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+  .ougm .actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .ougm .form-library {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: 0.85rem;
+    margin-top: 1rem;
+  }
+  .ougm .form-card {
+    display: flex;
+    flex-direction: column;
+    overflow-wrap: anywhere;
+  }
+  .ougm .form-card .actions {
+    margin-top: auto;
+    padding-top: 0.4rem;
+  }
+  .ougm .saved-reports,
+  .ougm #staff-shifts {
+    margin-top: 1.25rem;
+  }
+  .ougm .dialog-heading {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    align-items: center;
+    flex-direction: row;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #d5dfe7;
+    background: white;
+  }
+  .ougm .dialog-heading h2 {
+    margin: 0;
+    font-size: clamp(1.15rem, 3vw, 1.5rem);
+  }
+  .ougm .dialog-heading button {
+    flex-shrink: 0;
+  }
+  .ougm .offender-photo {
+    max-width: 100%;
+  }
+  .ougm [role="alert"] {
+    color: #922e25;
+  }
+}
+
+@media screen and (min-width: 640px) {
+  .ougm .mission-header,
+  .ougm .section-heading {
+    align-items: center;
+    flex-direction: row;
+  }
+  .ougm nav button {
+    flex-direction: row;
+    font-size: 0.95rem;
+  }
+  .ougm dialog {
+    width: min(900px, calc(100% - 2rem));
+    height: auto;
+    max-height: 90dvh;
+    border-radius: 1rem;
+  }
+}
+
+@media screen and (min-width: 860px) {
+  .ougm .columns {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
 }

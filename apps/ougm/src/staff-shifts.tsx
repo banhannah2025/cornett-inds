@@ -83,50 +83,48 @@ export function StaffShifts({
             ))}
         </select>
       </label>
-      <div className="shift-table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>Staff</th>
-              <th>Role</th>
-              <th>Begins</th>
-              <th>Ends</th>
-              <th>Notes</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shifts.map((shift) => (
-              <tr key={shift.id}>
-                <td>{shift.staff}</td>
-                <td>{shift.title}</td>
-                <td>
-                  {shift.date} {shift.time}
-                </td>
-                <td>
-                  {shift.endDate} {shift.endTime}
-                </td>
-                <td>{shift.notes}</td>
-                <td>
-                  <button type="button" onClick={() => onEdit(shift.id)}>
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="quiet"
-                    onClick={() => {
-                      onChange((all) => all.filter((e) => e.id !== shift.id));
-                      if (editing === shift.id) reset();
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {shifts.length > 0 && (
+        <ul className="shift-roster">
+          {shifts.map((shift) => (
+            <li className="shift-card stack" key={shift.id}>
+              <div>
+                <strong>{shift.staff}</strong>
+                <small>{shift.title}</small>
+              </div>
+              <dl className="shift-range">
+                <div>
+                  <dt>Begins</dt>
+                  <dd>
+                    {shift.date} {shift.time}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Ends</dt>
+                  <dd>
+                    {shift.endDate} {shift.endTime}
+                  </dd>
+                </div>
+              </dl>
+              {shift.notes && <p>{shift.notes}</p>}
+              <div className="actions">
+                <button type="button" onClick={() => onEdit(shift.id)}>
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="quiet"
+                  onClick={() => {
+                    onChange((all) => all.filter((e) => e.id !== shift.id));
+                    if (editing === shift.id) reset();
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       {!shifts.length && <p>No shifts match this month and staff selection.</p>}
       <form
         className="stack"
