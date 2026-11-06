@@ -563,3 +563,155 @@
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   }
 }
+
+@media screen {
+  .ougm .office-calendar .section-heading {
+    align-items: flex-start;
+  }
+  .ougm .schedule-tools summary,
+  .ougm .roster-disclosure summary {
+    padding: 0.6rem 0.75rem;
+    min-height: 44px;
+    cursor: pointer;
+    font-weight: 650;
+  }
+  .ougm .schedule-tools {
+    position: relative;
+  }
+  .ougm .schedule-tools > .actions {
+    position: absolute;
+    z-index: 2;
+    top: 100%;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    right: 0;
+    padding: 0.55rem;
+    border: 1px solid #d5dfe7;
+    border-radius: 0.7rem;
+    background: white;
+    box-shadow: 0 6px 20px #12253820;
+  }
+  .ougm .schedule-tools > .actions button {
+    width: 100%;
+  }
+  .ougm .calendar-layout {
+    gap: 0.85rem;
+  }
+  .ougm .month-heading {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    text-align: center;
+    gap: 0.4rem;
+    margin-bottom: 0.85rem;
+  }
+  .ougm .month-panel .calendar {
+    margin-bottom: 0.85rem;
+  }
+  .ougm .month-panel .calendar button {
+    min-height: 48px;
+    border: 1px solid transparent;
+  }
+  .ougm .month-panel .calendar button[aria-current="date"] {
+    border-color: #20776f;
+  }
+  .ougm .month-panel .calendar button:not(.selected):hover {
+    background: #dbeaf0;
+  }
+  .ougm .month-panel .calendar button small {
+    min-width: 1.2rem;
+    padding: 0 0.2rem;
+    border-radius: 1rem;
+    background: #d1ebe7;
+    color: #124f49;
+    font-size: 0.7rem;
+    line-height: 1.3;
+  }
+  .ougm .month-footer,
+  .ougm .agenda-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .ougm .month-footer {
+    border-top: 1px solid #d5dfe7;
+    padding-top: 0.7rem;
+  }
+  .ougm .month-footer label,
+  .ougm .calendar-kicker,
+  .ougm .agenda-meta {
+    font-size: 0.8125rem;
+    color: #435a6d;
+    font-weight: 650;
+  }
+  .ougm .agenda-heading {
+    align-items: center;
+  }
+  .ougm .agenda-heading h3 {
+    margin: 0;
+  }
+  .ougm .agenda-entry,
+  .ougm .agenda-editor {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    margin-top: 0.85rem;
+    border: 1px solid #d5dfe7;
+    border-radius: 0.75rem;
+    padding: 0.8rem;
+    background: #f5f8fa;
+  }
+  .ougm .agenda-meta {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.65rem;
+  }
+  .ougm .agenda-entry h4,
+  .ougm .agenda-editor h4 {
+    font-weight: 700;
+  }
+  .ougm .agenda-entry .actions {
+    margin-top: 0.5rem;
+  }
+  .ougm .agenda-empty {
+    border: 1px dashed #bccdd9;
+    border-radius: 0.75rem;
+    padding: 0.8rem;
+  }
+  .ougm .roster-disclosure {
+    margin-top: 1rem;
+  }
+  .ougm .roster-disclosure > #staff-shifts {
+    margin-top: 0.65rem;
+    border: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+}
+
+@media screen and (max-width: 639px) {
+  .ougm.calendar-workspace .mission-header {
+    gap: 0.55rem;
+    padding: 0.85rem 1rem;
+  }
+  .ougm.calendar-workspace .mission-header h1 {
+    font-size: 1.35rem;
+  }
+  .ougm.calendar-workspace .mission-header .eyebrow {
+    font-size: 0.7rem;
+  }
+  .ougm.calendar-workspace .access {
+    padding: 0.2rem 0.6rem;
+  }
+  .ougm.calendar-workspace nav {
+    margin: 0.75rem 0 1rem;
+  }
+  .ougm .office-calendar h2 {
+    margin: 0;
+  }
+  .ougm .office-calendar .section-heading {
+    gap: 0.5rem;
+  }
+}
