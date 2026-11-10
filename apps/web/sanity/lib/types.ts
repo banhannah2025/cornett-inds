@@ -42,6 +42,7 @@ export type FieldNote = NewsPost;
 
 export type Devotional = {
   _id: string;
+  _updatedAt?: string;
   title: string;
   slug: string;
   excerpt: string;

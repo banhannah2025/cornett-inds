@@ -4,24 +4,60 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { DevotionalPrint } from "@/components/devotional-print";
 import { AdminDevotionalEditor } from "@/components/admin-devotional-editor";
 import { AdminImageEditor } from "@/components/admin-image-editor";
 import { ExpandableImage } from "@/components/expandable-image";
 import { getAdminContext } from "@/lib/admin";
+import { devotionalPath, siteUrl } from "@/lib/site-url";
 import { getDevotional } from "@/sanity/lib/data";
+import { devotionalSeoDefaults } from "@/sanity/lib/devotional-seo";
 import { portableTextToEditorText } from "@/sanity/lib/editor";
 import { getImageAssets } from "@/sanity/lib/assets";
 import { urlForImage } from "@/sanity/lib/image";
 import type { SanityImage } from "@/sanity/lib/types";
 
 export const dynamic = "force-dynamic";
+const loadDevotional = cache(getDevotional);
+
 export async function generateMetadata({ params }: PageProps<"/devotionals/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const devotional = await getDevotional(slug);
-  return devotional
-    ? { title: devotional.seoTitle ?? `${devotional.title} | Daily Devotionals`, description: devotional.seoDescription ?? devotional.excerpt }
-    : { title: "Devotional not found | Blended Works" };
+  const devotional = await loadDevotional(slug);
+  if (!devotional) return { title: "Devotional not found | Blended Works" };
+
+  const defaults = devotionalSeoDefaults(devotional.title, devotional.excerpt);
+  const title = devotional.seoTitle?.trim() || defaults.seoTitle;
+  const description = devotional.seoDescription?.trim() || defaults.seoDescription;
+  const url = siteUrl(devotionalPath(devotional.slug));
+  const image = devotional.mainImage?.asset?._ref
+    ? {
+        url: urlForImage(devotional.mainImage).width(1200).url(),
+        alt: devotional.mainImage.alt?.trim() || devotional.title,
+      }
+    : undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      siteName: "Blended Works",
+      url,
+      title,
+      description,
+      publishedTime: devotional.publishedAt,
+      modifiedTime: devotional._updatedAt,
+      images: image ? [image] : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
 }
 
 const components: PortableTextComponents = {
@@ -59,7 +95,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "long", day: "nu
 
 export default async function DevotionalPage({ params }: PageProps<"/devotionals/[slug]">) {
   const { slug } = await params;
-  const [devotional, admin] = await Promise.all([getDevotional(slug), getAdminContext()]);
+  const [devotional, admin] = await Promise.all([loadDevotional(slug), getAdminContext()]);
   if (!devotional) notFound();
   const imageAssets = admin.isAdmin ? await getImageAssets() : [];
   return (

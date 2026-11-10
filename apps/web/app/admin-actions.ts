@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdministrator } from "@/lib/admin";
+import { devotionalSeoDefaults } from "@/sanity/lib/devotional-seo";
 import { editorTextToPortableText } from "@/sanity/lib/editor";
 import { getSanityWriteClient, getSanityWriteClients, sanityWriteTarget } from "@/sanity/lib/writeClient";
 
@@ -417,8 +418,17 @@ async function writeDevotional(
   addTextField("scriptureReference", "Scripture reference", 80, true);
   addTextField("scriptureText", "Scripture passage", 5000, true);
   addTextField("prayer", "Closing prayer", Infinity, false);
+  const defaults = devotionalSeoDefaults(
+    String(fields.title ?? existing?.title ?? ""),
+    String(fields.excerpt ?? existing?.excerpt ?? ""),
+  );
   addTextField("seoTitle", "SEO title", 65, false);
   addTextField("seoDescription", "SEO description", 160, false);
+  for (const key of ["seoTitle", "seoDescription"] as const) {
+    if (!String(fields[key] ?? existing?.[key] ?? "").trim()) {
+      fields[key] = defaults[key];
+    }
+  }
 
   const publishedInput = required(formData, "publishedAt", "Publish date", 40);
   const publishedDate = new Date(
@@ -449,6 +459,7 @@ async function writeDevotional(
     await client.patch(documentId).ifRevisionId(existing._rev).set(fields).commit();
     revalidatePath("/devotionals");
     revalidatePath(`/devotionals/${existing.slug}`);
+    revalidatePath("/admin");
     return { ok: true, message: "Devotional updated." };
   }
 
