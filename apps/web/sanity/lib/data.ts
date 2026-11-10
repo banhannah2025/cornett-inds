@@ -282,9 +282,11 @@ export async function getFieldNote(category: string, slug: string) {
   }
 }
 
+const devotionalClient = sanityClient.withConfig({ useCdn: false });
+
 export async function getDevotionals() {
   try {
-    return await sanityClient.fetch<Devotional[]>(
+    return await devotionalClient.fetch<Devotional[]>(
       devotionalsQuery,
       {},
       options,
@@ -296,7 +298,7 @@ export async function getDevotionals() {
 
 export async function getDevotional(slug: string) {
   try {
-    return await sanityClient.fetch<Devotional | null>(
+    return await devotionalClient.fetch<Devotional | null>(
       devotionalBySlugQuery,
       { slug },
       options,

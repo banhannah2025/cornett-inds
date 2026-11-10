@@ -70,7 +70,7 @@ export default async function DevotionalPage({ params }: PageProps<"/devotionals
             <div className="flex flex-wrap items-center justify-between gap-4">
               <Link className="inline-flex items-center gap-2 text-sm font-bold text-[#a45d2d]" href="/devotionals"><ArrowLeft className="size-4" /> All devotionals</Link>
               {admin.isAdmin && (
-                <AdminDevotionalEditor devotional={{ _id: devotional._id, title: devotional.title, excerpt: devotional.excerpt, publishedAt: devotional.publishedAt, scriptureReference: devotional.scriptureReference, scriptureText: devotional.scriptureText, prayer: devotional.prayer, bodyText: portableTextToEditorText(devotional.body) }} />
+                <AdminDevotionalEditor devotional={{ _id: devotional._id, title: devotional.title, excerpt: devotional.excerpt, publishedAt: devotional.publishedAt, scriptureReference: devotional.scriptureReference, scriptureText: devotional.scriptureText, prayer: devotional.prayer, bodyText: portableTextToEditorText(devotional.body), seoTitle: devotional.seoTitle, seoDescription: devotional.seoDescription }} />
               )}
             </div>
             <DevotionalPrint devotional={{ title: devotional.title, publishedAt: devotional.publishedAt, scriptureText: devotional.scriptureText, body: devotional.body as Array<{ _type?: string; children?: Array<{ text?: string }> }>, prayer: devotional.prayer }} />

@@ -26,11 +26,14 @@ function optional(formData: FormData, key: string, label: string, max: number) {
   return result;
 }
 
-async function authorReference(formData: FormData) {
+async function authorReference(
+  formData: FormData,
+  client?: ReturnType<typeof getSanityWriteClient>,
+) {
   if (!formData.has("authorId")) return undefined;
   const authorId = value(formData, "authorId");
   if (!authorId) return null;
-  const exists = await getSanityWriteClient().fetch<string | null>(
+  const exists = await (client ?? getSanityWriteClient()).fetch<string | null>(
     `*[_type == "author" && _id == $id][0]._id`,
     { id: authorId },
   );
@@ -355,98 +358,110 @@ export async function saveDevotional(
 ): Promise<AdminActionResult> {
   try {
     await requireAdministrator();
-    const client = getSanityWriteClient();
-    const documentId = value(formData, "documentId");
-    const existing = documentId
-      ? await client.fetch<{ _id: string; slug: string } | null>(
-          `*[_type == "devotional" && _id == $id][0]{_id,"slug":slug.current}`,
-          { id: documentId },
-        )
-      : null;
-    if (documentId && !existing)
-      throw new Error("The devotional could not be found.");
-    const publishedInput = required(
-      formData,
-      "publishedAt",
-      "Publish date",
-      40,
-    );
-    const publishedDate = new Date(publishedInput);
-    if (Number.isNaN(publishedDate.getTime()))
-      throw new Error("Enter a valid publish date.");
-    const bodyText = value(formData, "bodyText");
-    const replaceBody = !documentId || formData.get("replaceBody") === "on";
-    const devotionalAuthor = await authorReference(formData);
-    const fields: Record<string, unknown> = {
-      title: required(formData, "title", "Title", 100),
-      excerpt: required(formData, "excerpt", "Short introduction", 240),
-      publishedAt: publishedDate.toISOString(),
-      scriptureReference: required(
-        formData,
-        "scriptureReference",
-        "Scripture reference",
-        80,
-      ),
-      scriptureText: required(
-        formData,
-        "scriptureText",
-        "Scripture passage",
-        5000,
-      ),
-      prayer: value(formData, "prayer"),
-      ...(devotionalAuthor !== undefined ? { author: devotionalAuthor } : {}),
-      seoTitle: optional(formData, "seoTitle", "SEO title", 65),
-      seoDescription: optional(
-        formData,
-        "seoDescription",
-        "SEO description",
-        160,
-      ),
-    };
-    if (replaceBody) {
-      if (!bodyText)
-        throw new Error("Reflection is required when replacing its content.");
-      fields.body = editorTextToPortableText(bodyText);
+    const clients = getSanityWriteClients();
+    for (const client of clients) {
+      try {
+        return await writeDevotional(client, formData);
+      } catch (error) {
+        const status = (error as { statusCode?: number } | null)?.statusCode;
+        if (status !== 401 && status !== 403) throw error;
+      }
     }
-    if (!documentId) {
-      const requestedSlug = slugify(
-        value(formData, "slug") || String(fields.title),
-      );
-      if (!requestedSlug) throw new Error("Enter a valid slug.");
-      const duplicate = await client.fetch<string | null>(
-        `*[_type == "devotional" && slug.current == $slug][0]._id`,
-        { slug: requestedSlug },
-      );
-      if (duplicate) throw new Error("That devotional slug is already in use.");
-      await client.create({
-        _type: "devotional",
-        slug: { _type: "slug", current: requestedSlug },
-        ...fields,
-      });
-      revalidatePath("/devotionals");
-      return {
-        ok: true,
-        message: "Devotional published.",
-        href: `/devotionals/${requestedSlug}`,
-      };
-    }
-    await client.patch(documentId).set(fields).commit();
-    revalidatePath("/devotionals");
-    revalidatePath(`/devotionals/${existing!.slug}`);
+    const { projectId, dataset } = sanityWriteTarget();
     return {
-      ok: true,
-      message: "Devotional updated.",
-      href: `/devotionals/${existing!.slug}`,
+      ok: false,
+      message: `Sanity denied permission to save this devotional in ${projectId}/${dataset}. Check the web server's Sanity write credentials.`,
     };
   } catch (error) {
     return {
       ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Unable to save the devotional.",
+      message: error instanceof Error ? error.message : "Unable to save the devotional.",
     };
   }
+}
+
+async function writeDevotional(
+  client: ReturnType<typeof getSanityWriteClient>,
+  formData: FormData,
+): Promise<AdminActionResult> {
+  const documentId = value(formData, "documentId");
+  const existing = documentId
+    ? await client.fetch<(Record<string, unknown> & {
+        slug: string;
+        _rev: string;
+        publishedAt: string;
+      }) | null>(
+        `*[_type == "devotional" && _id == $id][0]{
+          _rev, "slug": slug.current, title, excerpt, publishedAt,
+          scriptureReference, scriptureText, prayer, seoTitle, seoDescription
+        }`,
+        { id: documentId },
+      )
+    : null;
+  if (documentId && !existing?.slug) {
+    throw new Error("The devotional could not be found.");
+  }
+
+  const fields: Record<string, unknown> = {};
+  function addTextField(key: string, label: string, max: number, isRequired: boolean) {
+    const submitted = value(formData, key);
+    const stored = String(existing?.[key] ?? "").replace(/\r\n?/g, "\n").trim();
+    if (existing && submitted === stored) return;
+    fields[key] = isRequired
+      ? required(formData, key, label, max)
+      : optional(formData, key, label, max);
+  }
+
+  addTextField("title", "Title", 100, true);
+  addTextField("excerpt", "Short introduction", 240, true);
+  addTextField("scriptureReference", "Scripture reference", 80, true);
+  addTextField("scriptureText", "Scripture passage", 5000, true);
+  addTextField("prayer", "Closing prayer", Infinity, false);
+  addTextField("seoTitle", "SEO title", 65, false);
+  addTextField("seoDescription", "SEO description", 160, false);
+
+  const publishedInput = required(formData, "publishedAt", "Publish date", 40);
+  const publishedDate = new Date(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(publishedInput)
+      ? `${publishedInput}Z`
+      : publishedInput,
+  );
+  if (Number.isNaN(publishedDate.getTime())) {
+    throw new Error("Enter a valid publish date.");
+  }
+  const publishedAt = publishedDate.toISOString();
+  if (!existing || publishedAt.slice(0, 16) !== new Date(existing.publishedAt).toISOString().slice(0, 16)) {
+    fields.publishedAt = publishedAt;
+  }
+
+  const author = await authorReference(formData, client);
+  if (author !== undefined) fields.author = author;
+  if (!existing || formData.get("replaceBody") === "on") {
+    const bodyText = value(formData, "bodyText");
+    if (!bodyText) throw new Error("Reflection is required when replacing its content.");
+    fields.body = editorTextToPortableText(bodyText);
+  }
+
+  if (existing) {
+    if (Object.keys(fields).length === 0) {
+      return { ok: true, message: "No changes to save." };
+    }
+    await client.patch(documentId).ifRevisionId(existing._rev).set(fields).commit();
+    revalidatePath("/devotionals");
+    revalidatePath(`/devotionals/${existing.slug}`);
+    return { ok: true, message: "Devotional updated." };
+  }
+
+  const slug = slugify(value(formData, "slug") || String(fields.title));
+  if (!slug) throw new Error("Enter a valid slug.");
+  const duplicate = await client.fetch<string | null>(
+    `*[_type == "devotional" && slug.current == $slug][0]._id`,
+    { slug },
+  );
+  if (duplicate) throw new Error("That devotional slug is already in use.");
+  await client.create({ _type: "devotional", slug: { _type: "slug", current: slug }, ...fields });
+  revalidatePath("/devotionals");
+  return { ok: true, message: "Devotional published.", href: `/devotionals/${slug}` };
 }
 
 export async function savePostImage(
