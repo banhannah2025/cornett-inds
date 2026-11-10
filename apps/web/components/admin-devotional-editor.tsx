@@ -31,11 +31,15 @@ export function AdminDevotionalEditor({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<AdminActionResult | null>(null);
-  const [replaceBody, setReplaceBody] = useState(false);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
     const formData = new FormData(event.currentTarget);
+    const bodyText = String(formData.get("bodyText") ?? "").replace(/\r\n?/g, "\n").trim();
+    const originalBody = devotional?.bodyText.replace(/\r\n?/g, "\n").trim();
+    if (devotional && bodyText !== originalBody) {
+      formData.set("replaceBody", "on");
+    }
     setResult(null);
     startTransition(async () => {
       try {
@@ -130,26 +134,16 @@ export function AdminDevotionalEditor({
             className={`${fieldClass} font-mono leading-6`}
             defaultValue={devotional?.bodyText}
             name="bodyText"
-            readOnly={Boolean(devotional) && !replaceBody}
-            required={!devotional || replaceBody}
+            required={!devotional}
             rows={12}
           />
         </label>
         {devotional && (
-          <label className="flex items-start gap-3 rounded-xl border border-amber-700/20 bg-amber-50 px-4 py-3 text-sm">
-            <input
-              checked={replaceBody}
-              className="mt-1"
-              name="replaceBody"
-              onChange={(event) => setReplaceBody(event.target.checked)}
-              type="checkbox"
-            />
-            <span>
-              <strong>Replace the reflection with the text above.</strong>
-              <br />
-              Leave unchecked to preserve rich text and inline media.
-            </span>
-          </label>
+          <p className="text-sm text-[#6b786e]">
+            Editing the reflection replaces it with the text above. Embedded
+            media and formatting beyond headings and quotes are lost when the
+            reflection is replaced.
+          </p>
         )}
         <label className="block text-sm font-bold">
           Closing prayer
