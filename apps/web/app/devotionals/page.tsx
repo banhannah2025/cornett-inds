@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { BookHeart } from "lucide-react";
 import { DevotionalCard } from "@/components/devotional-card";
+import { siteUrl } from "@/lib/site-url";
 import { getDevotionals } from "@/sanity/lib/data";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Daily Devotionals | Blended Works",
+  alternates: { canonical: siteUrl("/devotionals") },
   description:
     "Faith-rooted Scripture, reflection, prayer, and practical encouragement shaped by real life and service at the mission.",
 };
