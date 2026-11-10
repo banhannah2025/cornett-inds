@@ -68,13 +68,13 @@ export const fieldNoteBySlugQuery = `*[_type == "fieldNote" && slug.current == $
 }`;
 
 export const devotionalsQuery = `*[_type == "devotional" && defined(slug.current) && defined(publishedAt) && publishedAt <= now()] | order(publishedAt desc) {
-  _id, title, "slug": slug.current, excerpt, publishedAt, scriptureReference, scriptureText,
+  _id, _updatedAt, title, "slug": slug.current, excerpt, publishedAt, scriptureReference, scriptureText,
   mainImage { asset, "assetUrl": asset->url, alt, caption, crop, hotspot },
   "author": author->{ name, "slug": slug.current, image { asset, alt, crop, hotspot } }
 }`;
 
 export const devotionalBySlugQuery = `*[_type == "devotional" && slug.current == $slug && defined(publishedAt) && publishedAt <= now()][0] {
-  _id, title, "slug": slug.current, excerpt, publishedAt, scriptureReference, scriptureText, prayer,
+  _id, _updatedAt, title, "slug": slug.current, excerpt, publishedAt, scriptureReference, scriptureText, prayer,
   mainImage { asset, "assetUrl": asset->url, alt, caption, crop, hotspot }, body, seoTitle, seoDescription,
   "author": author->{ name, "slug": slug.current, image { asset, alt, crop, hotspot }, bio }
 }`;
