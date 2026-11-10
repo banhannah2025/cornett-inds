@@ -177,7 +177,11 @@ export function AdminDevotionalEditor({
             </select>
           </label>
         )}
-        <div className="grid gap-5 border-t border-[#1e2a24]/10 pt-5 sm:grid-cols-2">
+        <fieldset className="grid gap-5 border-t border-[#1e2a24]/10 pt-5 sm:grid-cols-2">
+          <legend className="pr-2 text-sm font-bold">Search and social previews</legend>
+          <p className="text-sm text-[#6b786e] sm:col-span-2">
+            Leave either field blank to use the devotional title or introduction.
+          </p>
           <label className="block text-sm font-bold">
             SEO title{" "}
             <span className="font-normal text-[#6b786e]">(optional)</span>
@@ -199,7 +203,7 @@ export function AdminDevotionalEditor({
               rows={3}
             />
           </label>
-        </div>
+        </fieldset>
         <div className="flex justify-end border-t border-[#1e2a24]/10 pt-5">
           <button
             className="rounded-full bg-[#1e2a24] px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
