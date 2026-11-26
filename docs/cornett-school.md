@@ -8,7 +8,7 @@ Adult (18+) open enrollment, nondenominational Christian school within Blended W
 
 Route: `/apps/cornett-school`, linked from the shared Apps menu.
 
-Public founding preview with four proposed pathways (24 course outlines), an original orientation lesson with a practice question and reflection, an external resource directory, and interactive weekly study planning, priorities, budget arithmetic, text export, and printing. No enrollment, grades, payments, certificate issuance, private messaging, or prayer submissions are represented as active. Planner/reflection data exists only in memory in the open page. Reloading loses it unless exported. It is not stored in public Sanity content.
+Public founding preview with four proposed pathways, 24 dedicated draft course syllabi, 96 planned learning units, proposed assessment rubrics and pathway projects, an original orientation lesson with a practice question and reflection, an external resource directory, and interactive weekly study planning, priorities, budget arithmetic, text export, and printing. No enrollment, grades, payments, certificate issuance, private messaging, or prayer submissions are represented as active. Planner/reflection data exists only in memory in the open page. Reloading loses it unless exported. It is not stored in public Sanity content.
 
 ## Delivery sequence and acceptance criteria
 
@@ -33,3 +33,11 @@ Subscription amount/interval; operating budget; policy approval; theological sta
 ## Verification
 
 Run the web workspace type check and production build. Before enrollment, additionally test authentication/authorization, billing lifecycle, record persistence, assessment integrity, certificate verification, accessibility with keyboard and assistive technology, responsive layouts, and data recovery. The founding preview is not a production learning-management system.
+
+## Pathway curriculum expansion
+
+Each syllabus has three learning outcomes, four planned units with guiding questions, a course-specific applied assignment, historical and psychological inquiry, Scripture study, recommended preparation, and a workload estimate. Estimated pathway hours are 96 (foundations), 120 (historical study), 144 (advanced study), and 168 (ministry), totaling 528 hours. These are planning estimates, not academic credit or a representation of released instructional hours.
+
+Course pages are statically generated under `/apps/cornett-school/courses/[slug]`; unknown slugs return not found. Returning to the catalog preserves the Programs section through a validated query parameter. Course links and the certificate section expose proposed standards: 80% knowledge checks, every assignment submitted, competence in each rubric dimension, a pathway integration project, and founder review. These policies remain drafts until approved; no grades or certificates are issued.
+
+The 96 units are lesson-development plans, not complete lessons. Next content work must supply substantive original teaching, reviewed sources and commercial reuse clearance, accessible media where selected, meaningful assessments, and release approval. Do not equate a syllabus with a finished course.

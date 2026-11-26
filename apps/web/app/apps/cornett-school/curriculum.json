@@ -1,0 +1,842 @@
+[
+  {
+    "id": "CSC-101",
+    "slug": "the-gospel-and-christian-belief",
+    "title": "The Gospel and Christian Belief",
+    "pathway": 0,
+    "hours": 16,
+    "outcomes": [
+      "Explain the Christian gospel using passages in context",
+      "Distinguish core Christian claims from denominational distinctives",
+      "Describe discipleship without treating personal testimony as proof of every claim"
+    ],
+    "units": [
+      {
+        "title": "The story of redemption",
+        "question": "How do creation, human failure, covenant, and restoration connect?"
+      },
+      {
+        "title": "Jesus Christ and the gospel",
+        "question": "How do the Gospels present Jesus and his mission?"
+      },
+      {
+        "title": "Grace, faith, and Christian life",
+        "question": "How do Christian traditions explain the relationship between faith and action?"
+      },
+      {
+        "title": "Belief, questions, and testimony",
+        "question": "How can you explain your convictions honestly and respectfully?"
+      }
+    ],
+    "assignment": "Prepare a 600-word gospel explanation with three contextual Scripture references and a short account of a question you still have.",
+    "history": "Trace the setting of the earliest Christian proclamation.",
+    "psychology": "Distinguish personal conviction, social belonging, and reasons offered for belief.",
+    "scripture": "Luke 15; John 1:1–18; Ephesians 2:1–10",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-102",
+    "slug": "learning-to-read-the-bible",
+    "title": "Learning to Read the Bible",
+    "pathway": 0,
+    "hours": 16,
+    "outcomes": [
+      "Separate observation, interpretation, and application",
+      "Identify genre, audience, and context before drawing conclusions",
+      "Compare translations without building an argument on an isolated English word"
+    ],
+    "units": [
+      {
+        "title": "The library of Scripture",
+        "question": "What kinds of writing are collected in the Bible?"
+      },
+      {
+        "title": "Reading a passage in context",
+        "question": "What changes when you read the surrounding argument?"
+      },
+      {
+        "title": "Translation and study tools",
+        "question": "What can a translation or commentary establish, and what can it not?"
+      },
+      {
+        "title": "From reading to faithful response",
+        "question": "How does an application follow from an interpretation?"
+      }
+    ],
+    "assignment": "Submit a passage study showing observations, context, interpretation, alternative readings, and a practical response.",
+    "history": "Introduce manuscripts, translation, and the history of biblical interpretation.",
+    "psychology": "Identify confirmation bias and practice revising an initial reading.",
+    "scripture": "James 1:19–27; Luke 10:25–37",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-103",
+    "slug": "old-testament-overview",
+    "title": "Old Testament Overview",
+    "pathway": 0,
+    "hours": 16,
+    "outcomes": [
+      "Locate major Old Testament books within a broad narrative sequence",
+      "Distinguish law, narrative, wisdom, and prophetic literature",
+      "Trace covenant and worship themes without flattening differences between books"
+    ],
+    "units": [
+      {
+        "title": "Creation and covenant",
+        "question": "Which themes emerge in Genesis and Exodus?"
+      },
+      {
+        "title": "Land, kingship, and worship",
+        "question": "How are leadership and covenant faithfulness portrayed?"
+      },
+      {
+        "title": "Wisdom and prophetic witness",
+        "question": "How do poetry, wisdom, and prophecy communicate differently?"
+      },
+      {
+        "title": "Exile, return, and expectation",
+        "question": "How do displacement and restoration shape the story?"
+      }
+    ],
+    "assignment": "Create an annotated narrative timeline with genre examples and one contextual study of an Old Testament passage.",
+    "history": "Distinguish narrative sequence from independently established historical dating.",
+    "psychology": "Reflect on memory, identity, and community responses to displacement.",
+    "scripture": "Genesis 12; Exodus 19–20; Psalm 13; Isaiah 40",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-104",
+    "slug": "new-testament-overview",
+    "title": "New Testament Overview",
+    "pathway": 0,
+    "hours": 16,
+    "outcomes": [
+      "Summarize the purpose and literary character of major New Testament groupings",
+      "Read letters as communication to particular communities",
+      "Connect the ministry of Jesus, early church, and Christian hope"
+    ],
+    "units": [
+      {
+        "title": "The four Gospels",
+        "question": "Why study each Gospel on its own terms?"
+      },
+      {
+        "title": "Acts and expanding communities",
+        "question": "What questions arise as the movement crosses boundaries?"
+      },
+      {
+        "title": "Letters and community life",
+        "question": "How does an occasion shape a letter’s argument?"
+      },
+      {
+        "title": "Apocalyptic writing and hope",
+        "question": "How should imagery and genre guide interpretation?"
+      }
+    ],
+    "assignment": "Build a New Testament book guide with audience questions, genre notes, and an interpretation of one letter passage.",
+    "history": "Situate texts within first-century Jewish and Roman settings.",
+    "psychology": "Explore belonging and conflict without diagnosing ancient authors.",
+    "scripture": "Mark 1; Acts 10–11; Philippians 2; Revelation 21",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-105",
+    "slug": "prayer-worship-and-discipleship",
+    "title": "Prayer, Worship, and Discipleship",
+    "pathway": 0,
+    "hours": 16,
+    "outcomes": [
+      "Compare biblical forms of prayer and worship",
+      "Develop a sustainable voluntary spiritual practice",
+      "Explain how accountability can respect freedom and boundaries"
+    ],
+    "units": [
+      {
+        "title": "Prayer and lament",
+        "question": "What place do praise, petition, silence, and lament have?"
+      },
+      {
+        "title": "Worship and community",
+        "question": "How do shared practices express belief?"
+      },
+      {
+        "title": "Discipleship and service",
+        "question": "How do learning and action inform each other?"
+      },
+      {
+        "title": "A sustainable rhythm",
+        "question": "How can spiritual practice coexist with work, family, and rest?"
+      }
+    ],
+    "assignment": "Develop and evaluate a two-week spiritual practice plan, including boundaries and adaptations for your responsibilities.",
+    "history": "Compare selected worship practices across Christian history.",
+    "psychology": "Distinguish habit formation from shame-based compliance.",
+    "scripture": "Matthew 6:5–15; Psalm 42; Romans 12",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-106",
+    "slug": "learning-habits-and-self-awareness",
+    "title": "Learning, Habits, and Self-Awareness",
+    "pathway": 0,
+    "hours": 16,
+    "outcomes": [
+      "Create a realistic weekly study plan",
+      "Use retrieval practice and reflection to identify learning gaps",
+      "Separate emotional reactions from unsupported conclusions about others"
+    ],
+    "units": [
+      {
+        "title": "Learning how to learn",
+        "question": "How will you check understanding beyond rereading?"
+      },
+      {
+        "title": "Attention and habits",
+        "question": "Which cues and distractions affect your study?"
+      },
+      {
+        "title": "Emotion and self-reflection",
+        "question": "What helps you notice a reaction before acting?"
+      },
+      {
+        "title": "Rest and resilient planning",
+        "question": "How can you adapt a plan after an interrupted week?"
+      }
+    ],
+    "assignment": "Submit a study plan, a self-quiz, and a reflection comparing intended and actual study time.",
+    "history": "Examine how access to literacy and education changed across communities.",
+    "psychology": "Introduce learning, attention, motivation, and limits of self-report.",
+    "scripture": "Proverbs 18:13; James 1:19–20",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-201",
+    "slug": "ancient-near-eastern-history",
+    "title": "Ancient Near Eastern History",
+    "pathway": 1,
+    "hours": 20,
+    "outcomes": [
+      "Use maps and timelines to situate biblical settings",
+      "Distinguish archaeological evidence from interpretive reconstruction",
+      "Compare ancient sources without assuming similarity proves dependence"
+    ],
+    "units": [
+      {
+        "title": "Geography and sources",
+        "question": "Which sources inform a reconstruction of the ancient Near East?"
+      },
+      {
+        "title": "Egypt and Mesopotamia",
+        "question": "How do political and social settings inform contextual questions?"
+      },
+      {
+        "title": "Covenant, law, and worship",
+        "question": "How can comparisons illuminate both similarities and differences?"
+      },
+      {
+        "title": "Archaeology and uncertainty",
+        "question": "How should competing reconstructions be evaluated?"
+      }
+    ],
+    "assignment": "Create an evidence-based historical dossier with a map, annotated source list, and explicit uncertainty notes.",
+    "history": "Study ancient societies through texts, material culture, and competing chronologies.",
+    "psychology": "Examine how modern expectations influence historical reconstruction.",
+    "scripture": "Exodus 1–3; Deuteronomy 6",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-202",
+    "slug": "israel-and-second-temple-judaism",
+    "title": "Israel and Second Temple Judaism",
+    "pathway": 1,
+    "hours": 20,
+    "outcomes": [
+      "Outline major questions surrounding exile, return, and Second Temple life",
+      "Recognize diversity within ancient Jewish communities",
+      "Interpret Christian texts without stereotyping Judaism"
+    ],
+    "units": [
+      {
+        "title": "Exile and return",
+        "question": "How are identity and worship negotiated after displacement?"
+      },
+      {
+        "title": "Temple, Torah, and daily life",
+        "question": "What sources describe institutions and practice?"
+      },
+      {
+        "title": "Jewish diversity and interpretation",
+        "question": "Why must distinct movements and periods be differentiated?"
+      },
+      {
+        "title": "The Jewish setting of Jesus",
+        "question": "How does this setting shape questions we ask of the Gospels?"
+      }
+    ],
+    "assignment": "Prepare a contextual guide to one Gospel passage using clearly identified Jewish and Christian perspectives.",
+    "history": "Explore Persian, Hellenistic, and Roman periods with attention to source dates.",
+    "psychology": "Examine group identity while avoiding stereotypes and collective blame.",
+    "scripture": "Ezra 1; Nehemiah 8; Luke 2:22–52",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-203",
+    "slug": "the-greek-and-roman-world",
+    "title": "The Greek and Roman World",
+    "pathway": 1,
+    "hours": 20,
+    "outcomes": [
+      "Explain selected features of Roman civic and household life",
+      "Assess how geography and institutions inform New Testament reading",
+      "Distinguish contextual possibility from demonstrated authorial intent"
+    ],
+    "units": [
+      {
+        "title": "Empire and civic life",
+        "question": "How did power and citizenship shape daily experience?"
+      },
+      {
+        "title": "Households and social status",
+        "question": "Whose perspectives are preserved or missing in our sources?"
+      },
+      {
+        "title": "Travel, language, and communication",
+        "question": "How did people and messages move?"
+      },
+      {
+        "title": "Religion and public allegiance",
+        "question": "What contextual questions arise around worship and loyalty?"
+      }
+    ],
+    "assignment": "Write a historical background brief for Acts 17 with source limitations and a section on responsible application.",
+    "history": "Study the Mediterranean through maps, inscriptions, and literary evidence.",
+    "psychology": "Explore authority, status, and conformity as interpretive questions.",
+    "scripture": "Acts 16–17; Philippians 3:17–21",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-204",
+    "slug": "biblical-genres-and-interpretation",
+    "title": "Biblical Genres and Interpretation",
+    "pathway": 1,
+    "hours": 20,
+    "outcomes": [
+      "Apply genre-sensitive questions to multiple biblical texts",
+      "Support an interpretation with textual and contextual evidence",
+      "Represent a credible alternative interpretation fairly"
+    ],
+    "units": [
+      {
+        "title": "Narrative and law",
+        "question": "How do description, command, and covenant setting differ?"
+      },
+      {
+        "title": "Poetry, wisdom, and prophecy",
+        "question": "How do imagery and literary form affect reading?"
+      },
+      {
+        "title": "Gospels and letters",
+        "question": "How do narrative purpose and argument guide interpretation?"
+      },
+      {
+        "title": "Apocalyptic and interpretive disagreement",
+        "question": "How can you argue carefully without overstating certainty?"
+      }
+    ],
+    "assignment": "Produce a comparative interpretation portfolio covering narrative, poetry, a letter, and apocalyptic writing.",
+    "history": "Compare selected interpretive methods used across church history.",
+    "psychology": "Practice recognizing motivated reasoning and overconfidence.",
+    "scripture": "Psalm 23; Proverbs 26:4–5; Mark 4; 1 Corinthians 13",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-205",
+    "slug": "jesus-the-gospels-and-acts",
+    "title": "Jesus, the Gospels, and Acts",
+    "pathway": 1,
+    "hours": 20,
+    "outcomes": [
+      "Compare Gospel presentations without erasing distinctive emphases",
+      "Explain selected teachings in their narrative setting",
+      "Trace debates about inclusion and mission in Acts"
+    ],
+    "units": [
+      {
+        "title": "Reading the Gospels together and separately",
+        "question": "What does comparison reveal, and what can it obscure?"
+      },
+      {
+        "title": "Kingdom, parables, and discipleship",
+        "question": "How do audience and narrative setting affect a teaching?"
+      },
+      {
+        "title": "Cross and resurrection",
+        "question": "How do the texts connect suffering, hope, and proclamation?"
+      },
+      {
+        "title": "Acts and the expanding church",
+        "question": "How are conflict and participation negotiated?"
+      }
+    ],
+    "assignment": "Prepare a teaching series outline with a Gospel comparison and an Acts case study on community disagreement.",
+    "history": "Connect the texts to Jewish settings and early Christian expansion.",
+    "psychology": "Analyze listening, expectations, and group boundaries without reducing faith to psychology.",
+    "scripture": "Luke 4; Mark 8; John 20; Acts 15",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-206",
+    "slug": "human-development-and-relationships",
+    "title": "Human Development and Relationships",
+    "pathway": 1,
+    "hours": 20,
+    "outcomes": [
+      "Compare developmental frameworks while recognizing their limits",
+      "Practice reflective listening and respectful boundaries",
+      "Adapt a teaching plan to different adult learning needs"
+    ],
+    "units": [
+      {
+        "title": "Development across adulthood",
+        "question": "How do life stage and circumstances affect learning?"
+      },
+      {
+        "title": "Relationships and family systems",
+        "question": "How can patterns be discussed without assigning blame?"
+      },
+      {
+        "title": "Listening and communication",
+        "question": "How can you check that you understood someone?"
+      },
+      {
+        "title": "Difference, accessibility, and belonging",
+        "question": "How can environments support diverse learners?"
+      }
+    ],
+    "assignment": "Design an accessible adult Bible study and submit an anonymized or fictional listening role-play reflection.",
+    "history": "Examine changing assumptions about family, education, and community.",
+    "psychology": "Evaluate development, attachment, and relationship models as models rather than diagnoses.",
+    "scripture": "Romans 12:9–18; 1 Corinthians 12",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-301",
+    "slug": "christian-doctrine-and-ethics",
+    "title": "Christian Doctrine and Ethics",
+    "pathway": 2,
+    "hours": 24,
+    "outcomes": [
+      "Explain major doctrinal topics with biblical and historical support",
+      "Compare Christian positions without presenting one tradition as universal",
+      "Construct an ethical argument attentive to affected people"
+    ],
+    "units": [
+      {
+        "title": "God, creation, and Scripture",
+        "question": "How do theological claims relate to interpretation?"
+      },
+      {
+        "title": "Christ, salvation, and the Spirit",
+        "question": "Where do traditions agree and differ?"
+      },
+      {
+        "title": "Church, sacraments, and hope",
+        "question": "How does doctrine shape community practice?"
+      },
+      {
+        "title": "Ethical reasoning in ministry",
+        "question": "How should principles, consequences, character, and context be weighed?"
+      }
+    ],
+    "assignment": "Write a theological position paper and an ethical case analysis that fairly considers an alternative position.",
+    "history": "Trace doctrinal language through selected historical debates.",
+    "psychology": "Examine moral judgment, bias, and the influence of group loyalty.",
+    "scripture": "John 1; Romans 5; 1 Corinthians 15; Micah 6:8",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-302",
+    "slug": "early-christianity-councils-and-creeds",
+    "title": "Early Christianity, Councils, and Creeds",
+    "pathway": 2,
+    "hours": 24,
+    "outcomes": [
+      "Read early Christian sources with attention to date and genre",
+      "Explain the questions addressed by selected councils and creeds",
+      "Distinguish theological argument from political and institutional context"
+    ],
+    "units": [
+      {
+        "title": "Sources for early Christianity",
+        "question": "What survives, and whose voices are missing?"
+      },
+      {
+        "title": "Worship, leadership, and diversity",
+        "question": "How can developing practices be studied responsibly?"
+      },
+      {
+        "title": "Councils and doctrinal language",
+        "question": "What questions did particular formulations address?"
+      },
+      {
+        "title": "Reading a creed today",
+        "question": "How do inherited statements function in different churches?"
+      }
+    ],
+    "assignment": "Prepare an annotated comparison of two early Christian sources and a contextual explanation of a creed.",
+    "history": "Study early Christian communities and selected conciliar controversies.",
+    "psychology": "Consider authority and belonging without assuming they explain every conviction.",
+    "scripture": "Acts 2:42–47; Philippians 2:5–11",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-303",
+    "slug": "eastern-christianity-and-the-reformation",
+    "title": "Eastern Christianity and the Reformation",
+    "pathway": 2,
+    "hours": 24,
+    "outcomes": [
+      "Recognize major Eastern and Western Christian traditions",
+      "Explain reform movements in their specific settings",
+      "Compare primary sources without treating all traditions as uniform"
+    ],
+    "units": [
+      {
+        "title": "Eastern Christian life and theology",
+        "question": "Which sources introduce Eastern traditions on their own terms?"
+      },
+      {
+        "title": "Medieval Western Christianity",
+        "question": "How did institutions and devotional practices develop?"
+      },
+      {
+        "title": "Reformations and Catholic reform",
+        "question": "What distinct arguments and circumstances shaped reform?"
+      },
+      {
+        "title": "The legacy of division and dialogue",
+        "question": "How do historical debates inform present-day relationships?"
+      }
+    ],
+    "assignment": "Develop a comparative historical essay using sources from the traditions being discussed.",
+    "history": "Study selected medieval, Reformation, and post-Reformation developments.",
+    "psychology": "Explore identity, conflict narratives, and charitable disagreement.",
+    "scripture": "John 17; Ephesians 4:1–16",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-304",
+    "slug": "global-christianity-and-missions",
+    "title": "Global Christianity and Missions",
+    "pathway": 2,
+    "hours": 24,
+    "outcomes": [
+      "Describe Christianity beyond a Western-centered narrative",
+      "Evaluate mission accounts for power and perspective",
+      "Design a community partnership that begins with local listening"
+    ],
+    "units": [
+      {
+        "title": "Ancient and global Christian communities",
+        "question": "Which histories are omitted from familiar narratives?"
+      },
+      {
+        "title": "Mission, empire, and local agency",
+        "question": "How do sources portray power and participation?"
+      },
+      {
+        "title": "Translation and cultural encounter",
+        "question": "Who defines faithful contextual expression?"
+      },
+      {
+        "title": "Partnership and reciprocal learning",
+        "question": "How can service respect local knowledge and leadership?"
+      }
+    ],
+    "assignment": "Prepare a contextual mission study and a partnership proposal with consent, accountability, and local leadership.",
+    "history": "Include African, Asian, Middle Eastern, Latin American, and Indigenous Christian perspectives.",
+    "psychology": "Examine cultural assumptions, prejudice, and intergroup contact.",
+    "scripture": "Acts 10; Acts 17:16–34; Revelation 7:9–10",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-305",
+    "slug": "psychology-of-religion-and-group-behavior",
+    "title": "Psychology of Religion and Group Behavior",
+    "pathway": 2,
+    "hours": 24,
+    "outcomes": [
+      "Distinguish empirical psychological claims from theological claims",
+      "Evaluate evidence quality and avoid overgeneralizing study results",
+      "Identify coercive group dynamics and propose accountable alternatives"
+    ],
+    "units": [
+      {
+        "title": "Studying religious experience",
+        "question": "What can different research methods investigate?"
+      },
+      {
+        "title": "Belonging and identity",
+        "question": "How do social ties support and pressure individuals?"
+      },
+      {
+        "title": "Authority, persuasion, and conformity",
+        "question": "When does influence become coercive?"
+      },
+      {
+        "title": "Evidence and responsible integration",
+        "question": "How can findings inform ministry without replacing theological reasoning?"
+      }
+    ],
+    "assignment": "Critique a selected research article and analyze a fictional group scenario with evidence limits and safeguards.",
+    "history": "Compare historical settings of religious movements without diagnosing participants.",
+    "psychology": "Study social influence, religious coping, and research ethics.",
+    "scripture": "1 Peter 5:1–4; Romans 12:1–8",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-306",
+    "slug": "research-methods-and-biblical-languages",
+    "title": "Research Methods and Biblical Languages",
+    "pathway": 2,
+    "hours": 24,
+    "outcomes": [
+      "Evaluate sources, citations, and competing arguments",
+      "Use introductory Greek and Hebrew tools without claiming fluency",
+      "Distinguish word meanings in context from lexical fallacies"
+    ],
+    "units": [
+      {
+        "title": "Questions, sources, and evidence",
+        "question": "What makes a research question answerable?"
+      },
+      {
+        "title": "Academic reading and citation",
+        "question": "Can a reader trace your claims to their sources?"
+      },
+      {
+        "title": "Greek and Hebrew orientation",
+        "question": "What can alphabets, morphology, and lexical tools help you notice?"
+      },
+      {
+        "title": "Research synthesis and limitations",
+        "question": "How will you distinguish evidence, inference, and uncertainty?"
+      }
+    ],
+    "assignment": "Submit an annotated bibliography and a contextual word-study critique, including limits of your language competence.",
+    "history": "Introduce textual transmission and the history of scholarship.",
+    "psychology": "Examine publication bias, correlation, and causal claims at an introductory level.",
+    "scripture": "Luke 1:1–4; 2 Timothy 2:15",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-401",
+    "slug": "sermon-preparation-and-teaching",
+    "title": "Sermon Preparation and Teaching",
+    "pathway": 3,
+    "hours": 28,
+    "outcomes": [
+      "Develop a message from a defensible passage interpretation",
+      "Adapt teaching to a defined audience and objective",
+      "Revise a recorded lesson using structured feedback"
+    ],
+    "units": [
+      {
+        "title": "From passage to teaching objective",
+        "question": "What should listeners understand or practice?"
+      },
+      {
+        "title": "Structure, illustration, and accuracy",
+        "question": "Does every illustration support the text without manipulating listeners?"
+      },
+      {
+        "title": "Delivery and accessibility",
+        "question": "How can presentation support different learners?"
+      },
+      {
+        "title": "Feedback and revision",
+        "question": "What changes follow from listener understanding?"
+      }
+    ],
+    "assignment": "Submit an exegetical brief, lesson plan, recorded 10–15 minute teaching, transcript, and revision reflection.",
+    "history": "Compare selected preaching and catechetical traditions.",
+    "psychology": "Apply learning and attention principles without coercive persuasion.",
+    "scripture": "Nehemiah 8:1–12; James 3:1–12",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-402",
+    "slug": "pastoral-care-grief-and-referral",
+    "title": "Pastoral Care, Grief, and Referral",
+    "pathway": 3,
+    "hours": 28,
+    "outcomes": [
+      "Demonstrate listening and consent in a fictional pastoral conversation",
+      "Distinguish pastoral support from clinical treatment",
+      "Create a locally verified referral and escalation plan"
+    ],
+    "units": [
+      {
+        "title": "Presence, listening, and consent",
+        "question": "What kind of support is the person actually seeking?"
+      },
+      {
+        "title": "Grief and loss",
+        "question": "How can care make room for varied responses without imposing a timetable?"
+      },
+      {
+        "title": "Boundaries and confidentiality",
+        "question": "What can be promised, and what limits need explanation?"
+      },
+      {
+        "title": "Referral and coordinated support",
+        "question": "When should a qualified professional or emergency service be involved?"
+      }
+    ],
+    "assignment": "Complete fictional care role-plays and a referral directory with source dates and a clear scope-of-role statement.",
+    "history": "Compare historical forms of pastoral and community care.",
+    "psychology": "Introduce grief and distress literacy without diagnosis or treatment training.",
+    "scripture": "Psalm 13; John 11:17–36; Romans 12:15",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-403",
+    "slug": "trauma-awareness-and-safeguarding",
+    "title": "Trauma Awareness and Safeguarding",
+    "pathway": 3,
+    "hours": 28,
+    "outcomes": [
+      "Recognize how ministry environments can affect safety and choice",
+      "Respond to a fictional disclosure without investigation or blame",
+      "Draft a safeguarding plan for review against applicable local requirements"
+    ],
+    "units": [
+      {
+        "title": "Safety, choice, and trust",
+        "question": "How can participation preserve agency?"
+      },
+      {
+        "title": "Receiving a disclosure",
+        "question": "How do you listen without leading questions or promises you cannot keep?"
+      },
+      {
+        "title": "Safeguarding systems",
+        "question": "How do reporting channels, supervision, and boundaries work together?"
+      },
+      {
+        "title": "Scenario review and improvement",
+        "question": "Which gaps would an independent reviewer identify?"
+      }
+    ],
+    "assignment": "Draft a ministry safeguarding procedure and respond to fictional scenarios; identify locally verified reporting obligations separately.",
+    "history": "Study institutional accountability and failures through carefully selected cases.",
+    "psychology": "Introduce trauma awareness while keeping clinical assessment outside the course scope.",
+    "scripture": "Mark 10:13–16; Ezekiel 34:1–10",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-404",
+    "slug": "church-leadership-and-stewardship",
+    "title": "Church Leadership and Stewardship",
+    "pathway": 3,
+    "hours": 28,
+    "outcomes": [
+      "Explain governance options and their accountability implications",
+      "Prepare a transparent fictional ministry budget",
+      "Design procedures that separate authority, money, and review"
+    ],
+    "units": [
+      {
+        "title": "Governance and shared responsibility",
+        "question": "Who makes decisions, and how can they be questioned?"
+      },
+      {
+        "title": "Financial stewardship",
+        "question": "How are funds authorized, recorded, and reported?"
+      },
+      {
+        "title": "People, volunteers, and operations",
+        "question": "How are roles, consent, and workload managed?"
+      },
+      {
+        "title": "Planning and accountable evaluation",
+        "question": "What evidence shows whether a ministry is serving its purpose?"
+      }
+    ],
+    "assignment": "Create a fictional church operations packet with governance, budget, role descriptions, and review procedures.",
+    "history": "Compare forms of church governance across traditions.",
+    "psychology": "Examine leadership power, burnout, and decision-making biases.",
+    "scripture": "Acts 6:1–7; 2 Corinthians 8:16–24",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-405",
+    "slug": "conflict-power-and-spiritual-abuse-prevention",
+    "title": "Conflict, Power, and Spiritual Abuse Prevention",
+    "pathway": 3,
+    "hours": 28,
+    "outcomes": [
+      "Distinguish disagreement from harassment, coercion, and abuse",
+      "Practice a conflict response that preserves safety and fair process",
+      "Design complaint and appeal channels independent of the person complained about"
+    ],
+    "units": [
+      {
+        "title": "Conflict and interpretation",
+        "question": "What facts are established, and which accounts remain disputed?"
+      },
+      {
+        "title": "Power and consent",
+        "question": "Can a participant disagree or leave without retaliation?"
+      },
+      {
+        "title": "Repair and accountability",
+        "question": "When are mediation and reconciliation inappropriate or insufficient?"
+      },
+      {
+        "title": "Prevention and independent review",
+        "question": "How can a community detect and correct misuse of authority?"
+      }
+    ],
+    "assignment": "Analyze fictional conflict cases and draft a nonretaliation, complaint, and independent review policy.",
+    "history": "Examine historical uses and abuses of religious authority.",
+    "psychology": "Explore coercive control and group pressure without diagnosing individuals.",
+    "scripture": "Mark 10:42–45; 1 Peter 5:1–4",
+    "status": "Syllabus draft"
+  },
+  {
+    "id": "CSC-406",
+    "slug": "ministry-portfolio-and-leadership-review",
+    "title": "Ministry Portfolio and Leadership Review",
+    "pathway": 3,
+    "hours": 28,
+    "outcomes": [
+      "Integrate biblical study, history, psychology, and ministry practice",
+      "Identify gaps and limits in personal readiness",
+      "Defend a ministry plan and revise it after founder review"
+    ],
+    "units": [
+      {
+        "title": "Portfolio selection and evidence",
+        "question": "Which work demonstrates each program outcome?"
+      },
+      {
+        "title": "Ministry plan and practical demonstration",
+        "question": "How do convictions translate into accountable practice?"
+      },
+      {
+        "title": "Founder review and oral discussion",
+        "question": "Can you explain and revise your reasoning?"
+      },
+      {
+        "title": "Continuing growth and boundaries",
+        "question": "Which needs require further study, supervision, or church recognition?"
+      }
+    ],
+    "assignment": "Submit a portfolio, teaching recording, care/referral scenario, safeguarding plan, budget, and continuing-learning plan for founder review.",
+    "history": "Explain how historical study changed one aspect of your ministry approach.",
+    "psychology": "Demonstrate listening, self-reflection, boundaries, and recognition of evidence limits.",
+    "scripture": "1 Timothy 3:1–13; Titus 1:5–9; James 3:1–12",
+    "status": "Syllabus draft"
+  }
+]

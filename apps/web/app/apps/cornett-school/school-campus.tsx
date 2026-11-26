@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BookOpen,
   GraduationCap,
@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { pathways, resources } from "./catalog";
+import { curriculum, assessmentPolicy, pathwayProjects } from "./curriculum";
 
 const sections = [
   { id: "welcome", label: "Welcome", icon: BookOpen },
@@ -26,6 +27,13 @@ type Section = (typeof sections)[number]["id"];
 
 export function SchoolCampus() {
   const [section, setSection] = useState<Section>("welcome");
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get(
+      "section",
+    );
+    if (sections.some((item) => item.id === requested))
+      setSection(requested as Section);
+  }, []);
   const [query, setQuery] = useState("");
   const [level, setLevel] = useState("All levels");
   const [answer, setAnswer] = useState("");
@@ -196,9 +204,9 @@ export function SchoolCampus() {
                 <em>A deeper understanding.</em>
               </h1>
               <p className="school-lead">
-                Four proposed certificate pathways. History and psychology
-                develop alongside Scripture and ministry throughout the
-                sequence.
+                Four connected certificate pathways with 24 draft course syllabi
+                and 96 planned learning units. History and psychology develop
+                alongside Scripture and ministry throughout the sequence.
               </p>
               <label className="school-field">
                 Choose a level
@@ -221,14 +229,37 @@ export function SchoolCampus() {
                       </span>
                       <h2>{p.title}</h2>
                       <p>{p.description}</p>
+                      <p>
+                        <strong>Planned workload:</strong>{" "}
+                        {curriculum
+                          .filter((c) => c.pathway === pathways.indexOf(p))
+                          .reduce((sum, c) => sum + c.hours, 0)}{" "}
+                        hours, including study and assignments.
+                      </p>
                       <ul>
-                        {p.courses.map((c) => (
-                          <li key={c}>{c}</li>
-                        ))}
+                        {curriculum
+                          .filter((c) => c.pathway === pathways.indexOf(p))
+                          .map((c) => (
+                            <li key={c.id}>
+                              <Link
+                                href={`/apps/cornett-school/courses/${c.slug}`}
+                              >
+                                {c.title}
+                              </Link>
+                              <span className="school-course-meta">
+                                {c.id} · {c.hours} hours · Syllabus draft
+                              </span>
+                            </li>
+                          ))}
                       </ul>
+                      <p>
+                        <strong>Pathway project:</strong>{" "}
+                        {pathwayProjects[pathways.indexOf(p)]}
+                      </p>
                       <p className="school-muted">
-                        Completion criteria, workloads, and assessments will be
-                        published before enrollment.
+                        {pathways.indexOf(p) === 0
+                          ? "No prior Bible knowledge required."
+                          : `Recommended preparation: ${pathways[pathways.indexOf(p) - 1]?.title}, or founder review of equivalent learning.`}
                       </p>
                     </article>
                   ))}
@@ -664,6 +695,27 @@ export function SchoolCampus() {
                 requirements. They are not academic degrees, professional
                 licenses, ordination, or a guarantee of acceptance by a church.
               </p>
+              <section className="school-card">
+                <h2>Proposed completion requirements</h2>
+                <p>{assessmentPolicy.status}</p>
+                <p>{assessmentPolicy.knowledge}</p>
+                <p>{assessmentPolicy.assignments}</p>
+                <p>{assessmentPolicy.review}</p>
+                <p>
+                  Complete all six courses in a pathway and its integration
+                  project. Certificate eligibility will be determined from
+                  verified records; preview activities do not earn a
+                  certificate.
+                </p>
+                <div className="school-rubric">
+                  {assessmentPolicy.rubric.map((item) => (
+                    <div key={item.title}>
+                      <h3>{item.title}</h3>
+                      <p>{item.standard}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
               <div className="school-grid">
                 {[
                   "Complete the required lessons and practice",
