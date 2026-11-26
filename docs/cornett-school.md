@@ -16,14 +16,14 @@ Adult (18+), open-enrollment, nondenominational Christian school within Blended 
 - Private database bootstrap schema with RLS, browser-role access revoked, ownership checks in server endpoints, one-pending-submission and one-certificate constraints, and cascading student-record deletion.
 - External resource directory with rights notes, plus weekly study planning, tasks, budgeting, export, and print tools. Life-planning tools remain in-memory and are not saved to student records.
 
-No paid enrollment is open. No content has been automatically founder-approved and no pilot access or certificates have been issued by this development work. No connected production database has been changed.
+No paid enrollment is open. No content has been automatically founder-approved and no pilot access or certificates have been issued by this development work. A separate school database has now been created and initialized; existing projects were not modified.
 
 ## Private storage setup
 
 Existing public Sanity content is not used for school records. The school uses server-only Supabase Data API requests with a private table access model. Clerk handles identity; Supabase browser roles have no table privileges. The privileged server key never reaches the browser.
 
 1. Select a private database project. Connected projects observed during development were inactive; do not repurpose or reactivate an unrelated project without deciding that target and checking cost.
-2. Review and run `database/cornett-school.sql` in the chosen project. This is an unapplied bootstrap script, not a claim of deployed migration history.
+2. Review and run `database/cornett-school.sql` in the chosen project. This bootstrap has been applied to the school project through the two migrations documented below.
 3. Configure `SCHOOL_SUPABASE_URL` and `SCHOOL_SUPABASE_SECRET_KEY` as server secrets. Use a secret/service-role key, never a publishable or anon key.
 4. Confirm the Data API is enabled for the intended schema and that `service_role` can access the six tables while `anon` and `authenticated` cannot.
 5. Verify two-account isolation, real persistence, deletion, access expiry, review races, and backup/restore against the actual deployment before accepting students.
@@ -65,3 +65,16 @@ World English Bible text and individually checked Gutenberg/LibriVox works are c
 - `node --test apps/web/lib/school/school.test.cjs`: route/model tests with mocked identity/storage cover ownership forgery, same-origin checks, anonymous access, missing configuration, access expiry, course release/enrollment gates, server grading, explicit adult/policy acceptance, required lesson evidence, rubric approval, deletion ownership, founder-only review, and certificate privacy/eligibility gates.
 - `database/cornett-school.schema.test.cjs`: tested with scratch-installed `@electric-sql/pglite@0.6.0`, without adding it to application dependencies. Set `SCHOOL_PGLITE_MODULE` to that installation and run with `node --test`. Executes the actual SQL in ephemeral PostgreSQL and checks RLS, revoked browser-role permissions, pending-submission uniqueness, review constraints, default-private certificates, duplicate certificate prevention, and deletion cascades.
 - Web type check and production build. Browser visual/interaction testing and live provider integration testing are not yet complete.
+
+## Provisioned school database — 2026-11-26
+
+- Organization: Cornett Industries (`dvjuezqhilndowtkuybx`).
+- Project: Cornett School of Christianity (`wixmkrjftjzrljfhliey`), US West (`us-west-1`).
+- API URL: `https://wixmkrjftjzrljfhliey.supabase.co`.
+- Dashboard: https://supabase.com/dashboard/project/wixmkrjftjzrljfhliey
+- Project creation quote: $0/month at provisioning; this is not a guarantee about future usage or plan changes.
+- Applied migrations: `create_private_school_records`, `explicitly_deny_browser_school_access`.
+- All six tables have RLS, revoked anonymous/authenticated table privileges, and explicit restrictive deny policies for browser roles. The server service role retains required CRUD privileges.
+- Live checks: permission inspection passed; a service-role student/progress write-and-read transaction passed and was rolled back; security advisor returned no findings.
+- No real students, course releases, assignments, or certificates were created. No existing database was reactivated or changed.
+- App connection is still pending: the school server needs `SCHOOL_SUPABASE_URL` and a server-only `SCHOOL_SUPABASE_SECRET_KEY`. The connector exposes publishable keys, not the required private server key. Never put a service key in Git, a public environment variable, or chat. Certificate issuance remains disabled.

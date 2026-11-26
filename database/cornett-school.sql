@@ -1,5 +1,6 @@
 -- Private school bootstrap schema. Review and execute against the selected school
--- database before configuring the server-only URL and secret key. Not yet applied.
+-- database before configuring the server-only URL and secret key.
+-- Applied to project wixmkrjftjzrljfhliey on 2026-11-26; see docs/cornett-school.md.
 -- Clerk identities are strings. All access goes through authenticated Next.js
 -- endpoints; neither browser Supabase role receives access to these tables.
 begin;
@@ -78,5 +79,13 @@ create table if not exists public.school_certificates (
 alter table public.school_certificates enable row level security;
 revoke all on public.school_certificates from public, anon, authenticated;
 grant select, insert, update, delete on public.school_certificates to service_role;
+
+-- Explicit defense in depth if browser privileges are ever granted accidentally.
+create policy school_server_only on public.school_students as restrictive for all to anon, authenticated using (false) with check (false);
+create policy school_server_only on public.school_releases as restrictive for all to anon, authenticated using (false) with check (false);
+create policy school_server_only on public.school_enrollments as restrictive for all to anon, authenticated using (false) with check (false);
+create policy school_server_only on public.school_progress as restrictive for all to anon, authenticated using (false) with check (false);
+create policy school_server_only on public.school_submissions as restrictive for all to anon, authenticated using (false) with check (false);
+create policy school_server_only on public.school_certificates as restrictive for all to anon, authenticated using (false) with check (false);
 
 commit;
