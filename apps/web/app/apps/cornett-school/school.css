@@ -453,3 +453,43 @@
   border-top: 2px solid #cfdae8;
   padding-top: 0.5rem;
 }
+.school-unit-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.5rem 0;
+}
+.school-unit-nav button[aria-pressed="true"] {
+  background: #233f61;
+  color: white;
+}
+.school-lessons {
+  margin-top: 3rem;
+}
+.school-student-link {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #bbc9d9;
+  border-radius: 9px;
+  padding: 0.7rem 1rem;
+  font-weight: 650;
+}
+.school-preserve {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.school-release,
+.school-review {
+  border-top: 1px solid #dce3ed;
+  padding: 1rem 0;
+}
+.school-certificate {
+  padding: 3rem 2rem;
+  background: white;
+  border: 3px double #a7772d;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.school-certificate h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}

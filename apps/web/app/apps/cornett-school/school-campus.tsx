@@ -128,6 +128,12 @@ export function SchoolCampus() {
                 practical ministry into conversation.
               </p>
               <div className="school-actions">
+                <Link
+                  className="school-student-link"
+                  href="/apps/cornett-school/student"
+                >
+                  Open student learning center
+                </Link>
                 <button
                   className="school-primary"
                   onClick={() => setSection("programs")}

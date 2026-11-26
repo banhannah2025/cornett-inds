@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { curriculum, assessmentPolicy } from "../../curriculum";
 import { pathways } from "../../catalog";
 import "../../school.css";
+import lessons from "../../lessons.json";
+import { LessonReader } from "../../lesson-reader";
 
 export const dynamicParams = false;
 export function generateStaticParams() {
@@ -86,7 +88,11 @@ export default async function CoursePage({
         <div className="school-grid">
           {course.units.map((unit) => (
             <article className="school-card" key={unit.title}>
-              <span className="school-badge">Lesson development pending</span>
+              <span className="school-badge">
+                {course.pathway === 0
+                  ? "Original lesson draft available below"
+                  : "Lesson development pending"}
+              </span>
               <h3>{unit.title}</h3>
               <p>{unit.question}</p>
               <p className="school-muted">
@@ -144,6 +150,20 @@ export default async function CoursePage({
             is required by this syllabus. This preview does not accept
             assignments or issue certificates.
           </p>
+        </section>
+        {lessons.some((l) => l.courseId === course.id) && (
+          <LessonReader
+            lessons={lessons.filter((l) => l.courseId === course.id)}
+          />
+        )}
+        <section className="school-card">
+          <h2>Continue in the student learning center</h2>
+          <p>
+            View enrollment, saved progress, assignments, and founder feedback.
+          </p>
+          <Link href="/apps/cornett-school/student">
+            Open student learning center
+          </Link>
         </section>
         <footer className="school-footer">
           Cornett School of Christianity · Adult certificate education · No
