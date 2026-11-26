@@ -1,0 +1,495 @@
+.cornett-school {
+  --school-ink: #1c3049;
+  --school-blue: #233f61;
+  --school-gold: #a7772d;
+  min-height: 100vh;
+  background: #f4f7fb;
+  color: var(--school-ink);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.cornett-school * {
+  box-sizing: border-box;
+}
+.school-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #dce3ed;
+  background: white;
+  font-size: 0.875rem;
+}
+.school-parent {
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+.school-badge {
+  display: inline-block;
+  background: #e9eff7;
+  color: #345371;
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.school-shell {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  max-width: 1600px;
+  margin: auto;
+}
+.school-sidebar {
+  padding: 2rem 1.3rem;
+  background: #192e49;
+  color: #eff5fc;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 72px);
+}
+.school-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: Georgia, serif;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+.school-brand svg {
+  color: #e3bd76;
+  flex-shrink: 0;
+}
+.school-brand small {
+  display: block;
+  font-family: Arial, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.17em;
+  margin-top: 0.4rem;
+}
+.school-sidebar-note {
+  color: #c1d0e2;
+  margin: 2rem 0;
+  font-size: 0.95rem;
+}
+.school-sidebar nav {
+  display: grid;
+  gap: 0.4rem;
+}
+.school-sidebar nav button {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: transparent;
+  border-color: transparent;
+  text-align: left;
+  color: #d6e1ef;
+  width: 100%;
+  padding: 0.8rem 0.7rem;
+}
+.school-sidebar nav button[aria-current] {
+  background: #304a69;
+  color: white;
+  border-color: #506b8a;
+}
+.school-sidebar-footer {
+  margin-top: auto;
+  padding-top: 3rem;
+  font-size: 0.875rem;
+  color: #bfd0e4;
+}
+.school-sidebar-footer a {
+  display: block;
+  margin-top: 1rem;
+  color: #efcf92;
+  text-decoration: underline;
+}
+.school-content {
+  padding: 3.5rem clamp(1.25rem, 4vw, 4.5rem);
+  min-width: 0;
+}
+.school-eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  font-weight: 800;
+  color: #875e22;
+  margin-bottom: 1rem;
+}
+.cornett-school h1 {
+  font-family: Georgia, serif;
+  font-size: clamp(2.3rem, 4.4vw, 4.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  font-weight: 500;
+  margin: 0 0 1.5rem;
+}
+.cornett-school h1 em {
+  color: #496b91;
+  font-style: normal;
+}
+.cornett-school h2 {
+  font-family: Georgia, serif;
+  font-size: 1.65rem;
+  line-height: 1.3;
+  margin: 0.7rem 0 1rem;
+}
+.cornett-school h3 {
+  font-size: 1.15rem;
+  font-weight: 750;
+  margin: 1rem 0 0.6rem;
+}
+.school-lead {
+  font-size: 1.15rem;
+  max-width: 780px;
+  color: #516178;
+  margin-bottom: 2rem;
+}
+.school-actions {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+.cornett-school button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #bbc9d9;
+  border-radius: 9px;
+  background: white;
+  padding: 0.7rem 1rem;
+  font-weight: 650;
+  color: #233f61;
+}
+.cornett-school button:hover {
+  background: #e5edf7;
+}
+.cornett-school button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cornett-school .school-primary {
+  background: #233f61;
+  color: white;
+  border-color: #233f61;
+}
+.cornett-school :focus-visible {
+  outline: 3px solid #bb852d;
+  outline-offset: 4px;
+}
+.school-feature {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 2rem;
+  background: #e4ecf6;
+  border: 1px solid #cbd8e8;
+  border-radius: 18px;
+  padding: 2rem;
+  margin: 3rem 0;
+}
+.school-feature p {
+  color: #435971;
+}
+.cornett-school blockquote {
+  border-left: 3px solid #ad803b;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  font-family: Georgia, serif;
+  font-size: 1.5rem;
+}
+.cornett-school cite {
+  display: block;
+  font:
+    normal 0.875rem/1.6 Arial,
+    sans-serif;
+  margin-top: 1rem;
+  color: #516178;
+}
+.school-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 1.2rem;
+  margin: 1.5rem 0;
+}
+.school-card {
+  background: white;
+  border: 1px solid #dce3ed;
+  border-radius: 14px;
+  padding: 1.5rem;
+  min-width: 0;
+  margin-bottom: 1rem;
+}
+.school-card p {
+  margin: 0.8rem 0;
+  color: #4d5d73;
+}
+.school-card a {
+  color: #254f80;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.school-card ul {
+  padding-left: 1.3rem;
+  list-style: disc;
+}
+.school-card li {
+  margin: 0.6rem 0;
+}
+.school-notice {
+  border-left: 4px solid #b28a48;
+  background: #fff;
+  padding: 1.2rem 1.5rem;
+  margin: 2rem 0;
+}
+.school-notice h2 {
+  font-size: 1.3rem;
+}
+.school-field {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 650;
+  margin: 1rem 0;
+  max-width: 650px;
+}
+.cornett-school input:not([type="checkbox"]):not([type="radio"]),
+.cornett-school select,
+.cornett-school textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #b5c4d6;
+  border-radius: 8px;
+  background: white;
+  color: #1c3049;
+  padding: 0.7rem;
+  font: inherit;
+}
+.cornett-school select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23233f61' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+.school-programs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+  margin-top: 2rem;
+}
+.school-muted {
+  font-size: 0.875rem;
+  color: #53647b;
+}
+.school-lesson {
+  max-width: 850px;
+}
+.school-choice {
+  display: flex;
+  gap: 0.7rem;
+  align-items: baseline;
+  padding: 0.6rem 0;
+}
+.school-choice input,
+.school-task input {
+  accent-color: #233f61;
+}
+.cornett-school fieldset {
+  margin: 1rem 0;
+  border: 0;
+}
+.cornett-school legend {
+  font-weight: 700;
+}
+.school-result {
+  font-size: 1.4rem;
+  font-weight: 750;
+  color: #233f61;
+}
+.school-task-form {
+  display: flex;
+  align-items: end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.school-task-form label {
+  flex: 1;
+  min-width: 160px;
+}
+.school-task-form button {
+  margin-bottom: 1rem;
+}
+.school-task {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #e1e8f1;
+  padding: 0.7rem 0;
+}
+.school-task label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  overflow-wrap: anywhere;
+}
+.school-task button {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+}
+.school-footer {
+  border-top: 1px solid #d5dfea;
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  font-size: 0.875rem;
+  color: #586a81;
+}
+.school-skip {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  background: white;
+  padding: 1rem;
+  z-index: 100;
+}
+.school-skip:focus {
+  top: 1rem;
+}
+@media (max-width: 900px) {
+  .school-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .school-feature,
+  .school-programs {
+    grid-template-columns: 1fr;
+  }
+  .school-header > span:not(.school-badge) {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .school-header {
+    padding: 1rem;
+  }
+  .school-shell {
+    display: block;
+  }
+  .school-sidebar {
+    min-height: 0;
+    padding: 1.2rem;
+  }
+  .school-brand {
+    font-size: 1.3rem;
+  }
+  .school-sidebar-note,
+  .school-sidebar-footer {
+    display: none;
+  }
+  .school-sidebar nav {
+    display: flex;
+    overflow-x: auto;
+    margin-top: 1rem;
+    gap: 0.5rem;
+    padding-bottom: 0.4rem;
+  }
+  .school-sidebar nav button {
+    width: auto;
+    white-space: nowrap;
+    padding: 0.65rem;
+    font-size: 0.875rem;
+  }
+  .school-content {
+    padding: 2rem 1.1rem;
+  }
+  .school-feature {
+    padding: 1.3rem;
+  }
+  .school-header .school-badge {
+    font-size: 0.75rem;
+  }
+}
+@media print {
+  .school-sidebar,
+  .school-header,
+  .school-actions,
+  .school-task-form,
+  .school-task button,
+  .school-skip {
+    display: none !important;
+  }
+  .school-shell {
+    display: block;
+  }
+  .school-content {
+    padding: 0;
+  }
+  .school-card {
+    break-inside: avoid;
+    border-color: #aaa;
+  }
+  .cornett-school {
+    background: white;
+    color: black;
+  }
+  .school-footer {
+    margin-top: 1rem;
+  }
+}
+.school-course-page {
+  max-width: 1100px;
+  margin: auto;
+}
+.school-course-page > .school-eyebrow {
+  margin-top: 2rem;
+}
+.school-course-meta {
+  display: block;
+  font-size: 0.875rem;
+  color: #53647b;
+}
+.school-rubric {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 1.2rem;
+}
+.school-rubric > div {
+  border-top: 2px solid #cfdae8;
+  padding-top: 0.5rem;
+}
+.school-unit-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.5rem 0;
+}
+.school-unit-nav button[aria-pressed="true"] {
+  background: #233f61;
+  color: white;
+}
+.school-lessons {
+  margin-top: 3rem;
+}
+.school-student-link {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #bbc9d9;
+  border-radius: 9px;
+  padding: 0.7rem 1rem;
+  font-weight: 650;
+}
+.school-preserve {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.school-release,
+.school-review {
+  border-top: 1px solid #dce3ed;
+  padding: 1rem 0;
+}
+.school-certificate {
+  padding: 3rem 2rem;
+  background: white;
+  border: 3px double #a7772d;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.school-certificate h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}

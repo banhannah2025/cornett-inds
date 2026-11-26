@@ -19,33 +19,22 @@
     "OPENAI_API_KEY",
     "OUGM_AI_MODEL",
     "OUGM_STAFF_EMAILS",
-    "OUGM_TRANSCRIPTION_MODEL"
+    "OUGM_TRANSCRIPTION_MODEL",
+    "SCHOOL_SUPABASE_URL",
+    "SCHOOL_SUPABASE_SECRET_KEY",
+    "SCHOOL_CERTIFICATES_ENABLED"
   ],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        ".env*"
-      ],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "!.next/cache/**",
-        "!.next/dev/**"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "!.next/dev/**"]
     },
     "lint": {
-      "dependsOn": [
-        "^lint"
-      ]
+      "dependsOn": ["^lint"]
     },
     "check-types": {
-      "dependsOn": [
-        "^check-types"
-      ]
+      "dependsOn": ["^check-types"]
     },
     "dev": {
       "cache": false,
